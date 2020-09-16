@@ -47,7 +47,6 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *.cover
-*.py,cover
 .hypothesis/
 .pytest_cache/
 
@@ -91,12 +90,8 @@ ipython_config.py
 #   install all needed dependencies.
 #Pipfile.lock
 
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow
-__pypackages__/
-
-# Celery stuff
+# celery beat schedule file
 celerybeat-schedule
-celerybeat.pid
 
 # SageMath parsed files
 *.sage.py
@@ -119,7 +114,6 @@ venv.bak/
 
 # mkdocs documentation
 /site
-
 # mypy
 .mypy_cache/
 .dmypy.json
@@ -127,3 +121,19 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# custom
+.idea
+.vscode
+
+.DS_Store
+
+data/DIV2K
+data/Set5
+data/Set14
+data/BSDS300
+
+output
+result
+weights/*.pth
+weights/*.zip

@@ -146,7 +146,7 @@ perception_criterion = PerceptualLoss().to(device)
 
 # Define optimizer_G and optimization strategy for PSNR model
 optimizer_G = torch.optim.Adam(netG.parameters(), lr=2e-4, betas=(0.9, 0.99), weight_decay=1e-2)
-# train loop [40, 80, 120, 160, 200]
+# train step [250000, 250000, 250000, 250000, 250000]
 lr_scheduler_G = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer_G, T_0=100, T_mult=1, eta_min=1e-7)
 
 # Start training PSNR model
@@ -183,13 +183,13 @@ else:
                 print(f"[{epoch}/{500}][{i + 1}/{len(train_dataloader)}] "
                       f"Generator L1 loss: {g_loss.item():.8f}")
 
-    torch.save(netG.state_dict(), f"./weights/ESRGAN_PSNR_X{args.scale_factor}.pth")
-    print(f"Saving pre-train weights to `./weights/ESRGAN_PSNR_X{args.scale_factor}.pth`.")
+        torch.save(netG.state_dict(), f"./weights/ESRGAN_PSNR_X{args.scale_factor}.pth")
+    print(f"Saved ESRGAN for PSNR model weights to `./weights/ESRGAN_PSNR_X{args.scale_factor}.pth`.")
 
 # Define optimizer and optimization strategy for ESRGAN model
 optimizer_G = torch.optim.Adam(netG.parameters(), lr=1e-4, betas=(0.9, 0.99), weight_decay=1e-2)
 optimizer_D = torch.optim.Adam(netD.parameters(), lr=1e-4, betas=(0.9, 0.99), weight_decay=1e-2)
-# train loop [8, 16, 32, 48] and [60]
+# train step [50000, 100000, 200000, 300000] and max step is 400000
 lr_scheduler_G = torch.optim.lr_scheduler.MultiStepLR(optimizer_G, milestones=[100, 200, 400, 500], gamma=0.5)
 lr_scheduler_D = torch.optim.lr_scheduler.MultiStepLR(optimizer_D, milestones=[100, 200, 400, 500], gamma=0.5)
 
@@ -267,13 +267,13 @@ for epoch in range(60):
         netD.zero_grad()
 
         real_output = netD(hr_real_image)
-        fake_output = netD(hr_fake_image).detach()
+        fake_output = netD(hr_fake_image.detach())
         d_real_out = real_output - fake_output.mean()
         d_fake_out = fake_output - real_output.mean()
 
         # Calculate the resistance loss of the model
-        real_adv_loss = adversarial_criterion(d_real_out, fake_labels)
-        fake_adv_loss = adversarial_criterion(d_fake_out, real_labels)
+        real_adv_loss = adversarial_criterion(d_real_out, real_labels)
+        fake_adv_loss = adversarial_criterion(d_fake_out, fake_labels)
         d_loss = (real_adv_loss + fake_adv_loss) / 2
 
         # Calculate gradients for discriminator.
@@ -359,7 +359,7 @@ for epoch in range(60):
     if best_psnr_value < avg_psnr_value and best_ssim_value < avg_ssim_value:
         best_psnr_value = avg_psnr_value
         best_ssim_value = avg_ssim_value
-        shutil.copyfile(f"weights/model_G_epoch_{epoch}.pth",
+        shutil.copyfile(f"weights/ESRGAN_G_epoch_{epoch}.pth",
                         f"weights/ESRGAN_RRDB_X{args.scale_factor}.pth")
 
     mse_list.append(total_mse_value / len(val_dataloader))

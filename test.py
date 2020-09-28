@@ -18,14 +18,16 @@ import random
 import cv2
 import torch.backends.cudnn as cudnn
 import torch.utils.data.distributed
+import torchvision.datasets as datasets
+import torchvision.transforms as transforms
 import torchvision.utils as vutils
 from sewar.full_ref import msssim
 from sewar.full_ref import sam
 from sewar.full_ref import vifp
 
 from esrgan_pytorch import Generator
-from esrgan_pytorch import TestDatasetFromFolder
 from esrgan_pytorch import cal_mse
+from esrgan_pytorch import TestDatasetFromFolder
 from esrgan_pytorch import cal_niqe
 from esrgan_pytorch import cal_psnr
 from esrgan_pytorch import cal_rmse
@@ -38,11 +40,11 @@ parser.add_argument("-j", "--workers", default=0, type=int, metavar="N",
                     help="Number of data loading workers. (default:0)")
 parser.add_argument("--image-size", type=int, default=128,
                     help="Size of the data crop (squared assumed). (default:128)")
-parser.add_argument("--scale-factor", type=int, default=4,
+parser.add_argument("--scale-factor", type=int, default=4, choices=[4],
                     help="Low to high resolution scaling factor. (default:4).")
 parser.add_argument("--cuda", action="store_true", help="Enables cuda")
-parser.add_argument("--weights", default="./weights/ESRGAN_RRDB_X4.pth",
-                    help="Path to weights (default:`./weights/ESRGAN_RRDB_X4.pth`).")
+parser.add_argument("--weights", default="./weights/ESRGAN_RRDB_4x.pth",
+                    help="Path to weights (default:`./weights/ESRGAN_RRDB_4x.pth`).")
 parser.add_argument("--outf", default="./result",
                     help="folder to output images. (default:`./result`).")
 parser.add_argument("--manualSeed", type=int, default=0,
@@ -68,7 +70,7 @@ if torch.cuda.is_available() and not args.cuda:
     print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
 # Load dataset
-dataset = TestDatasetFromFolder(dataset_dir=args.dataroot, image_size=args.image_size, upscale_factor=args.scale_factor)
+dataset = TestDatasetFromFolder(dataset_dir=args.dataroot, image_size=args.image_size, scale_factor=args.scale_factor)
 dataloader = torch.utils.data.DataLoader(dataset,
                                          batch_size=1,
                                          shuffle=True,
@@ -100,6 +102,7 @@ for i, data in enumerate(dataloader):
     # Generate real and fake inputs
     hr_fake_image = model(lr_real_image)
 
+    vutils.save_image(hr_restore_image, f"{args.outf}/{filename}_restore.png", normalize=True)
     vutils.save_image(hr_fake_image, f"{args.outf}/{filename}_esrgan.png", normalize=True)
     vutils.save_image(hr_real_image, f"{args.outf}/{filename}_hr.png", normalize=True)
 

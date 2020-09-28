@@ -31,37 +31,37 @@ def check_image_file(filename):
         Return True if bool(x) is True for any x in the iterable.
 
     """
-    return any(filename.endswith(extension) for extension in [".png", ".jpg", ".jpeg", ".PNG", ".JPG", ".JPEG"])
+    return any(filename.endswith(extension) for extension in ["bmp", ".png", ".jpg", ".jpeg", ".PNG", ".JPG", ".JPEG"])
 
 
-def calculate_valid_crop_size(image_size, upscale_factor):
+def calculate_valid_crop_size(image_size, scale_factor):
     r"""Auto crop image size.
 
     Args:
         image_size (int): Minimum size of image block.
-        upscale_factor (int): Image magnification factor.
+        scale_factor (int): Image magnification factor.
 
     Returns:
         The minimum length and width of the cropped image.
 
     """
-    return image_size - (image_size % upscale_factor)
+    return image_size - (image_size % scale_factor)
 
 
-def train_hr_transform(image_size, upscale_factor):
+def train_hr_transform(image_size, scale_factor):
     r"""Processing format of training high resolution image.
 
     Args:
         image_size (int): Minimum size of image block.
-        upscale_factor (int): Image magnification factor.
+        scale_factor (int): Image magnification factor.
 
     Returns:
         Composes several transforms together.
 
     """
     return transforms.Compose([
-        transforms.RandomCrop(image_size * upscale_factor),
-        img2tensor()
+        transforms.RandomCrop(image_size * scale_factor),
+        img2tensor(),
     ])
 
 
@@ -79,7 +79,7 @@ def train_lr_transform(image_size):
     return transforms.Compose([
         tensor2img(),
         transforms.Resize((image_size, image_size), interpolation=Image.BICUBIC),
-        img2tensor()
+        img2tensor(),
     ])
 
 
@@ -97,25 +97,52 @@ def display_transform(image_size=384):
         tensor2img(),
         transforms.Resize((image_size, image_size)),
         transforms.CenterCrop(image_size),
-        img2tensor()
+        img2tensor(),
     ])
+
+
+class DatasetFromFolder(torch.utils.data.dataset.Dataset):
+    r"""An abstract class representing a :class:`Dataset`."""
+
+    def __init__(self, lr_dir, hr_dir):
+        r"""
+
+        Args:
+            lr_dir (str): Directory image address of the low resolution.
+            hr_dir (str): Directory image address of the high resolution.
+        """
+        super(DatasetFromFolder, self).__init__()
+        self.lr_filenames = [os.path.join(lr_dir, x) for x in os.listdir(lr_dir) if check_image_file(x)]
+        self.hr_filenames = [os.path.join(hr_dir, x) for x in os.listdir(hr_dir) if check_image_file(x)]
+        self.transforms = transforms.Compose([
+            img2tensor(),
+        ])
+
+    def __getitem__(self, index):
+        lr_image = self.transforms(Image.open(self.lr_filenames[index]))
+        hr_image = self.transforms(Image.open(self.hr_filenames[index]))
+        return lr_image, hr_image
+
+    def __len__(self):
+        return len(self.lr_filenames)
 
 
 class TrainDatasetFromFolder(torch.utils.data.dataset.Dataset):
     r"""An abstract class representing a :class:`Dataset`."""
 
-    def __init__(self, dataset_dir, image_size, upscale_factor):
+    def __init__(self, dataset_dir, image_size, scale_factor):
         r"""
 
         Args:
             dataset_dir (str): Directory address of the file.
             image_size (int): Minimum size of image block.
-            upscale_factor (int): Image magnification factor.
+            scale_factor (int): Image magnification factor.
+
         """
         super(TrainDatasetFromFolder, self).__init__()
         self.image_filenames = [os.path.join(dataset_dir, x) for x in os.listdir(dataset_dir) if check_image_file(x)]
-        image_size = calculate_valid_crop_size(image_size, upscale_factor)
-        self.hr_transform = train_hr_transform(image_size, upscale_factor)
+        image_size = calculate_valid_crop_size(image_size, scale_factor)
+        self.hr_transform = train_hr_transform(image_size, scale_factor)
         self.lr_transform = train_lr_transform(image_size)
 
     def __getitem__(self, index):
@@ -130,17 +157,17 @@ class TrainDatasetFromFolder(torch.utils.data.dataset.Dataset):
 class ValDatasetFromFolder(torch.utils.data.dataset.Dataset):
     r"""An abstract class representing a :class:`Dataset`."""
 
-    def __init__(self, dataset_dir, image_size, upscale_factor):
+    def __init__(self, dataset_dir, image_size, scale_factor):
         r"""
 
         Args:
             dataset_dir (str): Directory address of the file.
             image_size (int): Minimum size of image block.
-            upscale_factor (int): Image magnification factor.
+            scale_factor (int): Image magnification factor.
         """
         super(ValDatasetFromFolder, self).__init__()
-        self.image_size = calculate_valid_crop_size(image_size, upscale_factor)
-        self.upscale_factor = upscale_factor
+        self.image_size = calculate_valid_crop_size(image_size, scale_factor)
+        self.upscale_factor = scale_factor
         self.image_filenames = [os.path.join(dataset_dir, x) for x in os.listdir(dataset_dir) if check_image_file(x)]
 
     def __getitem__(self, index):
@@ -159,18 +186,18 @@ class ValDatasetFromFolder(torch.utils.data.dataset.Dataset):
 class TestDatasetFromFolder(torch.utils.data.dataset.Dataset):
     r"""An abstract class representing a :class:`Dataset`."""
 
-    def __init__(self, dataset_dir, image_size, upscale_factor):
+    def __init__(self, dataset_dir, image_size, scale_factor):
         r"""
 
         Args:
             dataset_dir (str): Directory address of the file.
             image_size (int): Minimum size of image block.
-            upscale_factor (int): Image magnification factor.
+            scale_factor (int): Image magnification factor.
         """
         super(TestDatasetFromFolder, self).__init__()
-        self.lr_path = dataset_dir + "/X" + str(upscale_factor) + "/data"
-        self.hr_path = dataset_dir + "/X" + str(upscale_factor) + "/target"
-        self.image_size = calculate_valid_crop_size(image_size, upscale_factor)
+        self.lr_path = dataset_dir + "/X" + str(scale_factor) + "/data"
+        self.hr_path = dataset_dir + "/X" + str(scale_factor) + "/target"
+        self.image_size = calculate_valid_crop_size(image_size, scale_factor)
         self.lr_filenames = [os.path.join(self.lr_path, x) for x in os.listdir(self.lr_path) if check_image_file(x)]
         self.hr_filenames = [os.path.join(self.hr_path, x) for x in os.listdir(self.hr_path) if check_image_file(x)]
 

@@ -34,13 +34,12 @@ parser = argparse.ArgumentParser(description="PyTorch Enhance Super Resolution G
 parser.add_argument("--file", type=str, default="./assets/baby.png",
                     help="Test low resolution image name. "
                          "(default:`./assets/baby.png`)")
-parser.add_argument("--weights", type=str, default="weights/ESRGAN_RRDB_X4.pth",
-                    help="Generator model name.  "
-                         "(default:`weights/ESRGAN_RRDB_X4.pth`)")
+parser.add_argument("--weights", type=str, default="weights/ESRGAN_RRDB_4x.pth",
+                    help="Generator model name. (default:`weights/ESRGAN_RRDB_4x.pth`)")
 parser.add_argument("--cuda", action="store_true", help="Enables cuda")
 parser.add_argument("--image-size", type=int, default=128,
                     help="size of the data crop (squared assumed). (default:128)")
-parser.add_argument("--scale-factor", default=4, type=int,
+parser.add_argument("--scale-factor", default=4, type=int, choices=[4],
                     help="Super resolution upscale factor")
 
 args = parser.parse_args()

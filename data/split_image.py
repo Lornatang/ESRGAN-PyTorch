@@ -22,8 +22,8 @@ input_dir_2x = "./2x/train/input"  # Low resolution image at 2x.
 input_dir_4x = "./4x/train/input"  # Low resolution image at 4x.
 target_dir_2x = "./2x/train/target"  # High resolution image at 2x.
 target_dir_4x = "./4x/train/target"  # High resolution image at 4x.
-row_number = 4  # How many rows an image split into
-col_number = 4  # How many cols an image split into
+row_number = 9  # How many rows an image split into
+col_number = 9  # How many cols an image split into
 
 
 def split_for_slicling(image, row_number, col_number):
@@ -53,3 +53,5 @@ def save_split_image(img_dir: str = None) -> None:
 if __name__ == "__main__":
     save_split_image(input_dir_2x)
     save_split_image(target_dir_2x)
+    save_split_image(input_dir_4x)
+    save_split_image(target_dir_4x)

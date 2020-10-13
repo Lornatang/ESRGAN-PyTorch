@@ -250,20 +250,17 @@ for epoch in range(args.start_epoch, epochs):
         netG.zero_grad()
 
         # Pixel level loss between two images.
-        mse_loss = content_criterion(sr, lr)
+        l1_loss = content_criterion(sr, lr)
 
         # According to the feature map, the root mean square error is regarded as the content loss.
-        vgg_loss = content_criterion(feature_extractor(sr), feature_extractor(hr))
+        perceptual_loss = content_criterion(feature_extractor(sr), feature_extractor(hr))
 
         # Second train with fake high resolution image.
         sr_output = netD(sr)
         adversarial_loss = adversarial_criterion(sr_output, real_label)
 
-        # The original content loss in this paper consists of MSE loss and VGG loss.
-        content_loss = mse_loss + 6e-3 * vgg_loss
-
         # # The original perceptual loss in this paper consists of VGG loss, MSE loss and adversarial loss.
-        errG = content_loss + 1e-3 * adversarial_loss
+        errG = perceptual_loss + 0.1 * l1_loss + 0.005 * adversarial_loss
         errG.backward()
         D_G_z2 = sr_output.mean().item()
         optimizerG.step()

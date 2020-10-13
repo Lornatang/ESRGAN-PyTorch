@@ -252,12 +252,12 @@ class ResidualDenseBlock(nn.Module):
         self.scale_ratio = scale_ratio
 
     def forward(self, input: Tensor) -> Tensor:
-        layer1 = self.conv1(input)
-        layer2 = self.layer2(torch.cat((input, layer1), 1))
-        layer3 = self.layer3(torch.cat((input, layer1, layer2), 1))
-        layer4 = self.layer4(torch.cat((input, layer1, layer2, layer3), 1))
-        layer5 = self.layer5(torch.cat((input, layer1, layer2, layer3, layer4), 1))
-        return layer5 * self.scale_ratio + input
+        conv1 = self.conv1(input)
+        conv2 = self.conv2(torch.cat((input, conv1), 1))
+        conv3 = self.conv3(torch.cat((input, conv1, conv2), 1))
+        conv4 = self.conv4(torch.cat((input, conv1, conv2, conv3), 1))
+        conv5 = self.conv5(torch.cat((input, conv1, conv2, conv3, conv4), 1))
+        return conv5 * self.scale_ratio + input
 
 
 class ResidualInResidualDenseBlock(nn.Module):

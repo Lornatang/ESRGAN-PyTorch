@@ -32,7 +32,7 @@ __all__ = [
     "DatasetFromFolder",
     "Discriminator",
     "FeatureExtractorVGG22",
-    "FeatureExtractorVGG54"
+    "FeatureExtractorVGG54",
     "Generator",
     "ResidualDenseBlock",
     "ResidualInResidualDenseBlock",

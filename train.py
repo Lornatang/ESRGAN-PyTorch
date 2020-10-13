@@ -68,7 +68,9 @@ args = parser.parse_args()
 print(args)
 
 try:
-    os.makedirs("output")
+    os.makedirs("output/lr")
+    os.makedirs("output/hr")
+    os.makedirs("output/sr")
     os.makedirs("weight")
 except OSError:
     logger.error("[!] Failed to create folder because the folder already exists!")
@@ -98,9 +100,10 @@ netD = Discriminator().to(device)
 
 # Define PSNR model optimizers
 psnr_epochs = int(args.psnr_iters // len(dataloader))
+epoch_indices = int(psnr_epochs // 4)
 optimizer = optim.Adam(netG.parameters(), lr=args.psnr_lr, betas=(0.9, 0.99))
 scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer,
-                                                           T_0=int(psnr_epochs // 4),
+                                                           T_0=epoch_indices,
                                                            T_mult=1,
                                                            eta_min=1e-7)
 
@@ -161,11 +164,11 @@ else:
             progress_bar.set_description(f"[{epoch + 1}/{psnr_epochs}][{i + 1}/{len(dataloader)}] "
                                          f"MSE: {loss.item():.4f}")
 
-            # The image is saved every 500 iterations.
-            if (len(dataloader) * epoch + i + 1) % 500 == 0:
-                vutils.save_image(lr, f"./output/lr_epoch_{epoch}.bmp", normalize=True)
-                vutils.save_image(sr, f"./output/sr_epoch_{epoch}.bmp", normalize=True)
-                vutils.save_image(hr, f"./output/hr_epoch_{epoch}.bmp", normalize=True)
+            # The image is saved every 5000 iterations.
+            if (len(dataloader) * epoch + i + 1) % 5000 == 0:
+                vutils.save_image(lr, f"./output/lr/RRDBNet_PSNR_{len(dataloader) * epoch + i + 1}.bmp", normalize=True)
+                vutils.save_image(hr, f"./output/hr/RRDBNet_PSNR_{len(dataloader) * epoch + i + 1}.bmp", normalize=True)
+                vutils.save_image(sr, f"./output/sr/RRDBNet_PSNR_{len(dataloader) * epoch + i + 1}.bmp", normalize=True)
 
         # The model is saved every 1 epoch.
         torch.save({"epoch": epoch + 1,
@@ -275,11 +278,11 @@ for epoch in range(args.start_epoch, epochs):
                                      f"Loss_D: {errD.item():.4f} Loss_G: {errG.item():.4f} "
                                      f"D(x): {D_x:.4f} D(G(lr)): {D_G_z1:.4f}/{D_G_z2:.4f}")
 
-        # The image is saved every 500 iterations.
-        if (len(dataloader) * epoch + i + 1) % 500 == 0:
-            vutils.save_image(lr, f"./output/lr_epoch_{epoch}.bmp", normalize=True)
-            vutils.save_image(sr, f"./output/sr_epoch_{epoch}.bmp", normalize=True)
-            vutils.save_image(hr, f"./output/hr_epoch_{epoch}.bmp", normalize=True)
+        # The image is saved every 5000 iterations.
+        if (len(dataloader) * epoch + i + 1) % 5000 == 0:
+            vutils.save_image(lr, f"./output/lr/ESRGAN_{len(dataloader) * epoch + i + 1}.bmp", normalize=True)
+            vutils.save_image(hr, f"./output/hr/ESRGAN_{len(dataloader) * epoch + i + 1}.bmp", normalize=True)
+            vutils.save_image(sr, f"./output/sr/ESRGAN_{len(dataloader) * epoch + i + 1}.bmp", normalize=True)
 
         # The model is saved every 1 epoch.
         torch.save({"epoch": epoch + 1,

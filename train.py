@@ -116,7 +116,7 @@ if args.resume_PSNR:
 
 # We use vgg54 as our feature extraction method by default.
 feature_extractor = FeatureExtractorVGG54().to(device)
-# TODO: Loss = content_loss + 2e-6 * content_loss + 1e-3 * adversarial_loss
+# Loss = perceptual_loss + 0.005 * adversarial_loss + 0.1 * l1_loss
 content_criterion = nn.L1Loss().to(device)
 adversarial_criterion = nn.BCELoss().to(device)
 
@@ -126,20 +126,20 @@ netD.train()
 feature_extractor.train()
 
 # Pre-train generator using raw MSE loss
-logger.info("[*] Start training RRDBNet for PSNR model based on L1 loss.")
+logger.info(f"[*] Start training RRDBNet for PSNR model based on L1 loss.")
 logger.info(f"[*] Generator pre-training for {psnr_epochs} epochs.")
 logger.info(f"[*] Searching RRDBNet for PSNR pretrained model weights.")
-# Writer train RRDBNet PSNR model log.
-if args.start_epoch == 0:
-    with open(f"RRDBNet_PSNR_{args.upscale_factor}x_Loss.csv", "w+") as f:
-        writer = csv.writer(f)
-        writer.writerow(["Epoch", "L1 Loss"])
 
 # Save the generator model based on MSE pre training to speed up the training time
 if os.path.exists(f"./weight/RRDBNet_PSNR_{args.upscale_factor}x.pth"):
     print("[*] Found RRDBNet for PSNR pretrained model weights. Skip pre-train.")
     netG.load_state_dict(torch.load(f"./weight/RRDBNet_PSNR_{args.upscale_factor}x.pth", map_location=device))
 else:
+    # Writer train RRDBNet PSNR model log.
+    if args.start_epoch == 0:
+        with open(f"RRDBNet_PSNR_{args.upscale_factor}x_Loss.csv", "w+") as f:
+            writer = csv.writer(f)
+            writer.writerow(["Epoch", "L1 Loss"])
     print("[!] Not found pretrained weights. Start training RRDBNet for PSNR model.")
     for epoch in range(args.start_epoch, psnr_epochs):
         progress_bar = tqdm(enumerate(dataloader), total=len(dataloader))
@@ -223,8 +223,8 @@ for epoch in range(args.start_epoch, epochs):
         lr = input.to(device)
         hr = target.to(device)
         batch_size = lr.size(0)
-        real_label = torch.full((batch_size,), 1, dtype=lr.dtype, device=device)
-        fake_label = torch.full((batch_size,), 0, dtype=lr.dtype, device=device)
+        real_label = torch.full((batch_size, 1), 1, dtype=lr.dtype, device=device)
+        fake_label = torch.full((batch_size, 1), 0, dtype=lr.dtype, device=device)
 
         ##############################################
         # (1) Update G network: maximize - E(lr)[log(D(hr, sr))] - E(sr)[1- log(D(sr, hr))]
@@ -244,7 +244,7 @@ for epoch in range(args.start_epoch, epochs):
         errG_sr = adversarial_criterion(sr_output - torch.mean(hr_output), real_label)
         adversarial_loss = (errG_hr + errG_sr) / 2
         # Pixel level loss between two images.
-        l1_loss = content_criterion(sr, lr)
+        l1_loss = content_criterion(sr, hr)
         errG = perceptual_loss + 0.005 * adversarial_loss + 0.1 * l1_loss
         errG.backward()
         optimizerG.step()
@@ -291,21 +291,21 @@ for epoch in range(args.start_epoch, epochs):
             vutils.save_image(hr, os.path.join(output_hr_dir, f"ESRGAN_{total_iter + 1}.bmp"), normalize=True)
             vutils.save_image(sr, os.path.join(output_sr_dir, f"ESRGAN_{total_iter + 1}.bmp"), normalize=True)
 
-        # The model is saved every 1 epoch.
-        torch.save({"epoch": epoch + 1,
-                    "optimizer": optimizerD.state_dict(),
-                    "state_dict": netD.state_dict()
-                    }, f"./weight/netD_{args.upscale_factor}x_checkpoint.pth")
-        torch.save({"epoch": epoch + 1,
-                    "optimizer": optimizerG.state_dict(),
-                    "state_dict": netG.state_dict()
-                    }, f"./weight/netG_{args.upscale_factor}x_checkpoint.pth")
+    # The model is saved every 1 epoch.
+    torch.save({"epoch": epoch + 1,
+                "optimizer": optimizerD.state_dict(),
+                "state_dict": netD.state_dict()
+                }, f"./weight/netD_{args.upscale_factor}x_checkpoint.pth")
+    torch.save({"epoch": epoch + 1,
+                "optimizer": optimizerG.state_dict(),
+                "state_dict": netG.state_dict()
+                }, f"./weight/netG_{args.upscale_factor}x_checkpoint.pth")
 
-        # Writer training log
-        with open(f"ESRGAN_{args.upscale_factor}x_Loss.csv", "a+") as f:
-            writer = csv.writer(f)
-            writer.writerow([epoch + 1, d_avg_loss / len(dataloader), g_avg_loss / len(dataloader)])
+    # Writer training log
+    with open(f"ESRGAN_{args.upscale_factor}x_Loss.csv", "a+") as f:
+        writer = csv.writer(f)
+        writer.writerow([epoch + 1, d_avg_loss / len(dataloader), g_avg_loss / len(dataloader)])
 
-    torch.save(netG.state_dict(), f"./weight/ESRGAN_{args.upscale_factor}x.pth")
-    logger.info(f"[*] Training ESRGAN model done! Saving ESRGAN model weight "
-                f"to `./weight/ESRGAN_{args.upscale_factor}x.pth`.")
+torch.save(netG.state_dict(), f"./weight/ESRGAN_{args.upscale_factor}x.pth")
+logger.info(f"[*] Training ESRGAN model done! Saving ESRGAN model weight "
+            f"to `./weight/ESRGAN_{args.upscale_factor}x.pth`.")

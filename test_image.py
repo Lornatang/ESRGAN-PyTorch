@@ -15,7 +15,6 @@ import argparse
 import os
 
 import cv2
-import torch.utils.data
 import torch.utils.data.distributed
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
@@ -28,14 +27,15 @@ from sewar.full_ref import sam
 from sewar.full_ref import ssim
 from sewar.full_ref import vifp
 
-from srgan_pytorch import DatasetFromFolder
-from srgan_pytorch import Generator
-from srgan_pytorch import cal_niqe
-from srgan_pytorch import select_device
+from esrgan_pytorch import Generator
+from esrgan_pytorch import cal_niqe
+from esrgan_pytorch import select_device
 
 parser = argparse.ArgumentParser(description="ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.")
-parser.add_argument("--file", type=str, default="./assets/baby.png",
-                    help="Test low resolution image name. (default:`./assets/baby.png`)")
+parser.add_argument("--lr", type=str,
+                    help="Test low resolution image name.")
+parser.add_argument("--hr", type=str,
+                    help="Raw high resolution image name.")
 parser.add_argument("--upscale-factor", type=int, default=4, choices=[2, 4],
                     help="Low to high resolution scaling factor. (default:4).")
 parser.add_argument("--model-path", default="./weight/SRGAN_4x.pth", type=str, metavar="PATH",
@@ -51,19 +51,11 @@ except OSError:
     pass
 
 # Selection of appropriate treatment equipment
-device = select_device(args.device, batch_size=args.batch_size)
-
-dataset = DatasetFromFolder(input_dir=f"{args.dataroot}/{args.upscale_factor}x/train/input",
-                            target_dir=f"{args.dataroot}/{args.upscale_factor}x/train/target")
-
-dataloader = torch.utils.data.DataLoader(dataset,
-                                         batch_size=args.batch_size,
-                                         pin_memory=True,
-                                         num_workers=int(args.workers))
+device = select_device(args.device, batch_size=1)
 
 # Construct SRGAN model.
 model = Generator(upscale_factor=args.upscale_factor).to(device)
-model.load_state_dict(torch.load(args.weights, map_location=device))
+model.load_state_dict(torch.load(args.model_path, map_location=device))
 
 # Set model eval mode
 model.eval()
@@ -72,10 +64,12 @@ model.eval()
 pil2tensor = transforms.ToTensor()
 
 # Load image
-img = Image.open(args.file)
-hr = pil2tensor(img).unsqueeze(0)
-lr = pil2tensor(img).unsqueeze(0)
+lr = Image.open(args.lr)
+hr = Image.open(args.hr)
+lr = pil2tensor(lr).unsqueeze(0)
+hr = pil2tensor(hr).unsqueeze(0)
 lr = lr.to(device)
+hr = hr.to(device)
 
 with torch.no_grad():
     sr = model(lr)
@@ -91,7 +85,7 @@ mse_value = mse(src_img, dst_img)
 rmse_value = rmse(src_img, dst_img)
 psnr_value = psnr(src_img, dst_img)
 ssim_value = ssim(src_img, dst_img)
-ms_ssim_value = msssim(src_img, dst_img)
+ms_ssim_value = msssim(src_img, dst_img)  # 30.00+000j
 niqe_value = cal_niqe("sr.png")
 sam_value = sam(src_img, dst_img)
 vif_value = vifp(src_img, dst_img)
@@ -101,8 +95,8 @@ print("====================== Performance summary ======================")
 print(f"MSE: {mse_value:.2f}\n"
       f"RMSE: {rmse_value:.2f}\n"
       f"PSNR: {psnr_value:.2f}\n"
-      f"SSIM: {ssim_value:.4f}\n"
-      f"MS-SSIM: {ms_ssim_value:.4f}\n"
+      f"SSIM: {ssim_value[0]:.4f}\n"
+      f"MS-SSIM: {ms_ssim_value.real:.4f}\n"
       f"NIQE: {niqe_value:.2f}\n"
       f"SAM: {sam_value:.4f}\n"
       f"VIF: {vif_value:.4f}")

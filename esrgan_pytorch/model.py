@@ -87,7 +87,7 @@ class FeatureExtractorVGG22(nn.Module):
     `"Perceptual Losses for Real-Time Style Transfer and Super-Resolution" <https://arxiv.org/pdf/1603.08155.pdf>`_
     """
 
-    def __init__(self, feature_layer: int = 9) -> None:
+    def __init__(self, feature_layer: int = 8) -> None:
         """ Constructing characteristic loss function of VGG network. For VGG2.2.
 
         Args:
@@ -103,7 +103,6 @@ class FeatureExtractorVGG22(nn.Module):
               (5): Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
               (6): ReLU(inplace=True)
               (7): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-              (8): ReLU(inplace=True)
             )
         """
         super(FeatureExtractorVGG22, self).__init__()
@@ -125,11 +124,11 @@ class FeatureExtractorVGG54(nn.Module):
     as SRGAN in the following.
     """
 
-    def __init__(self, feature_layer: int = 31) -> None:
+    def __init__(self, feature_layer: int = 35) -> None:
         """ Constructing characteristic loss function of VGG network. For VGG5.4.
 
         Args:
-            feature_layer (int): How many layers in VGG19. (Default:30).
+            feature_layer (int): How many layers in VGG19. (Default:35).
 
         Notes:
             features(
@@ -164,6 +163,10 @@ class FeatureExtractorVGG54(nn.Module):
               (28): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
               (29): ReLU(inplace=True)
               (30): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+              (31): ReLU(inplace=True)
+              (32): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+              (33): ReLU(inplace=True)
+              (34): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
             )
 
         """

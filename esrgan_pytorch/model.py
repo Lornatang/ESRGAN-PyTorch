@@ -15,7 +15,6 @@ import math
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch import Tensor
 from torchvision.models import vgg19
 
@@ -188,38 +187,43 @@ class Generator(nn.Module):
             upscale_factor (int): Image magnification factor. (Default: 4).
         """
         super(Generator, self).__init__()
-        self.upsample_block_num = int(math.log(upscale_factor, 2))
+        upsample_block_num = int(math.log(upscale_factor, 2))
 
         # First layer
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=0, bias=False)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
 
         # 23 ResidualInResidualDenseBlock layer
         rrdb_layers = []
         for _ in range(23):
-            rrdb_layers += [ResidualInResidualDenseBlock(64, 32)]
+            rrdb_layers += [ResidualInResidualDenseBlock(in_channels=64, growth_channels=32, scale_ratio=0.2)]
         self.residual_residual_dense_blocks = nn.Sequential(*rrdb_layers)
 
         # Second conv layer post residual blocks
         self.conv2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=False)
 
         # Upsampling layers
-        self.upsampling = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=False)
+        upsampling = []
+        for _ in range(upsample_block_num):
+            upsampling += [
+                nn.Conv2d(64, 256, 3, 1, 1),
+                nn.BatchNorm2d(256),
+                nn.PixelShuffle(upscale_factor=2),
+                nn.PReLU()
+            ]
+        self.upsampling = nn.Sequential(*upsampling)
 
         # Final output layer
         self.conv3 = nn.Sequential(
             nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=False),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
-            nn.Conv2d(64, 3, kernel_size=3, stride=1, padding=1, bias=False)
+            nn.Conv2d(64, 3, kernel_size=3, stride=1, padding=1, bias=False),
         )
 
     def forward(self, input: Tensor) -> Tensor:
         out1 = self.conv1(input)
         out = self.residual_residual_dense_blocks(out1)
-        out2 = self.conv2(out)
-        out = torch.add(out1, out2)
-        for _ in range(self.upsample_block_num):
-            F.leaky_relu(input=self.upsampling(F.interpolate(out, scale_factor=2, mode="nearest")),
-                         negative_slope=0.2, inplace=True)
+        out = self.conv2(out)
+        out = self.upsampling(out + out1)
         out = self.conv3(out)
         return out
 

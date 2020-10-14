@@ -18,11 +18,11 @@ import os
 import random
 
 import torch.nn as nn
-import torch.optim as optim
 import torch.utils.data
 import torch.utils.data.distributed
 import torchvision.utils as vutils
 from tqdm import tqdm
+import torch.optim as optim
 
 from esrgan_pytorch import DatasetFromFolder
 from esrgan_pytorch import Discriminator
@@ -67,13 +67,16 @@ parser.add_argument("--device", default="",
 args = parser.parse_args()
 print(args)
 
+output_lr_dir = f"./output/{args.upscale_factor}x/lr"
+output_hr_dir = f"./output/{args.upscale_factor}x/hr"
+output_sr_dir = f"./output/{args.upscale_factor}x/sr"
+
 try:
-    os.makedirs("output/lr")
-    os.makedirs("output/hr")
-    os.makedirs("output/sr")
+    os.makedirs(output_lr_dir)
+    os.makedirs(output_hr_dir)
+    os.makedirs(output_sr_dir)
     os.makedirs("weight")
 except OSError:
-    logger.error("[!] Failed to create folder because the folder already exists!")
     pass
 
 # Set random initialization seed, easy to reproduce.
@@ -123,23 +126,21 @@ netD.train()
 feature_extractor.train()
 
 # Pre-train generator using raw MSE loss
-logger.info("[*] Start training PSNR model based on MSE loss.")
+logger.info("[*] Start training RRDBNet for PSNR model based on L1 loss.")
 logger.info(f"[*] Generator pre-training for {psnr_epochs} epochs.")
-logger.info(f"[*] Searching PSNR pretrained model weights.")
-
-# Writer train PSNR model log.
+logger.info(f"[*] Searching RRDBNet for PSNR pretrained model weights.")
+# Writer train RRDBNet PSNR model log.
 if args.start_epoch == 0:
     with open(f"RRDBNet_PSNR_{args.upscale_factor}x_Loss.csv", "w+") as f:
         writer = csv.writer(f)
-        writer.writerow(["Epoch", "MSE Loss"])
+        writer.writerow(["Epoch", "L1 Loss"])
 
 # Save the generator model based on MSE pre training to speed up the training time
-if os.path.exists(f"./weight/RRDBNet_PSNR_{args.upscale_factor}x_checkpoint.pth"):
-    logger.info("[*] Found PSNR pretrained model weights. Skip pre-train.")
-    netG.load_state_dict(torch.load(f"./weight/RRDBNet_PSNR_{args.upscale_factor}x_checkpoint.pth",
-                                    map_location=device))
+if os.path.exists(f"./weight/RRDBNet_PSNR_{args.upscale_factor}x.pth"):
+    print("[*] Found RRDBNet for PSNR pretrained model weights. Skip pre-train.")
+    netG.load_state_dict(torch.load(f"./weight/RRDBNet_PSNR_{args.upscale_factor}x.pth", map_location=device))
 else:
-    logger.warning("[!] Not found pretrained weights. Start training PSNR model.")
+    print("[!] Not found pretrained weights. Start training RRDBNet for PSNR model.")
     for epoch in range(args.start_epoch, psnr_epochs):
         progress_bar = tqdm(enumerate(dataloader), total=len(dataloader))
         avg_loss = 0.
@@ -153,22 +154,25 @@ else:
             # Generating fake high resolution images from real low resolution images.
             sr = netG(lr)
             # The MSE of the generated fake high-resolution image and real high-resolution image is calculated.
-            loss = content_criterion(sr, hr)
+            l1_loss = content_criterion(sr, hr)
             # Calculate gradients for generator
-            loss.backward()
+            l1_loss.backward()
             # Update generator weights
             optimizer.step()
 
-            avg_loss += loss.item()
+            avg_loss += l1_loss.item()
 
             progress_bar.set_description(f"[{epoch + 1}/{psnr_epochs}][{i + 1}/{len(dataloader)}] "
-                                         f"MSE: {loss.item():.4f}")
+                                         f"L1 loss: {l1_loss.item():.4f}")
+
+            # record iter.
+            total_iter = len(dataloader) * epoch + i
 
             # The image is saved every 5000 iterations.
-            if (len(dataloader) * epoch + i + 1) % 5000 == 0:
-                vutils.save_image(lr, f"./output/lr/RRDBNet_PSNR_{len(dataloader) * epoch + i + 1}.bmp", normalize=True)
-                vutils.save_image(hr, f"./output/hr/RRDBNet_PSNR_{len(dataloader) * epoch + i + 1}.bmp", normalize=True)
-                vutils.save_image(sr, f"./output/sr/RRDBNet_PSNR_{len(dataloader) * epoch + i + 1}.bmp", normalize=True)
+            if (total_iter + 1) % 5000 == 0:
+                vutils.save_image(lr, os.path.join(output_lr_dir, f"RRDBNet_PSNR_{total_iter + 1}.bmp"), normalize=True)
+                vutils.save_image(hr, os.path.join(output_hr_dir, f"RRDBNet_PSNR_{total_iter + 1}.bmp"), normalize=True)
+                vutils.save_image(sr, os.path.join(output_sr_dir, f"RRDBNet_PSNR_{total_iter + 1}.bmp"), normalize=True)
 
         # The model is saved every 1 epoch.
         torch.save({"epoch": epoch + 1,
@@ -181,11 +185,14 @@ else:
             writer = csv.writer(f)
             writer.writerow([epoch + 1, avg_loss / len(dataloader)])
 
-    torch.save(netG.state_dict(), f"./weight/RRDBNet_PSNR_{args.upscale_factor}x_checkpoint.pth")
-    logger.info(f"[*] Training PSNR model done! Saving PSNR model weight to "
-                f"`./weight/RRDBNet_PSNR_{args.upscale_factor}x_checkpoint.pth`")
+    torch.save(netG.state_dict(), f"./weight/RRDBNet_PSNR_{args.upscale_factor}x.pth")
+    print(f"[*] Training RRDBNet for PSNR model done! Saving RRDBNet for PSNR model weight to "
+          f"`./weight/RRDBNet_PSNR_{args.upscale_factor}x.pth`.")
 
-# Alternating training SRGAN network.
+# After training the RRDBNet for PSNR model, set the initial iteration to 0.
+args.start_epoch = 0
+
+# Alternating training ESRGAN network.
 epochs = int(args.iters // len(dataloader))
 epoch_indices = [int(50000 // len(dataloader)), int(100000 // len(dataloader)),
                  int(200000 // len(dataloader)), int(300000 // len(dataloader))]
@@ -194,15 +201,15 @@ optimizerG = optim.Adam(netG.parameters(), lr=args.lr, betas=(0.9, 0.99))
 schedulerD = optim.lr_scheduler.MultiStepLR(optimizerD, milestones=epoch_indices, gamma=0.5)
 schedulerG = optim.lr_scheduler.MultiStepLR(optimizerG, milestones=epoch_indices, gamma=0.5)
 
-# Loading SRGAN checkpoint
+# Loading ESRGAN checkpoint
 if args.resume:
     args.start_epoch = load_checkpoint(netD, optimizerD, f"./weight/netD_{args.upscale_factor}x_checkpoint.pth")
     args.start_epoch = load_checkpoint(netG, optimizerG, f"./weight/netG_{args.upscale_factor}x_checkpoint.pth")
 
-# Train SRGAN model.
+# Train ESRGAN model.
 logger.info(f"[*] Staring training ESRGAN model!")
 logger.info(f"[*] Training for {epochs} epochs.")
-# Writer train PSNR model log.
+# Writer train ESRGAN model log.
 if args.start_epoch == 0:
     with open(f"ESRGAN_{args.upscale_factor}x_Loss.csv", "w+") as f:
         writer = csv.writer(f)
@@ -220,66 +227,69 @@ for epoch in range(args.start_epoch, epochs):
         fake_label = torch.full((batch_size,), 0, dtype=lr.dtype, device=device)
 
         ##############################################
-        # (1) Update D network: maximize log(D(x)) + log(1 - D(G(z)))
+        # (1) Update G network: maximize - E(lr)[log(D(hr, sr))] - E(sr)[1- log(D(sr, hr))]
+        ##############################################
+        # Set generator gradients to zero.
+        netG.zero_grad()
+
+        # Generator first generates high resolution graph.
+        sr = netG(lr)
+
+        # According to the feature map, the root mean square error is regarded as the content loss.
+        perceptual_loss = content_criterion(feature_extractor(sr), feature_extractor(hr))
+        # Train with fake high resolution image.
+        hr_output = netD(hr).detach()  # No train real fake image.
+        sr_output = netD(sr)  # Train fake image.
+        errG_hr = adversarial_criterion(hr_output - torch.mean(sr_output), fake_label)
+        errG_sr = adversarial_criterion(sr_output - torch.mean(hr_output), real_label)
+        adversarial_loss = (errG_hr + errG_sr) / 2
+        # Pixel level loss between two images.
+        l1_loss = content_criterion(sr, lr)
+        errG = perceptual_loss + 0.005 * adversarial_loss + 0.1 * l1_loss
+        errG.backward()
+        optimizerG.step()
+        D_G_z1 = sr_output.mean().item()
+
+        ##############################################
+        # (2) Update D network: maximize - E(lr)[1- log(D(hr, sr))] - E(sr)[log(D(sr, hr))]
         ##############################################
         # Set discriminator gradients to zero.
         netD.zero_grad()
 
         # Train with real high resolution image.
-        hr_output = netD(hr)
-        errD_hr = adversarial_criterion(hr_output, real_label)
+        hr_output = netD(hr)  # Train real fake image.
+        sr_output = netD(sr).detach()  # No train fake image.
+        errD_hr = adversarial_criterion(hr_output - torch.mean(sr_output), real_label) * 0.5
         errD_hr.backward()
         D_x = hr_output.mean().item()
 
-        # First train with fake high resolution image.
-        sr = netG(lr)
-        sr_output = netD(sr.detach())
-        errD_sr = adversarial_criterion(sr_output, fake_label)
+        # Train with fake high resolution image.
+        sr_output = netD(sr).detach()  # Train fake image.
+        errD_sr = adversarial_criterion(sr_output - torch.mean(hr_output), fake_label) * 0.5
         errD_sr.backward()
-        # Score of generator's first high resolution image.
-        D_G_z1 = sr_output.mean().item()
-        errD = errD_hr + errD_sr
+        D_G_z2 = sr_output.mean().item()
+        errD = errD_sr + errD_hr
         optimizerD.step()
 
-        d_avg_loss += errD.item()
-
-        ##############################################
-        # (2) Update G network: maximize log(D(G(z)))
-        ##############################################
-        # Set generator gradients to zero
-        netG.zero_grad()
-
-        # Pixel level loss between two images.
-        l1_loss = content_criterion(sr, lr)
-
-        # According to the feature map, the root mean square error is regarded as the content loss.
-        perceptual_loss = content_criterion(feature_extractor(sr), feature_extractor(hr))
-
-        # Second train with fake high resolution image.
-        sr_output = netD(sr)
-        adversarial_loss = adversarial_criterion(sr_output, real_label)
-
-        # # The original perceptual loss in this paper consists of VGG loss, MSE loss and adversarial loss.
-        errG = perceptual_loss + 0.1 * l1_loss + 0.005 * adversarial_loss
-        errG.backward()
-        D_G_z2 = sr_output.mean().item()
-        optimizerG.step()
-
         # Dynamic adjustment of learning rate
-        schedulerG.step()
         schedulerD.step()
+        schedulerG.step()
 
+        d_avg_loss += errD.item()
         g_avg_loss += errG.item()
 
         progress_bar.set_description(f"[{epoch + 1}/{args.epochs}][{i + 1}/{len(dataloader)}] "
-                                     f"Loss_D: {errD.item():.4f} Loss_G: {errG.item():.4f} "
-                                     f"D(x): {D_x:.4f} D(G(lr)): {D_G_z1:.4f}/{D_G_z2:.4f}")
+                                     f"Loss_D: {errD:.6f} Loss_G: {errG.item():.6f} "
+                                     f"D(HR): {D_x:.6f} D(G(LR)): {D_G_z1:.6f}/{D_G_z2:.6f}")
+
+        # record iter.
+        total_iter = len(dataloader) * epoch + i
 
         # The image is saved every 5000 iterations.
-        if (len(dataloader) * epoch + i + 1) % 5000 == 0:
-            vutils.save_image(lr, f"./output/lr/ESRGAN_{len(dataloader) * epoch + i + 1}.bmp", normalize=True)
-            vutils.save_image(hr, f"./output/hr/ESRGAN_{len(dataloader) * epoch + i + 1}.bmp", normalize=True)
-            vutils.save_image(sr, f"./output/sr/ESRGAN_{len(dataloader) * epoch + i + 1}.bmp", normalize=True)
+        if (total_iter + 1) % 5000 == 0:
+            vutils.save_image(lr, os.path.join(output_lr_dir, f"ESRGAN_{total_iter + 1}.bmp"), normalize=True)
+            vutils.save_image(hr, os.path.join(output_hr_dir, f"ESRGAN_{total_iter + 1}.bmp"), normalize=True)
+            vutils.save_image(sr, os.path.join(output_sr_dir, f"ESRGAN_{total_iter + 1}.bmp"), normalize=True)
 
         # The model is saved every 1 epoch.
         torch.save({"epoch": epoch + 1,
@@ -297,5 +307,5 @@ for epoch in range(args.start_epoch, epochs):
             writer.writerow([epoch + 1, d_avg_loss / len(dataloader), g_avg_loss / len(dataloader)])
 
     torch.save(netG.state_dict(), f"./weight/ESRGAN_{args.upscale_factor}x.pth")
-    logger.info(f"[*] Training SRGAN model done! Saving SRGAN model weight "
+    logger.info(f"[*] Training ESRGAN model done! Saving ESRGAN model weight "
                 f"to `./weight/ESRGAN_{args.upscale_factor}x.pth`.")

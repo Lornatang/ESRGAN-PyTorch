@@ -133,7 +133,7 @@ logger.info(f"[*] Searching RRDBNet for PSNR pretrained model weights.")
 # Save the generator model based on MSE pre training to speed up the training time
 if os.path.exists(f"./weight/RRDBNet_PSNR_{args.upscale_factor}x.pth"):
     print("[*] Found RRDBNet for PSNR pretrained model weights. Skip pre-train.")
-    netG.load_state_dict(torch.load(f"./weight/RRDBNet_PSNR_{args.upscale_factor}x.pth", map_location=device))
+    # netG.load_state_dict(torch.load(f"./weight/RRDBNet_PSNR_{args.upscale_factor}x.pth", map_location=device))
 else:
     # Writer train RRDBNet PSNR model log.
     if args.start_epoch == 0:
@@ -163,7 +163,7 @@ else:
             avg_loss += l1_loss.item()
 
             progress_bar.set_description(f"[{epoch + 1}/{psnr_epochs}][{i + 1}/{len(dataloader)}] "
-                                         f"L1 loss: {l1_loss.item():.4f}")
+                                         f"L1 loss: {l1_loss.item():.6f}")
 
             # record iter.
             total_iter = len(dataloader) * epoch + i
@@ -194,8 +194,8 @@ args.start_epoch = 0
 
 # Alternating training ESRGAN network.
 epochs = int(args.iters // len(dataloader))
-epoch_indices = [int(50000 // len(dataloader)), int(100000 // len(dataloader)),
-                 int(200000 // len(dataloader)), int(300000 // len(dataloader))]
+base_epoch = int(epochs // 8)
+epoch_indices = [base_epoch, base_epoch * 2, base_epoch * 4, base_epoch * 6]
 optimizerD = optim.Adam(netD.parameters(), lr=args.lr, betas=(0.9, 0.99))
 optimizerG = optim.Adam(netG.parameters(), lr=args.lr, betas=(0.9, 0.99))
 schedulerD = optim.lr_scheduler.MultiStepLR(optimizerD, milestones=epoch_indices, gamma=0.5)
@@ -238,7 +238,7 @@ for epoch in range(args.start_epoch, epochs):
         # According to the feature map, the root mean square error is regarded as the content loss.
         perceptual_loss = content_criterion(feature_extractor(sr), feature_extractor(hr))
         # Train with fake high resolution image.
-        hr_output = netD(hr).detach()  # No train real fake image.
+        hr_output = netD(hr.detach())  # No train real fake image.
         sr_output = netD(sr)  # Train fake image.
         errG_hr = adversarial_criterion(hr_output - torch.mean(sr_output), fake_label)
         errG_sr = adversarial_criterion(sr_output - torch.mean(hr_output), real_label)
@@ -257,14 +257,14 @@ for epoch in range(args.start_epoch, epochs):
         netD.zero_grad()
 
         # Train with real high resolution image.
-        hr_output = netD(hr)  # Train real fake image.
-        sr_output = netD(sr).detach()  # No train fake image.
+        hr_output = netD(hr)  # Train real image.
+        sr_output = netD(sr.detach())  # No train fake image.
         errD_hr = adversarial_criterion(hr_output - torch.mean(sr_output), real_label) * 0.5
         errD_hr.backward()
         D_x = hr_output.mean().item()
 
         # Train with fake high resolution image.
-        sr_output = netD(sr).detach()  # Train fake image.
+        sr_output = netD(sr.detach())  # Train fake image.
         errD_sr = adversarial_criterion(sr_output - torch.mean(hr_output), fake_label) * 0.5
         errD_sr.backward()
         D_G_z2 = sr_output.mean().item()

@@ -38,8 +38,8 @@ parser.add_argument("--hr", type=str,
                     help="Raw high resolution image name.")
 parser.add_argument("--upscale-factor", type=int, default=4, choices=[2, 4],
                     help="Low to high resolution scaling factor. (default:4).")
-parser.add_argument("--model-path", default="./weight/SRGAN_4x.pth", type=str, metavar="PATH",
-                    help="Path to latest checkpoint for model. (default: ``./weight/SRGAN_4x.pth``).")
+parser.add_argument("--model-path", default="./weight/ESRGAN_4x.pth", type=str, metavar="PATH",
+                    help="Path to latest checkpoint for model. (default: ``./weight/ESRGAN_4x.pth``).")
 parser.add_argument("--device", default="0",
                     help="device id i.e. `0` or `0,1` or `cpu`. (default: ``CUDA:0``).")
 

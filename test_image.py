@@ -83,7 +83,7 @@ src_img = cv2.imread("sr.png")
 dst_img = cv2.imread("hr.png")
 
 # Reference sources from `https://github.com/richzhang/PerceptualSimilarity`
-lpips_loss = lpips.LPIPS(net="vgg")
+lpips_loss = lpips.LPIPS(net="vgg").to(device)
 
 mse_value = mse(src_img, dst_img)
 rmse_value = rmse(src_img, dst_img)
@@ -93,7 +93,7 @@ ms_ssim_value = msssim(src_img, dst_img)  # 30.00+000j
 niqe_value = cal_niqe("sr.png")
 sam_value = sam(src_img, dst_img)
 vif_value = vifp(src_img, dst_img)
-lpips_value = lpips_loss(src_img, dst_img)
+lpips_value = lpips_loss(sr, hr)
 
 print("\n")
 print("====================== Performance summary ======================")
@@ -105,6 +105,6 @@ print(f"MSE: {mse_value:.2f}\n"
       f"NIQE: {niqe_value:.2f}\n"
       f"SAM: {sam_value:.4f}\n"
       f"VIF: {vif_value:.4f}\n"
-      f"LPIPS: {lpips_value:.4f}")
+      f"LPIPS: {lpips_value.item():.4f}")
 print("============================== End ==============================")
 print("\n")

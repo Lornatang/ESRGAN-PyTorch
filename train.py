@@ -41,7 +41,7 @@ parser.add_argument("-j", "--workers", default=4, type=int, metavar="N",
                     help="Number of data loading workers. (default:4)")
 parser.add_argument("--start-epoch", default=0, type=int, metavar="N",
                     help="manual epoch number (useful on restarts)")
-parser.add_argument("--psnr_iters", default=1e6, type=int, metavar="N",
+parser.add_argument("--psnr-iters", default=1e6, type=int, metavar="N",
                     help="The number of iterations is needed in the training of PSNR model. (default:1e6)")
 parser.add_argument("--iters", default=4e5, type=int, metavar="N",
                     help="The training of srgan model requires the number of iterations. (default:4e5)")
@@ -133,7 +133,7 @@ logger.info(f"[*] Searching RRDBNet for PSNR pretrained model weights.")
 # Save the generator model based on MSE pre training to speed up the training time
 if os.path.exists(f"./weight/RRDBNet_PSNR_{args.upscale_factor}x.pth"):
     print("[*] Found RRDBNet for PSNR pretrained model weights. Skip pre-train.")
-    # netG.load_state_dict(torch.load(f"./weight/RRDBNet_PSNR_{args.upscale_factor}x.pth", map_location=device))
+    netG.load_state_dict(torch.load(f"./weight/RRDBNet_PSNR_{args.upscale_factor}x.pth", map_location=device))
 else:
     # Writer train RRDBNet PSNR model log.
     if args.start_epoch == 0:

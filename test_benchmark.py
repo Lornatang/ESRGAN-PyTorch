@@ -25,11 +25,12 @@ from sewar.full_ref import sam
 from sewar.full_ref import ssim
 from sewar.full_ref import vifp
 from tqdm import tqdm
+import lpips
 
-from srgan_pytorch import DatasetFromFolder
-from srgan_pytorch import Generator
-from srgan_pytorch import cal_niqe
-from srgan_pytorch import select_device
+from esrgan_pytorch import DatasetFromFolder
+from esrgan_pytorch import Generator
+from esrgan_pytorch import cal_niqe
+from esrgan_pytorch import select_device
 
 parser = argparse.ArgumentParser(description="ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.")
 parser.add_argument("--dataroot", type=str, default="./data",
@@ -38,8 +39,8 @@ parser.add_argument("-j", "--workers", default=4, type=int, metavar="N",
                     help="Number of data loading workers. (default:4)")
 parser.add_argument("--upscale-factor", type=int, default=4, choices=[2, 4],
                     help="Low to high resolution scaling factor. (default:4).")
-parser.add_argument("--model-path", default="./weights/SRGAN_4x.pth", type=str, metavar="PATH",
-                    help="Path to latest checkpoint for model. (default: ``./weights/SRGAN_4x.pth``).")
+parser.add_argument("--model-path", default="./weights/ESRGAN_4x.pth", type=str, metavar="PATH",
+                    help="Path to latest checkpoint for model. (default: ``./weights/ESRGAN_4x.pth``).")
 parser.add_argument("--device", default="0",
                     help="device id i.e. `0` or `0,1` or `cpu`. (default: ``CUDA:0``).")
 
@@ -97,7 +98,7 @@ with torch.no_grad():
         psnr_value = psnr(sr, hr)
         ssim_value = ssim(sr, hr)
         ms_ssim_value = msssim(sr, hr)
-        niqe_value = cal_niqe(f"./output/sr_{iteration}.bmp")
+        niqe_value = cal_niqe(f"./benchmark/sr_{iteration}.bmp")
         sam_value = sam(sr, hr)
         vif_value = vifp(sr, hr)
 

@@ -66,16 +66,17 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(negative_slope=0.2, inplace=True)
         )
 
-        self.avgpool = nn.AdaptiveAvgPool2d((512, 512))
+        self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
 
         self.classifier = nn.Sequential(
-            nn.Linear(8192, 100),
+            nn.Linear(512 * 7 * 7, 100),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
             nn.Linear(100, 1)
         )
 
     def forward(self, input: Tensor = None) -> Tensor:
         out = self.features(input)
+        out = self.avgpool(out)
         out = torch.flatten(out, 1)
         out = self.classifier(out)
         return out

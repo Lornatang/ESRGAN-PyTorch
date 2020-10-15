@@ -15,11 +15,11 @@ import argparse
 import os
 
 import cv2
+import lpips
 import torch.utils.data.distributed
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
 from PIL import Image
-import lpips
 from sewar.full_ref import mse
 from sewar.full_ref import msssim
 from sewar.full_ref import psnr

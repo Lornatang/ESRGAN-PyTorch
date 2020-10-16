@@ -21,16 +21,16 @@ import torchvision.transforms as transforms
 from PIL import Image
 from tqdm import tqdm
 
-from srgan_pytorch import Generator
-from srgan_pytorch import select_device
+from esrgan_pytorch import Generator
+from esrgan_pytorch import select_device
 
 parser = argparse.ArgumentParser(description="ESRGAN algorithm is applied to video files.")
 parser.add_argument("--file", type=str, required=True,
                     help="Test low resolution video name.")
 parser.add_argument("--upscale-factor", type=int, default=4, choices=[2, 4],
                     help="Low to high resolution scaling factor. (default:4).")
-parser.add_argument("--model-path", default="./weight/SRGAN_4x.pth", type=str, metavar="PATH",
-                    help="Path to latest checkpoint for model. (default: ``./weight/SRGAN_4x.pth``).")
+parser.add_argument("--model-path", default="./weight/ESRGAN_4x.pth", type=str, metavar="PATH",
+                    help="Path to latest checkpoint for model. (default: ``./weight/ESRGAN_4x.pth``).")
 parser.add_argument("--device", default="0",
                     help="device id i.e. `0` or `0,1` or `cpu`. (default: ``CUDA:0``).")
 parser.add_argument("--view", action="store_true",
@@ -50,7 +50,10 @@ model.load_state_dict(torch.load(args.weights, map_location=device))
 model.eval()
 
 # Image preprocessing operation
-pil2tensor = transforms.ToTensor()
+pil2tensor = pre_process = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+])
 tensor2pil = transforms.ToPILImage()
 
 # Open video file

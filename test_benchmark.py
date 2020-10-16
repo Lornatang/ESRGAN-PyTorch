@@ -25,7 +25,6 @@ from sewar.full_ref import sam
 from sewar.full_ref import ssim
 from sewar.full_ref import vifp
 from tqdm import tqdm
-import lpips
 
 from esrgan_pytorch import DatasetFromFolder
 from esrgan_pytorch import Generator

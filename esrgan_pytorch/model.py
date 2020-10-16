@@ -191,9 +191,9 @@ class ResidualInResidualDenseBlock(nn.Module):
             scale_ratio (float): Residual channel scaling column. (Default: 0.2)
         """
         super(ResidualInResidualDenseBlock, self).__init__()
-        self.RBD1 = ResidualDenseBlock(in_channels, growth_channels)
-        self.RBD2 = ResidualDenseBlock(in_channels, growth_channels)
-        self.RBD3 = ResidualDenseBlock(in_channels, growth_channels)
+        self.RBD1 = ResidualDenseBlock(in_channels, growth_channels, 0.2)
+        self.RBD2 = ResidualDenseBlock(in_channels, growth_channels, 0.2)
+        self.RBD3 = ResidualDenseBlock(in_channels, growth_channels, 0.2)
         self.scale_ratio = scale_ratio
 
     def forward(self, input: Tensor) -> Tensor:

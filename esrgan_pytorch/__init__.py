@@ -12,7 +12,6 @@
 # limitations under the License.
 # ==============================================================================
 from .calculate_niqe import cal_niqe
-from .calculate_ssim import cal_ssim
 from .dataset import DatasetFromFolder
 from .loss import PerceptionLoss
 from .model import Discriminator
@@ -27,7 +26,6 @@ from .utils import tensor2img
 
 __all__ = [
     "cal_niqe",
-    "cal_ssim",
     "DatasetFromFolder",
     "PerceptionLoss",
     "Discriminator",

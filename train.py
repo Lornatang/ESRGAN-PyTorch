@@ -26,7 +26,7 @@ import torch.optim as optim
 
 from esrgan_pytorch import DatasetFromFolder
 from esrgan_pytorch import Discriminator
-from esrgan_pytorch import FeatureExtractorVGG54
+from esrgan_pytorch import PerceptionLoss
 from esrgan_pytorch import Generator
 from esrgan_pytorch import init_torch_seeds
 from esrgan_pytorch import load_checkpoint
@@ -104,7 +104,7 @@ netD = Discriminator().to(device)
 # Define PSNR model optimizers
 psnr_epochs = int(args.psnr_iters // len(dataloader))
 epoch_indices = int(psnr_epochs // 4)
-optimizer = optim.Adam(netG.parameters(), lr=args.psnr_lr, betas=(0.9, 0.99))
+optimizer = optim.Adam(netG.parameters(), lr=args.psnr_lr, betas=(0.9, 0.999))
 scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer,
                                                            T_0=epoch_indices,
                                                            T_mult=1,
@@ -115,7 +115,7 @@ if args.resume_PSNR:
     args.start_epoch = load_checkpoint(netG, optimizer, f"./weight/RRDBNet_PSNR_{args.upscale_factor}x_checkpoint.pth")
 
 # We use vgg54 as our feature extraction method by default.
-feature_extractor = FeatureExtractorVGG54().to(device)
+perception_criterion = PerceptionLoss().to(device)
 # Loss = perceptual_loss + 0.005 * adversarial_loss + 0.1 * l1_loss
 content_criterion = nn.L1Loss().to(device)
 adversarial_criterion = nn.BCEWithLogitsLoss().to(device)
@@ -123,7 +123,6 @@ adversarial_criterion = nn.BCEWithLogitsLoss().to(device)
 # Set the all model to training mode
 netG.train()
 netD.train()
-feature_extractor.train()
 
 # Pre-train generator using raw MSE loss
 logger.info(f"[*] Start training RRDBNet for PSNR model based on L1 loss.")
@@ -196,8 +195,8 @@ args.start_epoch = 0
 epochs = int(args.iters // len(dataloader))
 base_epoch = int(epochs // 8)
 epoch_indices = [base_epoch, base_epoch * 2, base_epoch * 4, base_epoch * 6]
-optimizerD = optim.Adam(netD.parameters(), lr=args.lr, betas=(0.9, 0.99))
-optimizerG = optim.Adam(netG.parameters(), lr=args.lr, betas=(0.9, 0.99))
+optimizerD = optim.Adam(netD.parameters(), lr=args.lr, betas=(0.9, 0.999))
+optimizerG = optim.Adam(netG.parameters(), lr=args.lr, betas=(0.9, 0.999))
 schedulerD = optim.lr_scheduler.MultiStepLR(optimizerD, milestones=epoch_indices, gamma=0.5)
 schedulerG = optim.lr_scheduler.MultiStepLR(optimizerG, milestones=epoch_indices, gamma=0.5)
 
@@ -236,9 +235,9 @@ for epoch in range(args.start_epoch, epochs):
         sr = netG(lr)
 
         # According to the feature map, the root mean square error is regarded as the content loss.
-        perceptual_loss = content_criterion(feature_extractor(sr), feature_extractor(hr))
+        perceptual_loss = perception_criterion(sr, hr)
         # Train with fake high resolution image.
-        hr_output = netD(hr)  # No train real fake image.
+        hr_output = netD(hr.detach())  # No train real fake image.
         sr_output = netD(sr)  # Train fake image.
         errG_hr = adversarial_criterion(hr_output - torch.mean(sr_output), fake_label)
         errG_sr = adversarial_criterion(sr_output - torch.mean(hr_output), real_label)
@@ -248,7 +247,7 @@ for epoch in range(args.start_epoch, epochs):
         errG = perceptual_loss + 0.005 * adversarial_loss + 0.1 * l1_loss
         errG.backward()
         optimizerG.step()
-        D_G_z = sr_output.mean().item()
+        D_G_z1 = sr_output.mean().item()
 
         ##############################################
         # (2) Update D network: maximize - E(lr)[1- log(D(hr, sr))] - E(sr)[log(D(sr, hr))]
@@ -264,6 +263,7 @@ for epoch in range(args.start_epoch, epochs):
         errD = (errD_sr + errD_hr) / 2
         errD.backward()
         D_x = hr_output.mean().item()
+        D_G_z2 = sr_output.mean().item()
         optimizerD.step()
 
         # Dynamic adjustment of learning rate
@@ -275,7 +275,7 @@ for epoch in range(args.start_epoch, epochs):
 
         progress_bar.set_description(f"[{epoch + 1}/{epochs}][{i + 1}/{len(dataloader)}] "
                                      f"Loss_D: {errD:.6f} Loss_G: {errG.item():.6f} "
-                                     f"D(HR): {D_x:.6f} D(G(LR)): {D_G_z:.6f}")
+                                     f"D(HR): {D_x:.6f} D(G(LR)): {D_G_z1:.6f}/{D_G_z2:.6f}")
 
         # record iter.
         total_iter = len(dataloader) * epoch + i

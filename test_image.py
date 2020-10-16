@@ -13,6 +13,7 @@
 # ==============================================================================
 import argparse
 import os
+import time
 
 import cv2
 import lpips
@@ -41,7 +42,7 @@ parser.add_argument("--upscale-factor", type=int, default=4, choices=[2, 4],
                     help="Low to high resolution scaling factor. (default:4).")
 parser.add_argument("--model-path", default="./weight/ESRGAN_4x.pth", type=str, metavar="PATH",
                     help="Path to latest checkpoint for model. (default: ``./weight/ESRGAN_4x.pth``).")
-parser.add_argument("--device", default="0",
+parser.add_argument("--device", default="cpu",
                     help="device id i.e. `0` or `0,1` or `cpu`. (default: ``CUDA:0``).")
 
 args = parser.parse_args()
@@ -62,21 +63,27 @@ model.load_state_dict(torch.load(args.model_path, map_location=device))
 model.eval()
 
 # Just convert the data to Tensor format
-pil2tensor = transforms.ToTensor()
+pre_process = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+])
 
 # Load image
 lr = Image.open(args.lr)
 hr = Image.open(args.hr)
-lr = pil2tensor(lr).unsqueeze(0)
-hr = pil2tensor(hr).unsqueeze(0)
+lr = pre_process(lr).unsqueeze(0)
+hr = pre_process(hr).unsqueeze(0)
 lr = lr.to(device)
 hr = hr.to(device)
 
+start_time = time.time()
 with torch.no_grad():
     sr = model(lr)
+end_time = time.time()
 
-vutils.save_image(sr, "sr.png", normalize=False)
-vutils.save_image(hr, "hr.png", normalize=False)
+vutils.save_image(lr, "lr.png", normalize=True)
+vutils.save_image(sr, "sr.png", normalize=True)
+vutils.save_image(hr, "hr.png", normalize=True)
 
 # Evaluate performance
 src_img = cv2.imread("sr.png")
@@ -105,6 +112,7 @@ print(f"MSE: {mse_value:.2f}\n"
       f"NIQE: {niqe_value:.2f}\n"
       f"SAM: {sam_value:.4f}\n"
       f"VIF: {vif_value:.4f}\n"
-      f"LPIPS: {lpips_value.item():.4f}")
+      f"LPIPS: {lpips_value.item():.4f}"
+      f"Use time: {(end_time - start_time) * 1000:.2f}ms/{(end_time - start_time)}s.")
 print("============================== End ==============================")
 print("\n")

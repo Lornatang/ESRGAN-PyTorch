@@ -14,9 +14,8 @@
 from .calculate_niqe import cal_niqe
 from .calculate_ssim import cal_ssim
 from .dataset import DatasetFromFolder
+from .loss import PerceptionLoss
 from .model import Discriminator
-from .model import FeatureExtractorVGG22
-from .model import FeatureExtractorVGG54
 from .model import Generator
 from .model import ResidualDenseBlock
 from .model import ResidualInResidualDenseBlock
@@ -30,9 +29,8 @@ __all__ = [
     "cal_niqe",
     "cal_ssim",
     "DatasetFromFolder",
+    "PerceptionLoss",
     "Discriminator",
-    "FeatureExtractorVGG22",
-    "FeatureExtractorVGG54",
     "Generator",
     "ResidualDenseBlock",
     "ResidualInResidualDenseBlock",

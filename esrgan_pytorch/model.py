@@ -16,7 +16,6 @@ import math
 import torch
 import torch.nn as nn
 from torch import Tensor
-from torchvision.models import vgg19
 
 
 class Discriminator(nn.Module):
@@ -82,129 +81,34 @@ class Discriminator(nn.Module):
         return out
 
 
-class FeatureExtractorVGG22(nn.Module):
-    r"""A loss defined on feature maps representing lower-level features.
-    `"Perceptual Losses for Real-Time Style Transfer and Super-Resolution" <https://arxiv.org/pdf/1603.08155.pdf>`_
-    """
-
-    def __init__(self, feature_layer: int = 8) -> None:
-        """ Constructing characteristic loss function of VGG network. For VGG2.2.
-
-        Args:
-            feature_layer (int): How many layers in VGG19. (Default:8).
-
-        Notes:
-            features(
-              (0): Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-              (1): ReLU(inplace=True)
-              (2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-              (3): ReLU(inplace=True)
-              (4): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
-              (5): Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-              (6): ReLU(inplace=True)
-              (7): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-            )
-        """
-        super(FeatureExtractorVGG22, self).__init__()
-        model = vgg19(pretrained=True)
-        self.features = nn.Sequential(*list(model.features.children())[:feature_layer]).eval()
-
-    def forward(self, input: Tensor = None) -> Tensor:
-        out = self.features(input)
-
-        return out
-
-
-class FeatureExtractorVGG54(nn.Module):
-    r"""A loss defined on feature maps representing lower-level features.
-    `"Perceptual Losses for Real-Time Style Transfer and Super-Resolution" <https://arxiv.org/pdf/1603.08155.pdf>`_
-
-    A loss defined on feature maps of higher level features from deeper network layers
-    with more potential to focus on the content of the images. We refer to this network
-    as SRGAN in the following.
-    """
-
-    def __init__(self, feature_layer: int = 35) -> None:
-        """ Constructing characteristic loss function of VGG network. For VGG5.4.
-
-        Args:
-            feature_layer (int): How many layers in VGG19. (Default:35).
-
-        Notes:
-            features(
-              (0): Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-              (1): ReLU(inplace=True)
-              (2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-              (3): ReLU(inplace=True)
-              (4): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
-              (5): Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-              (6): ReLU(inplace=True)
-              (7): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-              (8): ReLU(inplace=True)
-              (9): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
-              (10): Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-              (11): ReLU(inplace=True)
-              (12): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-              (13): ReLU(inplace=True)
-              (14): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-              (15): ReLU(inplace=True)
-              (16): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-              (17): ReLU(inplace=True)
-              (18): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
-              (19): Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-              (20): ReLU(inplace=True)
-              (21): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-              (22): ReLU(inplace=True)
-              (23): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-              (24): ReLU(inplace=True)
-              (25): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-              (26): ReLU(inplace=True)
-              (27): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
-              (28): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-              (29): ReLU(inplace=True)
-              (30): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-              (31): ReLU(inplace=True)
-              (32): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-              (33): ReLU(inplace=True)
-              (34): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-            )
-
-        """
-        super(FeatureExtractorVGG54, self).__init__()
-        model = vgg19(pretrained=True)
-        self.features = nn.Sequential(*list(model.features.children())[:feature_layer]).eval()
-
-    def forward(self, input: Tensor = None) -> Tensor:
-        out = self.features(input)
-
-        return out
-
-
 class Generator(nn.Module):
-    def __init__(self, upscale_factor):
+    def __init__(self, upscale_factor, num_rrdb_blocks=16):
         r""" This is an esrgan model defined by the author himself.
+
+        We use two settings for our generator – one of them contains 16 residual blocks, with a capacity similar
+        to that of SRGAN and the other is a deeper model with 23 RRDB blocks.
 
         Args:
             upscale_factor (int): Image magnification factor. (Default: 4).
         """
         super(Generator, self).__init__()
-        upsample_block_num = int(math.log(upscale_factor, 2))
+        num_upsample_block = int(math.log(upscale_factor, 2))
 
         # First layer
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
 
-        # 23 ResidualInResidualDenseBlock layer
-        rrdb_layers = []
-        for _ in range(23):
-            rrdb_layers += [ResidualInResidualDenseBlock(in_channels=64, growth_channels=32, scale_ratio=0.2)]
-        self.residual_residual_dense_blocks = nn.Sequential(*rrdb_layers)
+        # 16/23 ResidualInResidualDenseBlock layer
+        rrdb_blocks = []
+        for _ in range(num_rrdb_blocks):
+            rrdb_blocks += [ResidualInResidualDenseBlock(in_channels=64, growth_channels=32, scale_ratio=0.2)]
+        self.residual_residual_dense_blocks = nn.Sequential(*rrdb_blocks)
 
         # Second conv layer post residual blocks
         self.conv2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=False)
 
         # Upsampling layers
         upsampling = []
-        for _ in range(upsample_block_num):
+        for _ in range(num_upsample_block):
             upsampling += [
                 nn.Conv2d(64, 256, 3, 1, 1),
                 nn.BatchNorm2d(256),
@@ -213,19 +117,27 @@ class Generator(nn.Module):
             ]
         self.upsampling = nn.Sequential(*upsampling)
 
-        # Final output layer
+        # Next layer after upper sampling
         self.conv3 = nn.Sequential(
             nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=False),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
-            nn.Conv2d(64, 3, kernel_size=3, stride=1, padding=1, bias=False),
         )
 
+        # Final output layer
+        self.conv4 = nn.Conv2d(64, 3, kernel_size=3, stride=1, padding=1, bias=False)
+
     def forward(self, input: Tensor) -> Tensor:
-        out1 = self.conv1(input)
-        out = self.residual_residual_dense_blocks(out1)
+        shortcut = self.conv1(input)
+
+        out = self.residual_residual_dense_blocks(shortcut)
         out = self.conv2(out)
-        out = self.upsampling(out + out1)
+
+        out = out + shortcut
+
+        out = self.upsampling(out)
         out = self.conv3(out)
+        out = self.conv4(out)
+
         return out
 
 
@@ -253,9 +165,7 @@ class ResidualDenseBlock(nn.Module):
         self.conv4 = nn.Sequential(
             nn.Conv2d(in_channels + 3 * growth_channels, growth_channels, 3, 1, 1, bias=False),
             nn.LeakyReLU(negative_slope=0.2, inplace=True))
-        self.conv5 = nn.Sequential(
-            nn.Conv2d(in_channels + 4 * growth_channels, in_channels, 3, 1, 1, bias=False),
-            nn.LeakyReLU(negative_slope=0.2, inplace=True))
+        self.conv5 = nn.Conv2d(in_channels + 4 * growth_channels, in_channels, 3, 1, 1, bias=False)
 
         self.scale_ratio = scale_ratio
 
@@ -265,7 +175,8 @@ class ResidualDenseBlock(nn.Module):
         conv3 = self.conv3(torch.cat((input, conv1, conv2), 1))
         conv4 = self.conv4(torch.cat((input, conv1, conv2, conv3), 1))
         conv5 = self.conv5(torch.cat((input, conv1, conv2, conv3, conv4), 1))
-        return conv5 * self.scale_ratio + input
+
+        return conv5.mul(self.scale_ratio) + input
 
 
 class ResidualInResidualDenseBlock(nn.Module):
@@ -289,4 +200,4 @@ class ResidualInResidualDenseBlock(nn.Module):
         out = self.RBD1(input)
         out = self.RBD2(out)
         out = self.RBD3(out)
-        return out * self.scale_ratio + input
+        return out.mul(self.scale_ratio) + input

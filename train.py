@@ -118,7 +118,7 @@ if args.resume_PSNR:
 feature_extractor = FeatureExtractorVGG54().to(device)
 # Loss = perceptual_loss + 0.005 * adversarial_loss + 0.1 * l1_loss
 content_criterion = nn.L1Loss().to(device)
-adversarial_criterion = nn.BCELoss().to(device)
+adversarial_criterion = nn.BCEWithLogitsLoss().to(device)
 
 # Set the all model to training mode
 netG.train()
@@ -238,7 +238,7 @@ for epoch in range(args.start_epoch, epochs):
         # According to the feature map, the root mean square error is regarded as the content loss.
         perceptual_loss = content_criterion(feature_extractor(sr), feature_extractor(hr))
         # Train with fake high resolution image.
-        hr_output = netD(hr.detach())  # No train real fake image.
+        hr_output = netD(hr)  # No train real fake image.
         sr_output = netD(sr)  # Train fake image.
         errG_hr = adversarial_criterion(hr_output - torch.mean(sr_output), fake_label)
         errG_sr = adversarial_criterion(sr_output - torch.mean(hr_output), real_label)
@@ -248,7 +248,7 @@ for epoch in range(args.start_epoch, epochs):
         errG = perceptual_loss + 0.005 * adversarial_loss + 0.1 * l1_loss
         errG.backward()
         optimizerG.step()
-        D_G_z1 = sr_output.mean().item()
+        D_G_z = sr_output.mean().item()
 
         ##############################################
         # (2) Update D network: maximize - E(lr)[1- log(D(hr, sr))] - E(sr)[log(D(sr, hr))]
@@ -259,16 +259,11 @@ for epoch in range(args.start_epoch, epochs):
         # Train with real high resolution image.
         hr_output = netD(hr)  # Train real image.
         sr_output = netD(sr.detach())  # No train fake image.
-        errD_hr = adversarial_criterion(hr_output - torch.mean(sr_output), real_label) * 0.5
-        errD_hr.backward()
+        errD_hr = adversarial_criterion(hr_output - torch.mean(sr_output), real_label)
+        errD_sr = adversarial_criterion(sr_output - torch.mean(hr_output), fake_label)
+        errD = (errD_sr + errD_hr) / 2
+        errD.backward()
         D_x = hr_output.mean().item()
-
-        # Train with fake high resolution image.
-        sr_output = netD(sr.detach())  # Train fake image.
-        errD_sr = adversarial_criterion(sr_output - torch.mean(hr_output), fake_label) * 0.5
-        errD_sr.backward()
-        D_G_z2 = sr_output.mean().item()
-        errD = errD_sr + errD_hr
         optimizerD.step()
 
         # Dynamic adjustment of learning rate
@@ -278,9 +273,9 @@ for epoch in range(args.start_epoch, epochs):
         d_avg_loss += errD.item()
         g_avg_loss += errG.item()
 
-        progress_bar.set_description(f"[{epoch + 1}/{args.epochs}][{i + 1}/{len(dataloader)}] "
+        progress_bar.set_description(f"[{epoch + 1}/{epochs}][{i + 1}/{len(dataloader)}] "
                                      f"Loss_D: {errD:.6f} Loss_G: {errG.item():.6f} "
-                                     f"D(HR): {D_x:.6f} D(G(LR)): {D_G_z1:.6f}/{D_G_z2:.6f}")
+                                     f"D(HR): {D_x:.6f} D(G(LR)): {D_G_z:.6f}")
 
         # record iter.
         total_iter = len(dataloader) * epoch + i

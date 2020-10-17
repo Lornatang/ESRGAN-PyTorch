@@ -18,23 +18,10 @@ import torchvision.transforms as transforms
 from PIL import Image
 
 from .utils import img2tensor
-from .utils import tensor2img
 
-
-def check_image_file(filename):
-    r"""Filter non image files in directory.
-
-    Args:
-        filename (str): File name under path.
-
-    Returns:
-        Return True if bool(x) is True for any x in the iterable.
-
-    """
-    return any(filename.endswith(extension) for extension in ["bmp", ".png",
-                                                              ".jpg", ".jpeg",
-                                                              ".png", ".PNG",
-                                                              ".jpeg", ".JPEG"])
+__all__ = [
+    "DatasetFromFolder", "check_image_file"
+]
 
 
 class DatasetFromFolder(torch.utils.data.dataset.Dataset):
@@ -70,3 +57,19 @@ class DatasetFromFolder(torch.utils.data.dataset.Dataset):
 
     def __len__(self):
         return len(self.input_filenames)
+
+
+def check_image_file(filename):
+    r"""Filter non image files in directory.
+
+    Args:
+        filename (str): File name under path.
+
+    Returns:
+        Return True if bool(x) is True for any x in the iterable.
+
+    """
+    return any(filename.endswith(extension) for extension in ["bmp", ".png",
+                                                              ".jpg", ".jpeg",
+                                                              ".png", ".PNG",
+                                                              ".jpeg", ".JPEG"])

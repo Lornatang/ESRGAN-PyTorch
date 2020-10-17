@@ -13,12 +13,14 @@
 # ==============================================================================
 from .calculate_niqe import cal_niqe
 from .dataset import DatasetFromFolder
+from .dataset import check_image_file
 from .loss import PerceptionLoss
 from .model import Discriminator
 from .model import Generator
-from .model import ResidualDenseBlock
-from .model import ResidualInResidualDenseBlock
+from .utils import calculate_weights_indices
+from .utils import cubic
 from .utils import img2tensor
+from .utils import imresize
 from .utils import init_torch_seeds
 from .utils import load_checkpoint
 from .utils import select_device
@@ -27,12 +29,14 @@ from .utils import tensor2img
 __all__ = [
     "cal_niqe",
     "DatasetFromFolder",
+    "check_image_file",
     "PerceptionLoss",
     "Discriminator",
     "Generator",
-    "ResidualDenseBlock",
-    "ResidualInResidualDenseBlock",
+    "calculate_weights_indices",
+    "cubic",
     "img2tensor",
+    "imresize",
     "init_torch_seeds",
     "load_checkpoint",
     "select_device",

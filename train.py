@@ -18,16 +18,16 @@ import os
 import random
 
 import torch.nn as nn
+import torch.optim as optim
 import torch.utils.data
 import torch.utils.data.distributed
 import torchvision.utils as vutils
 from tqdm import tqdm
-import torch.optim as optim
 
 from esrgan_pytorch import DatasetFromFolder
 from esrgan_pytorch import Discriminator
-from esrgan_pytorch import PerceptionLoss
 from esrgan_pytorch import Generator
+from esrgan_pytorch import PerceptionLoss
 from esrgan_pytorch import init_torch_seeds
 from esrgan_pytorch import load_checkpoint
 from esrgan_pytorch import select_device

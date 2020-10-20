@@ -21,6 +21,7 @@ from torchvision.models import vgg19
 
 class PerceptionLoss(nn.Module):
     r""" Where VGG5.4 represents the feature map of 33th layer in pretrained VGG19 model.
+    For VGG2.2 use 8th layer.
 
     "ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks" <https://arxiv.org/pdf/1809.00219.pdf>`_
 
@@ -29,11 +30,11 @@ class PerceptionLoss(nn.Module):
     as SRGAN in the following.
     """
 
-    def __init__(self, feature_layer: int = 33) -> None:
+    def __init__(self, feature_layer: int = 35) -> None:
         """ Constructing characteristic loss function of VGG network. For VGG5.4 layer.
 
         Args:
-            feature_layer (int): How many layers in VGG19. (Default:33).
+            feature_layer (int): How many layers in VGG19. (Default:35).
 
         Notes:
             features(
@@ -70,6 +71,8 @@ class PerceptionLoss(nn.Module):
               (30): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
               (31): ReLU(inplace=True)
               (32): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+              (33): ReLU(inplace=True)
+              (34): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
             )
         """
         super(PerceptionLoss, self).__init__()

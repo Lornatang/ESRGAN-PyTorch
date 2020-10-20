@@ -38,7 +38,7 @@ parser.add_argument("--lr", type=str,
                     help="Test low resolution image name.")
 parser.add_argument("--hr", type=str,
                     help="Raw high resolution image name.")
-parser.add_argument("--upscale-factor", type=int, default=4, choices=[2, 4],
+parser.add_argument("--upscale-factor", type=int, default=4, choices=[4],
                     help="Low to high resolution scaling factor. (default:4).")
 parser.add_argument("--model-path", default="./weight/ESRGAN_4x.pth", type=str, metavar="PATH",
                     help="Path to latest checkpoint for model. (default: ``./weight/ESRGAN_4x.pth``).")
@@ -63,10 +63,7 @@ model.load_state_dict(torch.load(args.model_path, map_location=device))
 model.eval()
 
 # Just convert the data to Tensor format
-pre_process = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-])
+pre_process = transforms.ToTensor()
 
 # Load image
 lr = Image.open(args.lr)
@@ -112,7 +109,7 @@ print(f"MSE: {mse_value:.2f}\n"
       f"NIQE: {niqe_value:.2f}\n"
       f"SAM: {sam_value:.4f}\n"
       f"VIF: {vif_value:.4f}\n"
-      f"LPIPS: {lpips_value.item():.4f}"
-      f"Use time: {(end_time - start_time) * 1000:.2f}ms/{(end_time - start_time)}s.")
+      f"LPIPS: {lpips_value.item():.4f}\n"
+      f"Use time: {(end_time - start_time) * 1000:.2f}ms/{(end_time - start_time):.4f}s.")
 print("============================== End ==============================")
 print("\n")

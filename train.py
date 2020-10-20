@@ -118,7 +118,7 @@ if args.resume_PSNR:
 perception_criterion = PerceptionLoss().to(device)
 # Loss = perceptual_loss + 0.005 * adversarial_loss + 0.01 * l1_loss
 content_criterion = nn.L1Loss().to(device)
-adversarial_criterion = nn.BCELoss().to(device)
+adversarial_criterion = nn.BCEWithLogitsLoss().to(device)
 
 # Set the all model to training mode
 netG.train()
@@ -231,7 +231,7 @@ for epoch in range(args.start_epoch, epochs):
         # Set generator gradients to zero.
         netG.zero_grad()
 
-        # Generator first generates high resolution graph.
+        # Generate a high resolution image from low resolution input.
         sr = netG(lr)
 
         # According to the feature map, the root mean square error is regarded as the content loss.
@@ -239,9 +239,8 @@ for epoch in range(args.start_epoch, epochs):
         # Train with fake high resolution image.
         hr_output = netD(hr.detach())  # No train real fake image.
         sr_output = netD(sr)  # Train fake image.
-        errG_hr = adversarial_criterion(hr_output - torch.mean(sr_output), fake_label)
-        errG_sr = adversarial_criterion(sr_output - torch.mean(hr_output), real_label)
-        adversarial_loss = (errG_hr + errG_sr) / 2
+        # Adversarial loss (relativistic average GAN)
+        adversarial_loss = adversarial_criterion(sr_output - torch.mean(hr_output), real_label)
         # Pixel level loss between two images.
         l1_loss = content_criterion(sr, hr)
         errG = perceptual_loss + 0.005 * adversarial_loss + 0.01 * l1_loss
@@ -258,6 +257,7 @@ for epoch in range(args.start_epoch, epochs):
         # Train with real high resolution image.
         hr_output = netD(hr)  # Train real image.
         sr_output = netD(sr.detach())  # No train fake image.
+        # Adversarial loss for real and fake images (relativistic average GAN)
         errD_hr = adversarial_criterion(hr_output - torch.mean(sr_output), real_label)
         errD_sr = adversarial_criterion(sr_output - torch.mean(hr_output), fake_label)
         errD = (errD_sr + errD_hr) / 2

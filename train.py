@@ -116,7 +116,7 @@ if args.resume_PSNR:
 
 # We use vgg54 as our feature extraction method by default.
 perception_criterion = PerceptionLoss().to(device)
-# Loss = perceptual_loss + 0.005 * adversarial_loss + 0.1 * l1_loss
+# Loss = perceptual_loss + 0.005 * adversarial_loss + 0.01 * l1_loss
 content_criterion = nn.L1Loss().to(device)
 adversarial_criterion = nn.BCELoss().to(device)
 
@@ -244,7 +244,7 @@ for epoch in range(args.start_epoch, epochs):
         adversarial_loss = (errG_hr + errG_sr) / 2
         # Pixel level loss between two images.
         l1_loss = content_criterion(sr, hr)
-        errG = perceptual_loss + 0.005 * adversarial_loss + 0.1 * l1_loss
+        errG = perceptual_loss + 0.005 * adversarial_loss + 0.01 * l1_loss
         errG.backward()
         optimizerG.step()
         D_G_z1 = sr_output.mean().item()

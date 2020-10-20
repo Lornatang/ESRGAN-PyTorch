@@ -118,7 +118,7 @@ if args.resume_PSNR:
 perception_criterion = PerceptionLoss().to(device)
 # Loss = perceptual_loss + 0.005 * adversarial_loss + 0.1 * l1_loss
 content_criterion = nn.L1Loss().to(device)
-adversarial_criterion = nn.BCEWithLogitsLoss().to(device)
+adversarial_criterion = nn.BCELoss().to(device)
 
 # Set the all model to training mode
 netG.train()

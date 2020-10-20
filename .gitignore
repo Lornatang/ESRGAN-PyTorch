@@ -136,6 +136,7 @@ data/4x
 output
 result
 logs
+benchmark
 
 weight/*.pth
 

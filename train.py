@@ -18,7 +18,6 @@ import os
 import random
 
 import torch.nn as nn
-import torch.optim as optim
 import torch.utils.data
 import torch.utils.data.distributed
 import torchvision.utils as vutils
@@ -104,11 +103,11 @@ netD = Discriminator().to(device)
 # Define PSNR model optimizers
 psnr_epochs = int(args.psnr_iters // len(dataloader))
 epoch_indices = int(psnr_epochs // 4)
-optimizer = optim.Adam(netG.parameters(), lr=args.psnr_lr, betas=(0.9, 0.999))
-scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer,
-                                                           T_0=epoch_indices,
-                                                           T_mult=1,
-                                                           eta_min=1e-7)
+optimizer = torch.optim.Adam(netG.parameters(), lr=args.psnr_lr, betas=(0.9, 0.999))
+scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer,
+                                                                 T_0=epoch_indices,
+                                                                 T_mult=1,
+                                                                 eta_min=1e-7)
 
 # Loading PSNR pre training model
 if args.resume_PSNR:
@@ -118,7 +117,7 @@ if args.resume_PSNR:
 perception_criterion = PerceptionLoss().to(device)
 # Loss = perceptual_loss + 0.005 * adversarial_loss + 0.01 * l1_loss
 content_criterion = nn.L1Loss().to(device)
-adversarial_criterion = nn.BCEWithLogitsLoss().to(device)
+adversarial_criterion = nn.BCELoss().to(device)
 
 # Set the all model to training mode
 netG.train()
@@ -169,9 +168,9 @@ else:
 
             # The image is saved every 5000 iterations.
             if (total_iter + 1) % 5000 == 0:
-                vutils.save_image(lr, os.path.join(output_lr_dir, f"RRDBNet_PSNR_{total_iter + 1}.bmp"), normalize=True)
-                vutils.save_image(hr, os.path.join(output_hr_dir, f"RRDBNet_PSNR_{total_iter + 1}.bmp"), normalize=True)
-                vutils.save_image(sr, os.path.join(output_sr_dir, f"RRDBNet_PSNR_{total_iter + 1}.bmp"), normalize=True)
+                vutils.save_image(lr, os.path.join(output_lr_dir, f"RRDBNet_PSNR_{total_iter + 1}.bmp"), normalize=False)
+                vutils.save_image(hr, os.path.join(output_hr_dir, f"RRDBNet_PSNR_{total_iter + 1}.bmp"), normalize=False)
+                vutils.save_image(sr, os.path.join(output_sr_dir, f"RRDBNet_PSNR_{total_iter + 1}.bmp"), normalize=False)
 
         # The model is saved every 1 epoch.
         torch.save({"epoch": epoch + 1,
@@ -195,10 +194,10 @@ args.start_epoch = 0
 epochs = int(args.iters // len(dataloader))
 base_epoch = int(epochs // 8)
 epoch_indices = [base_epoch, base_epoch * 2, base_epoch * 4, base_epoch * 6]
-optimizerD = optim.Adam(netD.parameters(), lr=args.lr, betas=(0.9, 0.999))
-optimizerG = optim.Adam(netG.parameters(), lr=args.lr, betas=(0.9, 0.999))
-schedulerD = optim.lr_scheduler.MultiStepLR(optimizerD, milestones=epoch_indices, gamma=0.5)
-schedulerG = optim.lr_scheduler.MultiStepLR(optimizerG, milestones=epoch_indices, gamma=0.5)
+optimizerD = torch.optim.Adam(netD.parameters(), lr=args.lr, betas=(0.9, 0.999))
+optimizerG = torch.optim.Adam(netG.parameters(), lr=args.lr, betas=(0.9, 0.999))
+schedulerD = torch.optim.lr_scheduler.MultiStepLR(optimizerD, milestones=epoch_indices, gamma=0.5)
+schedulerG = torch.optim.lr_scheduler.MultiStepLR(optimizerG, milestones=epoch_indices, gamma=0.5)
 
 # Loading ESRGAN checkpoint
 if args.resume:
@@ -226,13 +225,31 @@ for epoch in range(args.start_epoch, epochs):
         fake_label = torch.full((batch_size, 1), 0, dtype=lr.dtype, device=device)
 
         ##############################################
-        # (1) Update G network: maximize - E(lr)[log(D(hr, sr))] - E(sr)[1- log(D(sr, hr))]
+        # (1) Update D network: maximize - E(lr)[1- log(D(hr, sr))] - E(sr)[log(D(sr, hr))]
         ##############################################
-        # Set generator gradients to zero.
-        netG.zero_grad()
+        # Set discriminator gradients to zero.
+        netD.zero_grad()
 
         # Generate a high resolution image from low resolution input.
         sr = netG(lr)
+
+        # Train with real high resolution image.
+        hr_output = netD(hr)  # Train real image.
+        sr_output = netD(sr.detach())  # No train fake image.
+        # Adversarial loss for real and fake images (relativistic average GAN)
+        errD_hr = adversarial_criterion(hr_output - torch.mean(sr_output), real_label)
+        errD_sr = adversarial_criterion(sr_output - torch.mean(hr_output), fake_label)
+        errD = (errD_sr + errD_hr) / 2
+        errD.backward()
+        D_x = hr_output.mean().item()
+        D_G_z1 = sr_output.mean().item()
+        optimizerD.step()
+
+        ##############################################
+        # (2) Update G network: maximize - E(lr)[log(D(hr, sr))] - E(sr)[1- log(D(sr, hr))]
+        ##############################################
+        # Set generator gradients to zero.
+        netG.zero_grad()
 
         # According to the feature map, the root mean square error is regarded as the content loss.
         perceptual_loss = perception_criterion(sr, hr)
@@ -245,26 +262,8 @@ for epoch in range(args.start_epoch, epochs):
         l1_loss = content_criterion(sr, hr)
         errG = perceptual_loss + 0.005 * adversarial_loss + 0.01 * l1_loss
         errG.backward()
-        optimizerG.step()
-        D_G_z1 = sr_output.mean().item()
-
-        ##############################################
-        # (2) Update D network: maximize - E(lr)[1- log(D(hr, sr))] - E(sr)[log(D(sr, hr))]
-        ##############################################
-        # Set discriminator gradients to zero.
-        netD.zero_grad()
-
-        # Train with real high resolution image.
-        hr_output = netD(hr)  # Train real image.
-        sr_output = netD(sr.detach())  # No train fake image.
-        # Adversarial loss for real and fake images (relativistic average GAN)
-        errD_hr = adversarial_criterion(hr_output - torch.mean(sr_output), real_label)
-        errD_sr = adversarial_criterion(sr_output - torch.mean(hr_output), fake_label)
-        errD = (errD_sr + errD_hr) / 2
-        errD.backward()
-        D_x = hr_output.mean().item()
         D_G_z2 = sr_output.mean().item()
-        optimizerD.step()
+        optimizerG.step()
 
         # Dynamic adjustment of learning rate
         schedulerD.step()
@@ -274,7 +273,7 @@ for epoch in range(args.start_epoch, epochs):
         g_avg_loss += errG.item()
 
         progress_bar.set_description(f"[{epoch + 1}/{epochs}][{i + 1}/{len(dataloader)}] "
-                                     f"Loss_D: {errD:.6f} Loss_G: {errG.item():.6f} "
+                                     f"Loss_D: {errD.item():.6f} Loss_G: {errG.item():.6f} "
                                      f"D(HR): {D_x:.6f} D(G(LR)): {D_G_z1:.6f}/{D_G_z2:.6f}")
 
         # record iter.
@@ -282,9 +281,9 @@ for epoch in range(args.start_epoch, epochs):
 
         # The image is saved every 5000 iterations.
         if (total_iter + 1) % 5000 == 0:
-            vutils.save_image(lr, os.path.join(output_lr_dir, f"ESRGAN_{total_iter + 1}.bmp"), normalize=True)
-            vutils.save_image(hr, os.path.join(output_hr_dir, f"ESRGAN_{total_iter + 1}.bmp"), normalize=True)
-            vutils.save_image(sr, os.path.join(output_sr_dir, f"ESRGAN_{total_iter + 1}.bmp"), normalize=True)
+            vutils.save_image(lr, os.path.join(output_lr_dir, f"ESRGAN_{total_iter + 1}.bmp"), normalize=False)
+            vutils.save_image(hr, os.path.join(output_hr_dir, f"ESRGAN_{total_iter + 1}.bmp"), normalize=False)
+            vutils.save_image(sr, os.path.join(output_sr_dir, f"ESRGAN_{total_iter + 1}.bmp"), normalize=False)
 
     # The model is saved every 1 epoch.
     torch.save({"epoch": epoch + 1,
@@ -299,7 +298,9 @@ for epoch in range(args.start_epoch, epochs):
     # Writer training log
     with open(f"ESRGAN_{args.upscale_factor}x_Loss.csv", "a+") as f:
         writer = csv.writer(f)
-        writer.writerow([epoch + 1, d_avg_loss / len(dataloader), g_avg_loss / len(dataloader)])
+        writer.writerow([epoch + 1,
+                         d_avg_loss / len(dataloader),
+                         g_avg_loss / len(dataloader)])
 
 torch.save(netG.state_dict(), f"./weight/ESRGAN_{args.upscale_factor}x.pth")
 logger.info(f"[*] Training ESRGAN model done! Saving ESRGAN model weight "

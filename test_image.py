@@ -12,7 +12,6 @@
 # limitations under the License.
 # ==============================================================================
 import argparse
-import os
 import time
 
 import cv2
@@ -47,11 +46,6 @@ parser.add_argument("--device", default="cpu",
 
 args = parser.parse_args()
 
-try:
-    os.makedirs("benchmark")
-except OSError:
-    pass
-
 # Selection of appropriate treatment equipment
 device = select_device(args.device, batch_size=1)
 
@@ -78,9 +72,9 @@ with torch.no_grad():
     sr = model(lr)
 end_time = time.time()
 
-vutils.save_image(lr, "lr.png", normalize=True)
-vutils.save_image(sr, "sr.png", normalize=True)
-vutils.save_image(hr, "hr.png", normalize=True)
+vutils.save_image(lr, "lr.png", normalize=False)
+vutils.save_image(sr, "sr.png", normalize=False)
+vutils.save_image(hr, "hr.png", normalize=False)
 
 # Evaluate performance
 src_img = cv2.imread("sr.png")

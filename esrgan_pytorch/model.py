@@ -17,6 +17,10 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
+__all__ = [
+    "Discriminator", "Generator", "ResidualDenseBlock", "ResidualInResidualDenseBlock"
+]
+
 
 class Discriminator(nn.Module):
     r"""The main architecture of the discriminator. Similar to VGG structure."""
@@ -24,34 +28,34 @@ class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
         self.features = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1),  # input is 3 x 216 x 216
+            nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False),  # input is 3 x 216 x 216
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
 
-            nn.Conv2d(64, 64, kernel_size=3, stride=2, padding=1),  # state size. (64) x 108 x 108
+            nn.Conv2d(64, 64, kernel_size=3, stride=2, padding=1, bias=False),  # state size. (64) x 108 x 108
             nn.BatchNorm2d(64),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
 
-            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1, bias=False),
             nn.BatchNorm2d(128),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
 
-            nn.Conv2d(128, 128, kernel_size=3, stride=2, padding=1),  # state size. 128 x 54 x 54
+            nn.Conv2d(128, 128, kernel_size=3, stride=2, padding=1, bias=False),  # state size. 128 x 54 x 54
             nn.BatchNorm2d(128),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
 
-            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1, bias=False),
             nn.BatchNorm2d(256),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
 
-            nn.Conv2d(256, 256, kernel_size=3, stride=2, padding=1),  # state size. 256 x 27 x 27
+            nn.Conv2d(256, 256, kernel_size=3, stride=2, padding=1, bias=False),  # state size. 256 x 27 x 27
             nn.BatchNorm2d(256),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
 
-            nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1, bias=False),
             nn.BatchNorm2d(512),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
 
-            nn.Conv2d(512, 512, kernel_size=3, stride=2, padding=1),  # state size. 512 x 14 x 14
+            nn.Conv2d(512, 512, kernel_size=3, stride=2, padding=1, bias=False),  # state size. 512 x 14 x 14
             nn.BatchNorm2d(512),
             nn.LeakyReLU(negative_slope=0.2, inplace=True)
         )
@@ -60,7 +64,7 @@ class Discriminator(nn.Module):
 
         self.classifier = nn.Sequential(
             nn.Linear(512 * 14 * 14, 1024),
-            nn.LeakyReLU(0.2),
+            nn.LeakyReLU(negative_slope=0.2, inplace=True),
             nn.Linear(1024, 1)
         )
 
@@ -88,7 +92,7 @@ class Generator(nn.Module):
         num_upsample_block = int(math.log(upscale_factor, 2))
 
         # First layer
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
 
         # 16/23 ResidualInResidualDenseBlock layer
         rrdb_blocks = []
@@ -97,13 +101,13 @@ class Generator(nn.Module):
         self.Trunk_RRDB = nn.Sequential(*rrdb_blocks)
 
         # Second conv layer post residual blocks
-        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=False)
 
         # Upsampling layers
         upsampling = []
         for _ in range(num_upsample_block):
             upsampling += [
-                nn.Conv2d(64, 256, kernel_size=3, stride=1, padding=1),
+                nn.Conv2d(64, 256, kernel_size=3, stride=1, padding=1, bias=False),
                 nn.BatchNorm2d(256),
                 nn.PixelShuffle(upscale_factor=2),
                 nn.PReLU()
@@ -112,12 +116,12 @@ class Generator(nn.Module):
 
         # Next layer after upper sampling
         self.conv3 = nn.Sequential(
-            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=False),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
         )
 
         # Final output layer
-        self.conv4 = nn.Conv2d(64, 3, kernel_size=3, stride=1, padding=1)
+        self.conv4 = nn.Conv2d(64, 3, kernel_size=3, stride=1, padding=1, bias=False)
 
     def forward(self, input: Tensor) -> Tensor:
         out1 = self.conv1(input)
@@ -144,18 +148,18 @@ class ResidualDenseBlock(nn.Module):
         """
         super(ResidualDenseBlock, self).__init__()
         self.conv1 = nn.Sequential(
-            nn.Conv2d(in_channels + 0 * growth_channels, growth_channels, 3, 1, 1),
+            nn.Conv2d(in_channels + 0 * growth_channels, growth_channels, 3, 1, 1, bias=False),
             nn.LeakyReLU(negative_slope=0.2, inplace=True))
         self.conv2 = nn.Sequential(
-            nn.Conv2d(in_channels + 1 * growth_channels, growth_channels, 3, 1, 1),
+            nn.Conv2d(in_channels + 1 * growth_channels, growth_channels, 3, 1, 1, bias=False),
             nn.LeakyReLU(negative_slope=0.2, inplace=True))
         self.conv3 = nn.Sequential(
-            nn.Conv2d(in_channels + 2 * growth_channels, growth_channels, 3, 1, 1),
+            nn.Conv2d(in_channels + 2 * growth_channels, growth_channels, 3, 1, 1, bias=False),
             nn.LeakyReLU(negative_slope=0.2, inplace=True))
         self.conv4 = nn.Sequential(
-            nn.Conv2d(in_channels + 3 * growth_channels, growth_channels, 3, 1, 1),
+            nn.Conv2d(in_channels + 3 * growth_channels, growth_channels, 3, 1, 1, bias=False),
             nn.LeakyReLU(negative_slope=0.2, inplace=True))
-        self.conv5 = nn.Conv2d(in_channels + 4 * growth_channels, in_channels, 3, 1, 1)
+        self.conv5 = nn.Conv2d(in_channels + 4 * growth_channels, in_channels, 3, 1, 1, bias=False)
 
         self.scale_ratio = scale_ratio
 
@@ -181,9 +185,9 @@ class ResidualInResidualDenseBlock(nn.Module):
             scale_ratio (float): Residual channel scaling column. (Default: 0.2)
         """
         super(ResidualInResidualDenseBlock, self).__init__()
-        self.RBD1 = ResidualDenseBlock(in_channels, growth_channels, 0.2)
-        self.RBD2 = ResidualDenseBlock(in_channels, growth_channels, 0.2)
-        self.RBD3 = ResidualDenseBlock(in_channels, growth_channels, 0.2)
+        self.RBD1 = ResidualDenseBlock(in_channels, growth_channels, scale_ratio)
+        self.RBD2 = ResidualDenseBlock(in_channels, growth_channels, scale_ratio)
+        self.RBD3 = ResidualDenseBlock(in_channels, growth_channels, scale_ratio)
         self.scale_ratio = scale_ratio
 
     def forward(self, input: Tensor) -> Tensor:

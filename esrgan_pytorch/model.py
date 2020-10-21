@@ -78,15 +78,20 @@ class Discriminator(nn.Module):
 
 
 class Generator(nn.Module):
-    def __init__(self, upscale_factor, num_rrdb_blocks=16):
+    def __init__(self, upscale_factor, num_rrdb_blocks=8):
         r""" This is an esrgan model defined by the author himself.
 
-        We use two settings for our generator – one of them contains 16 residual blocks, with a capacity similar
-        to that of SRGAN and the other is a deeper model with 23 RRDB blocks.
+        We use two settings for our generator – one of them contains 8 residual blocks, with a capacity similar
+        to that of SRGAN and the other is a deeper model with 8/16/23 RRDB blocks.
 
         Args:
             upscale_factor (int): Image magnification factor. (Default: 4).
-            num_rrdb_blocks (int): How many residual in residual blocks are combined. (Default: 16).
+            num_rrdb_blocks (int): How many residual in residual blocks are combined. (Default: 8).
+
+        Notes:
+            Use `num_rrdb_blocks` is 8 for RTX 1080Ti.
+            Use `num_rrdb_blocks` is 16 for TITAN RTX.
+            Use `num_rrdb_blocks` is 23 for Tesla A100.
         """
         super(Generator, self).__init__()
         num_upsample_block = int(math.log(upscale_factor, 2))

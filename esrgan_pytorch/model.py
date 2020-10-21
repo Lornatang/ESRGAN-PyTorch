@@ -60,33 +60,22 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(negative_slope=0.2, inplace=True)
         )
 
-        self.avgpool = nn.AdaptiveAvgPool2d(14)
+        self.avgpool = nn.AdaptiveAvgPool2d((14, 14))
 
-        self.classifier = nn.Sequential(
+        self.fc = nn.Sequential(
             nn.Linear(512 * 14 * 14, 1024),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
-            nn.Linear(1024, 1)
+            nn.Linear(1024, 1),
+            nn.Sigmoid()
         )
-
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="leaky_relu")
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.BatchNorm2d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, 0, 0.01)
-                nn.init.constant_(m.bias, 0)
 
     def forward(self, input: Tensor) -> Tensor:
         out = self.features(input)
         out = self.avgpool(out)
         out = torch.flatten(out, 1)
-        out = self.classifier(out)
+        out = self.fc(out)
 
-        return torch.sigmoid(out)
+        return out
 
 
 class Generator(nn.Module):
@@ -138,7 +127,10 @@ class Generator(nn.Module):
         )
 
         # Final output layer
-        self.conv4 = nn.Conv2d(64, 3, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv4 = nn.Sequential(
+            nn.Conv2d(64, 3, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.Tanh()
+        )
 
     def forward(self, input: Tensor) -> Tensor:
         out1 = self.conv1(input)
@@ -155,7 +147,7 @@ class Generator(nn.Module):
 class ResidualDenseBlock(nn.Module):
     r"""The residual block structure of traditional SRGAN and Dense model is defined"""
 
-    def __init__(self, in_channels=64, growth_channels=32, scale_ratio=0.2):
+    def __init__(self, in_channels, growth_channels, scale_ratio):
         """
 
         Args:
@@ -185,14 +177,15 @@ class ResidualDenseBlock(nn.Module):
                 nn.init.kaiming_normal_(m.weight)
                 m.weight.data *= 0.1
                 if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
+                    m.bias.data.zero_()
             elif isinstance(m, nn.Linear):
                 nn.init.kaiming_normal_(m.weight)
                 m.weight.data *= 0.1
-                nn.init.constant_(m.bias, 0)
+                if m.bias is not None:
+                    m.bias.data.zero_()
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
+                nn.init.constant_(m.bias.data, 0.0)
 
     def forward(self, input: Tensor) -> Tensor:
         conv1 = self.conv1(input)
@@ -207,13 +200,13 @@ class ResidualDenseBlock(nn.Module):
 class ResidualInResidualDenseBlock(nn.Module):
     r"""The residual block structure of traditional ESRGAN and Dense model is defined"""
 
-    def __init__(self, in_channels=64, growth_channels=32, scale_ratio=0.2):
+    def __init__(self, in_channels, growth_channels, scale_ratio):
         """
 
         Args:
-            in_channels (int): Number of channels in the input image. (Default: 64).
-            growth_channels (int): how many filters to add each layer (`k` in paper). (Default: 32).
-            scale_ratio (float): Residual channel scaling column. (Default: 0.2)
+            in_channels (int): Number of channels in the input image.
+            growth_channels (int): how many filters to add each layer (`k` in paper).
+            scale_ratio (float): Residual channel scaling column.
         """
         super(ResidualInResidualDenseBlock, self).__init__()
         self.RDB1 = ResidualDenseBlock(in_channels, growth_channels, scale_ratio)

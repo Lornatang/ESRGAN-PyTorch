@@ -114,7 +114,7 @@ if args.resume_PSNR:
 
 # We use vgg54 as our feature extraction method by default.
 perception_criterion = PerceptionLoss().to(device)
-# Loss = perceptual_loss + 0.005 * adversarial_loss + 0.01 * l1_loss
+# Loss = perceptual loss + 0.005 * adversarial loss + 0.01 * l1 loss
 content_criterion = nn.L1Loss().to(device)
 adversarial_criterion = nn.BCEWithLogitsLoss().to(device)
 

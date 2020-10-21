@@ -20,7 +20,7 @@ from torchvision.models import vgg19
 
 
 class PerceptionLoss(nn.Module):
-    r""" Where VGG5.4 represents the feature map of 33th layer in pretrained VGG19 model.
+    r""" Where VGG5.4 represents the feature map of 35th layer in pretrained VGG19 model.
     For VGG2.2 use 8th layer.
 
     "ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks" <https://arxiv.org/pdf/1809.00219.pdf>`_

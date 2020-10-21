@@ -117,7 +117,7 @@ class Generator(nn.Module):
         # Next layer after upper sampling
         self.conv3 = nn.Sequential(
             nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.LeakyReLU(negative_slope=0.2, inplace=True),
+            nn.LeakyReLU(negative_slope=0.2, inplace=True)
         )
 
         # Final output layer
@@ -185,14 +185,14 @@ class ResidualInResidualDenseBlock(nn.Module):
             scale_ratio (float): Residual channel scaling column. (Default: 0.2)
         """
         super(ResidualInResidualDenseBlock, self).__init__()
-        self.RBD1 = ResidualDenseBlock(in_channels, growth_channels, scale_ratio)
-        self.RBD2 = ResidualDenseBlock(in_channels, growth_channels, scale_ratio)
-        self.RBD3 = ResidualDenseBlock(in_channels, growth_channels, scale_ratio)
+        self.RDB1 = ResidualDenseBlock(in_channels, growth_channels, scale_ratio)
+        self.RDB2 = ResidualDenseBlock(in_channels, growth_channels, scale_ratio)
+        self.RDB3 = ResidualDenseBlock(in_channels, growth_channels, scale_ratio)
         self.scale_ratio = scale_ratio
 
     def forward(self, input: Tensor) -> Tensor:
-        out = self.RBD1(input)
-        out = self.RBD2(out)
-        out = self.RBD3(out)
+        out = self.RDB1(input)
+        out = self.RDB2(out)
+        out = self.RDB3(out)
 
         return out.mul(self.scale_ratio) + input

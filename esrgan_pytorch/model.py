@@ -188,6 +188,7 @@ class ResidualInResidualDenseBlock(nn.Module):
         self.RDB1 = ResidualDenseBlock(in_channels, growth_channels, scale_ratio)
         self.RDB2 = ResidualDenseBlock(in_channels, growth_channels, scale_ratio)
         self.RDB3 = ResidualDenseBlock(in_channels, growth_channels, scale_ratio)
+
         self.scale_ratio = scale_ratio
 
     def forward(self, input: Tensor) -> Tensor:

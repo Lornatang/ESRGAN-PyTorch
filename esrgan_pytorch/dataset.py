@@ -14,7 +14,6 @@
 import os
 
 import torch.utils.data.dataset
-import torchvision.transforms as transforms
 from PIL import Image
 
 from .utils import img2tensor

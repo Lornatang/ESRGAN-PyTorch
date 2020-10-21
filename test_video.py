@@ -16,7 +16,6 @@ import os
 
 import cv2
 import numpy as np
-import torch.utils.data.distributed
 import torchvision.transforms as transforms
 from PIL import Image
 from tqdm import tqdm

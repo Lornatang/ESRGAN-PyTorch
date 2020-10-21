@@ -17,7 +17,6 @@ import os
 import cv2
 import lpips
 import torch.utils.data
-import torch.utils.data.distributed
 import torchvision.utils as vutils
 from sewar.full_ref import mse
 from sewar.full_ref import msssim
@@ -38,10 +37,10 @@ parser.add_argument("--dataroot", type=str, default="./data",
                     help="Path to datasets. (default:`./data`)")
 parser.add_argument("-j", "--workers", default=4, type=int, metavar="N",
                     help="Number of data loading workers. (default:4)")
-parser.add_argument("--upscale-factor", type=int, default=4, choices=[2, 4],
+parser.add_argument("--upscale-factor", type=int, default=4, choices=[4],
                     help="Low to high resolution scaling factor. (default:4).")
 parser.add_argument("--model-path", default="./weight/ESRGAN_4x.pth", type=str, metavar="PATH",
-                    help="Path to latest checkpoint for model. (default: ``./weights/ESRGAN_4x.pth``).")
+                    help="Path to latest checkpoint for model. (default: ``./weight/ESRGAN_4x.pth``).")
 parser.add_argument("--device", default="0",
                     help="device id i.e. `0` or `0,1` or `cpu`. (default: ``CUDA:0``).")
 

@@ -16,7 +16,6 @@ import time
 
 import cv2
 import lpips
-import torch.utils.data.distributed
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
 from PIL import Image

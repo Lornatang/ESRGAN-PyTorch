@@ -33,9 +33,9 @@ from esrgan_pytorch import cal_niqe
 from esrgan_pytorch import select_device
 
 parser = argparse.ArgumentParser(description="ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.")
-parser.add_argument("--lr", type=str,
+parser.add_argument("--lr", type=str, required=True,
                     help="Test low resolution image name.")
-parser.add_argument("--hr", type=str,
+parser.add_argument("--hr", type=str, required=True,
                     help="Raw high resolution image name.")
 parser.add_argument("--upscale-factor", type=int, default=4, choices=[4],
                     help="Low to high resolution scaling factor. (default:4).")

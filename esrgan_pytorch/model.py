@@ -115,8 +115,8 @@ class Generator(nn.Module):
         for _ in range(num_upsample_block):
             upsampling += [
                 nn.Conv2d(64, 256, kernel_size=3, stride=1, padding=1, bias=False),
-                nn.PixelShuffle(upscale_factor=2),
-                nn.PReLU()
+                nn.LeakyReLU(negative_slope=0.2, inplace=True),
+                nn.PixelShuffle(upscale_factor=2)
             ]
         self.upsampling = nn.Sequential(*upsampling)
 

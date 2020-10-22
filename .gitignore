@@ -138,7 +138,7 @@ result
 logs
 benchmark
 
-weight/*.pth
+*.pth
 
 *.mp4
 *.zip

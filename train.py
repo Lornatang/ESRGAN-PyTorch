@@ -51,7 +51,7 @@ parser.add_argument("--psnr-lr", type=float, default=2e-4,
                     help="Learning rate for PSNR model. (default:2e-4)")
 parser.add_argument("--lr", type=float, default=1e-4,
                     help="Learning rate. (default:1e-4)")
-parser.add_argument("--upscale-factor", type=int, default=4, choices=[2, 4],
+parser.add_argument("--upscale-factor", type=int, default=4, choices=[4],
                     help="Low to high resolution scaling factor. (default:4).")
 parser.add_argument("--resume_PSNR", action="store_true",
                     help="Path to latest checkpoint for PSNR model.")
@@ -167,9 +167,9 @@ else:
 
             # The image is saved every 5000 iterations.
             if (iters + 1) % 5000 == 0:
-                vutils.save_image(lr, os.path.join(output_lr_dir, f"RRDBNet_PSNR_{iters + 1}.bmp"), normalize=True)
-                vutils.save_image(hr, os.path.join(output_hr_dir, f"RRDBNet_PSNR_{iters + 1}.bmp"), normalize=True)
-                vutils.save_image(sr, os.path.join(output_sr_dir, f"RRDBNet_PSNR_{iters + 1}.bmp"), normalize=True)
+                vutils.save_image(lr, os.path.join(output_lr_dir, f"RRDBNet_PSNR_{iters + 1}.bmp"))
+                vutils.save_image(hr, os.path.join(output_hr_dir, f"RRDBNet_PSNR_{iters + 1}.bmp"))
+                vutils.save_image(sr, os.path.join(output_sr_dir, f"RRDBNet_PSNR_{iters + 1}.bmp"))
 
         # The model is saved every 1 epoch.
         torch.save({"epoch": epoch + 1,
@@ -280,9 +280,9 @@ for epoch in range(args.start_epoch, epochs):
 
         # The image is saved every 5000 iterations.
         if (iters + 1) % 5000 == 0:
-            vutils.save_image(lr, os.path.join(output_lr_dir, f"ESRGAN_{iters + 1}.bmp"), normalize=True)
-            vutils.save_image(hr, os.path.join(output_hr_dir, f"ESRGAN_{iters + 1}.bmp"), normalize=True)
-            vutils.save_image(sr, os.path.join(output_sr_dir, f"ESRGAN_{iters + 1}.bmp"), normalize=True)
+            vutils.save_image(lr, os.path.join(output_lr_dir, f"ESRGAN_{iters + 1}.bmp"))
+            vutils.save_image(hr, os.path.join(output_hr_dir, f"ESRGAN_{iters + 1}.bmp"))
+            vutils.save_image(sr, os.path.join(output_sr_dir, f"ESRGAN_{iters + 1}.bmp"))
 
     # The model is saved every 1 epoch.
     torch.save({"epoch": epoch + 1,

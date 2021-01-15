@@ -11,92 +11,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import math
-
 import torch
 import torch.nn as nn
-from torch import Tensor
+import torch.nn.functional as F
+from torch.hub import load_state_dict_from_url
 
-__all__ = [
-    "Discriminator", "Generator", "ResidualDenseBlock", "ResidualInResidualDenseBlock"
-]
-
-
-class Discriminator(nn.Module):
-    r"""The main architecture of the discriminator. Similar to VGG structure."""
-
-    def __init__(self):
-        super(Discriminator, self).__init__()
-        self.features = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False),  # input is 3 x 216 x 216
-            nn.LeakyReLU(negative_slope=0.2, inplace=True),
-
-            nn.Conv2d(64, 64, kernel_size=3, stride=2, padding=1, bias=False),  # state size. (64) x 108 x 108
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(negative_slope=0.2, inplace=True),
-
-            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(negative_slope=0.2, inplace=True),
-
-            nn.Conv2d(128, 128, kernel_size=3, stride=2, padding=1, bias=False),  # state size. 128 x 54 x 54
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(negative_slope=0.2, inplace=True),
-
-            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(256),
-            nn.LeakyReLU(negative_slope=0.2, inplace=True),
-
-            nn.Conv2d(256, 256, kernel_size=3, stride=2, padding=1, bias=False),  # state size. 256 x 27 x 27
-            nn.BatchNorm2d(256),
-            nn.LeakyReLU(negative_slope=0.2, inplace=True),
-
-            nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(512),
-            nn.LeakyReLU(negative_slope=0.2, inplace=True),
-
-            nn.Conv2d(512, 512, kernel_size=3, stride=2, padding=1, bias=False),  # state size. 512 x 14 x 14
-            nn.BatchNorm2d(512),
-            nn.LeakyReLU(negative_slope=0.2, inplace=True)
-        )
-
-        self.avgpool = nn.AdaptiveAvgPool2d((14, 14))
-
-        self.fc = nn.Sequential(
-            nn.Linear(512 * 14 * 14, 1024),
-            nn.LeakyReLU(negative_slope=0.2, inplace=True),
-            nn.Linear(1024, 1),
-            nn.Sigmoid()
-        )
-
-    def forward(self, input: Tensor) -> Tensor:
-        out = self.features(input)
-        out = self.avgpool(out)
-        out = torch.flatten(out, 1)
-        out = self.fc(out)
-
-        return out
+model_urls = {
+    "esrgan_4x4_16": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/GAN_srgan_4x4_16.pth",
+    "esrgan_4x4_23": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/GAN_srgan_4x4_23.pth"
+}
 
 
 class Generator(nn.Module):
-    def __init__(self, upscale_factor, num_rrdb_blocks=4):
+    def __init__(self, num_rrdb_blocks=16):
         r""" This is an esrgan model defined by the author himself.
 
         We use two settings for our generator – one of them contains 8 residual blocks, with a capacity similar
-        to that of SRGAN and the other is a deeper model with 8/16/23 RRDB blocks.
+        to that of SRGAN and the other is a deeper model with 16/23 RRDB blocks.
 
         Args:
-            upscale_factor (int): Image magnification factor. (Default: 4).
-            num_rrdb_blocks (int): How many residual in residual blocks are combined. (Default: 4).
+            num_rrdb_blocks (int): How many residual in residual blocks are combined. (Default: 16).
 
         Notes:
-            Use `num_rrdb_blocks` is 4 for RTX 2080.
-            Use `num_rrdb_blocks` is 8 for RTX 2080Ti.
-            Use `num_rrdb_blocks` is 16 for TITAN RTX.
+            Use `num_rrdb_blocks` is 16 for TITAN 2080Ti.
             Use `num_rrdb_blocks` is 23 for Tesla A100.
         """
         super(Generator, self).__init__()
-        num_upsample_block = int(math.log(upscale_factor, 2))
 
         # First layer
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
@@ -111,14 +51,8 @@ class Generator(nn.Module):
         self.conv2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=False)
 
         # Upsampling layers
-        upsampling = []
-        for _ in range(num_upsample_block):
-            upsampling += [
-                nn.Conv2d(64, 256, kernel_size=3, stride=1, padding=1, bias=False),
-                nn.LeakyReLU(negative_slope=0.2, inplace=True),
-                nn.PixelShuffle(upscale_factor=2)
-            ]
-        self.upsampling = nn.Sequential(*upsampling)
+        self.up1 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=False)
+        self.up2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=False)
 
         # Next layer after upper sampling
         self.conv3 = nn.Sequential(
@@ -127,17 +61,15 @@ class Generator(nn.Module):
         )
 
         # Final output layer
-        self.conv4 = nn.Sequential(
-            nn.Conv2d(64, 3, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.Tanh()
-        )
+        self.conv4 = nn.Conv2d(64, 3, kernel_size=3, stride=1, padding=1, bias=False)
 
-    def forward(self, input: Tensor) -> Tensor:
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
         out1 = self.conv1(input)
-        out = self.Trunk_RRDB(out1)
-        out2 = self.conv2(out)
+        trunk = self.Trunk_RRDB(out1)
+        out2 = self.conv2(trunk)
         out = torch.add(out1, out2)
-        out = self.upsampling(out)
+        out = F.leaky_relu(self.up1(F.interpolate(out, scale_factor=2, mode="nearest")), 0.2, True)
+        out = F.leaky_relu(self.up2(F.interpolate(out, scale_factor=2, mode="nearest")), 0.2, True)
         out = self.conv3(out)
         out = self.conv4(out)
 
@@ -147,7 +79,7 @@ class Generator(nn.Module):
 class ResidualDenseBlock(nn.Module):
     r"""The residual block structure of traditional SRGAN and Dense model is defined"""
 
-    def __init__(self, in_channels, growth_channels, scale_ratio):
+    def __init__(self, in_channels: int = 64, growth_channels: int = 32, scale_ratio: float = 0.2):
         """
 
         Args:
@@ -158,16 +90,20 @@ class ResidualDenseBlock(nn.Module):
         super(ResidualDenseBlock, self).__init__()
         self.conv1 = nn.Sequential(
             nn.Conv2d(in_channels + 0 * growth_channels, growth_channels, 3, 1, 1, bias=False),
-            nn.LeakyReLU(negative_slope=0.2, inplace=True))
+            nn.LeakyReLU(negative_slope=0.2, inplace=True)
+        )
         self.conv2 = nn.Sequential(
             nn.Conv2d(in_channels + 1 * growth_channels, growth_channels, 3, 1, 1, bias=False),
-            nn.LeakyReLU(negative_slope=0.2, inplace=True))
+            nn.LeakyReLU(negative_slope=0.2, inplace=True)
+        )
         self.conv3 = nn.Sequential(
             nn.Conv2d(in_channels + 2 * growth_channels, growth_channels, 3, 1, 1, bias=False),
-            nn.LeakyReLU(negative_slope=0.2, inplace=True))
+            nn.LeakyReLU(negative_slope=0.2, inplace=True)
+        )
         self.conv4 = nn.Sequential(
             nn.Conv2d(in_channels + 3 * growth_channels, growth_channels, 3, 1, 1, bias=False),
-            nn.LeakyReLU(negative_slope=0.2, inplace=True))
+            nn.LeakyReLU(negative_slope=0.2, inplace=True)
+        )
         self.conv5 = nn.Conv2d(in_channels + 4 * growth_channels, in_channels, 3, 1, 1, bias=False)
 
         self.scale_ratio = scale_ratio
@@ -187,7 +123,7 @@ class ResidualDenseBlock(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias.data, 0.0)
 
-    def forward(self, input: Tensor) -> Tensor:
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
         conv1 = self.conv1(input)
         conv2 = self.conv2(torch.cat((input, conv1), 1))
         conv3 = self.conv3(torch.cat((input, conv1, conv2), 1))
@@ -200,7 +136,7 @@ class ResidualDenseBlock(nn.Module):
 class ResidualInResidualDenseBlock(nn.Module):
     r"""The residual block structure of traditional ESRGAN and Dense model is defined"""
 
-    def __init__(self, in_channels, growth_channels, scale_ratio):
+    def __init__(self, in_channels: int = 64, growth_channels: int = 32, scale_ratio: float = 0.2):
         """
 
         Args:
@@ -215,9 +151,39 @@ class ResidualInResidualDenseBlock(nn.Module):
 
         self.scale_ratio = scale_ratio
 
-    def forward(self, input: Tensor) -> Tensor:
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
         out = self.RDB1(input)
         out = self.RDB2(out)
         out = self.RDB3(out)
 
         return out.mul(self.scale_ratio) + input
+
+
+def _esrgan(arch, num_residual_block, pretrained, progress):
+    model = Generator(num_residual_block)
+    if pretrained:
+        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
+        model.load_state_dict(state_dict)
+    return model
+
+
+def srgan_4x4_16(pretrained: bool = False, progress: bool = True) -> Generator:
+    r"""GAN model architecture from the
+    `"One weird trick..." <https://arxiv.org/abs/1809.00219>`_ paper.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    return _esrgan("esrgan_4x4_16", 16, pretrained, progress)
+
+
+def srgan_4x4_23(pretrained: bool = False, progress: bool = True) -> Generator:
+    r"""GAN model architecture from the
+    `"One weird trick..." <https://arxiv.org/abs/1809.00219>`_ paper.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    return _esrgan("esrgan_4x4_23", 23, pretrained, progress)

@@ -17,8 +17,8 @@ import torch.nn.functional as F
 from torch.hub import load_state_dict_from_url
 
 model_urls = {
-    "esrgan_4x4_16": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/GAN_srgan_4x4_16.pth",
-    "esrgan_4x4_23": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/GAN_srgan_4x4_23.pth"
+    "esrgan_4x4_16": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/GAN_esrgan_4x4_16.pth",
+    "esrgan_4x4_23": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/GAN_esrgan_4x4_23.pth"
 }
 
 
@@ -167,7 +167,7 @@ def _esrgan(arch, num_residual_block, pretrained, progress):
     return model
 
 
-def srgan_4x4_16(pretrained: bool = False, progress: bool = True) -> Generator:
+def esrgan_4x4_16(pretrained: bool = False, progress: bool = True) -> Generator:
     r"""GAN model architecture from the
     `"One weird trick..." <https://arxiv.org/abs/1809.00219>`_ paper.
 
@@ -178,7 +178,7 @@ def srgan_4x4_16(pretrained: bool = False, progress: bool = True) -> Generator:
     return _esrgan("esrgan_4x4_16", 16, pretrained, progress)
 
 
-def srgan_4x4_23(pretrained: bool = False, progress: bool = True) -> Generator:
+def esrgan_4x4_23(pretrained: bool = False, progress: bool = True) -> Generator:
     r"""GAN model architecture from the
     `"One weird trick..." <https://arxiv.org/abs/1809.00219>`_ paper.
 

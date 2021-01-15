@@ -69,7 +69,7 @@ def image_quality_evaluation(sr_filename: str, hr_filename: str, device: torch.d
     return mse_value, rmse_value, psnr_value, ssim_value, msssim_value, niqe_value, sam_value, vifp_value, lpips_value
 
 
-def test_psnr(model: nn.Module, criterion: nn.MSELoss, dataloader: torch.utils.data.DataLoader,
+def test_psnr(model: nn.Module, criterion: nn.L1Loss, dataloader: torch.utils.data.DataLoader,
               device: torch.device = "cpu"):
     # switch eval mode.
     model.eval()

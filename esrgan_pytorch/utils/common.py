@@ -20,7 +20,7 @@ import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
 
-import srgan_pytorch.models as models
+import esrgan_pytorch.models as models
 from .device import select_device
 
 __all__ = [

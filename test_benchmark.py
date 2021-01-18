@@ -12,140 +12,64 @@
 # limitations under the License.
 # ==============================================================================
 import argparse
-import os
+import logging
 
-import cv2
-import lpips
-import torch.utils.data
-import torchvision.utils as vutils
-from sewar.full_ref import mse
-from sewar.full_ref import msssim
-from sewar.full_ref import psnr
-from sewar.full_ref import rmse
-from sewar.full_ref import sam
-from sewar.full_ref import ssim
-from sewar.full_ref import vifp
-from tqdm import tqdm
+import esrgan_pytorch.models as models
+from esrgan_pytorch.utils.common import create_folder
+from tester import Test
 
-from esrgan_pytorch import DatasetFromFolder
-from esrgan_pytorch import Generator
-from esrgan_pytorch import cal_niqe
-from esrgan_pytorch import select_device
+model_names = sorted(name for name in models.__dict__
+                     if name.islower() and not name.startswith("__")
+                     and callable(models.__dict__[name]))
 
-parser = argparse.ArgumentParser(description="ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.")
-parser.add_argument("--dataroot", type=str, default="./data",
-                    help="Path to datasets. (default:`./data`)")
-parser.add_argument("-j", "--workers", default=4, type=int, metavar="N",
-                    help="Number of data loading workers. (default:4)")
-parser.add_argument("--upscale-factor", type=int, default=4, choices=[4],
-                    help="Low to high resolution scaling factor. (default:4).")
-parser.add_argument("--model-path", default="./weight/ESRGAN_4x.pth", type=str, metavar="PATH",
-                    help="Path to latest checkpoint for model. (default: ``./weight/ESRGAN_4x.pth``).")
-parser.add_argument("--device", default="0",
-                    help="device id i.e. `0` or `0,1` or `cpu`. (default: ``CUDA:0``).")
+logger = logging.getLogger(__name__)
+logging.basicConfig(format="[ %(levelname)s ] %(message)s", level=logging.INFO)
 
-args = parser.parse_args()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.")
+    parser.add_argument("data", metavar="DIR",
+                        help="path to dataset")
+    parser.add_argument("-a", "--arch", metavar="ARCH", default="esrgan_4x4_16",
+                        choices=model_names,
+                        help="model architecture: " +
+                             " | ".join(model_names) +
+                             " (default: esrgan_4x4_16)")
+    parser.add_argument("-j", "--workers", default=8, type=int, metavar="N",
+                        help="Number of data loading workers. (default:8)")
+    parser.add_argument("-b", "--batch-size", default=16, type=int, metavar="N",
+                        help="mini-batch size (default: 16), this is the total "
+                             "batch size of all GPUs on the current node when "
+                             "using Data Parallel or Distributed Data Parallel.")
+    parser.add_argument("--upscale-factor", type=int, default=4, choices=[4],
+                        help="Low to high resolution scaling factor. (default:4).")
+    parser.add_argument("--model-path", default="", type=str, metavar="PATH",
+                        help="Path to latest checkpoint for model. (default: ````).")
+    parser.add_argument("--pretrained", dest="pretrained", action="store_true",
+                        help="Use pre-trained model.")
+    parser.add_argument("--detail", dest="detail", action="store_true",
+                        help="Evaluate all indicators. It is very slow.")
+    parser.add_argument("--outf", default="test", type=str, metavar="PATH",
+                        help="The location of the image in the evaluation process. (default: ``test``).")
+    parser.add_argument("--device", default="0",
+                        help="device id i.e. `0` or `0,1` or `cpu`. (default: ``0``).")
 
-try:
-    os.makedirs("benchmark")
-except OSError:
-    pass
+    args = parser.parse_args()
 
-# Selection of appropriate treatment equipment
-device = select_device(args.device, batch_size=1)
+    print("##################################################\n")
+    print("Run Testing Engine.\n")
+    print(args)
 
-dataset = DatasetFromFolder(input_dir=f"{args.dataroot}/{args.upscale_factor}x/test/input",
-                            target_dir=f"{args.dataroot}/{args.upscale_factor}x/test/target")
+    create_folder(args.outf)
 
-dataloader = torch.utils.data.DataLoader(dataset,
-                                         batch_size=1,
-                                         pin_memory=True,
-                                         num_workers=int(args.workers))
+    logger.info("TestEngine:")
+    print("\tAPI version .......... 0.1.1")
+    print("\tBuild ................ 2020.11.30-1116-0c5adc7e")
 
-# Construct SRGAN model.
-model = Generator(upscale_factor=args.upscale_factor).to(device)
-model.load_state_dict(torch.load(args.model_path, map_location=device))
+    logger.info("Creating Testing Engine")
+    test = Test(args)
 
-# Set model eval mode
-model.eval()
+    logger.info("Staring testing model")
+    test.run()
+    print("##################################################\n")
 
-# Reference sources from `https://github.com/richzhang/PerceptualSimilarity`
-lpips_loss = lpips.LPIPS(net="vgg").to(device)
-
-# Evaluate algorithm performance
-total_mse_value = 0.0
-total_rmse_value = 0.0
-total_psnr_value = 0.0
-total_ssim_value = 0.0
-total_ms_ssim_value = 0.0
-total_niqe_value = 0.0
-total_sam_value = 0.0
-total_vif_value = 0.0
-total_lpips_value = 0.0
-
-# Start evaluate model performance
-progress_bar = tqdm(enumerate(dataloader), total=len(dataloader))
-for iteration, (input, target) in progress_bar:
-    # Set model gradients to zero
-    lr = input.to(device)
-    hr = target.to(device)
-
-    with torch.no_grad():
-        sr = model(lr)
-
-    vutils.save_image(lr, f"./benchmark/lr_{iteration}.bmp")
-    vutils.save_image(sr, f"./benchmark/sr_{iteration}.bmp")
-    vutils.save_image(hr, f"./benchmark/hr_{iteration}.bmp")
-
-    # Evaluate performance
-    src_img = cv2.imread(f"./benchmark/sr_{iteration}.bmp")
-    dst_img = cv2.imread(f"./benchmark/hr_{iteration}.bmp")
-
-    mse_value = mse(src_img, dst_img)
-    rmse_value = rmse(src_img, dst_img)
-    psnr_value = psnr(src_img, dst_img)
-    ssim_value = ssim(src_img, dst_img)
-    ms_ssim_value = msssim(src_img, dst_img)
-    niqe_value = cal_niqe(f"./benchmark/sr_{iteration}.bmp")
-    sam_value = sam(src_img, dst_img)
-    vif_value = vifp(src_img, dst_img)
-    lpips_value = lpips_loss(sr, hr)
-
-    total_mse_value += mse_value
-    total_rmse_value += rmse_value
-    total_psnr_value += psnr_value
-    total_ssim_value += ssim_value[0]
-    total_ms_ssim_value += ms_ssim_value.real
-    total_niqe_value += niqe_value
-    total_sam_value += sam_value
-    total_vif_value += vif_value
-    total_lpips_value += lpips_value.item()
-
-    progress_bar.set_description(f"[{iteration + 1}/{len(dataloader)}] "
-                                 f"PSNR: {psnr_value:.2f}dB "
-                                 f"SSIM: {ssim_value[0]:.4f} "
-                                 f"LPIPS: {lpips_value.item():.4f}")
-
-avg_mse_value = total_mse_value / len(dataloader)
-avg_rmse_value = total_rmse_value / len(dataloader)
-avg_psnr_value = total_psnr_value / len(dataloader)
-avg_ssim_value = total_ssim_value / len(dataloader)
-avg_ms_ssim_value = total_ms_ssim_value / len(dataloader)
-avg_niqe_value = total_niqe_value / len(dataloader)
-avg_sam_value = total_sam_value / len(dataloader)
-avg_vif_value = total_vif_value / len(dataloader)
-avg_lpips_value = total_lpips_value / len(dataloader)
-
-print("\n")
-print("====================== Performance summary ======================")
-print(f"Avg MSE: {avg_mse_value:.2f}\n"
-      f"Avg RMSE: {avg_rmse_value:.2f}\n"
-      f"Avg PSNR: {avg_psnr_value:.2f}\n"
-      f"Avg SSIM: {avg_ssim_value:.4f}\n"
-      f"Avg MS-SSIM: {avg_ms_ssim_value:.4f}\n"
-      f"Avg NIQE: {avg_niqe_value:.2f}\n"
-      f"Avg SAM: {avg_sam_value:.4f}\n"
-      f"Avg VIF: {avg_vif_value:.4f}\n"
-      f"Avg LPIPS: {avg_lpips_value:.4f}")
-print("============================== End ==============================")
-print("\n")
+    logger.info("Test dataset performance evaluation completed successfully.\n")

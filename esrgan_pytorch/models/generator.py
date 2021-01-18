@@ -39,29 +39,29 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
 
         # First layer
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1)
 
         # 16/23 ResidualInResidualDenseBlock layer
         rrdb_blocks = []
         for _ in range(num_rrdb_blocks):
-            rrdb_blocks += [ResidualInResidualDenseBlock(in_channels=64, growth_channels=32, scale_ratio=0.2)]
+            rrdb_blocks += [ResidualInResidualDenseBlock(channels=64, growth_channels=32, scale_ratio=0.2)]
         self.Trunk_RRDB = nn.Sequential(*rrdb_blocks)
 
         # Second conv layer post residual blocks
-        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
 
         # Upsampling layers
-        self.up1 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=False)
-        self.up2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=False)
+        self.up1 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
+        self.up2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
 
         # Next layer after upper sampling
         self.conv3 = nn.Sequential(
-            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(negative_slope=0.2, inplace=True)
         )
 
         # Final output layer
-        self.conv4 = nn.Conv2d(64, 3, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv4 = nn.Conv2d(64, 3, kernel_size=3, stride=1, padding=1)
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         out1 = self.conv1(input)
@@ -79,32 +79,32 @@ class Generator(nn.Module):
 class ResidualDenseBlock(nn.Module):
     r"""The residual block structure of traditional SRGAN and Dense model is defined"""
 
-    def __init__(self, in_channels: int = 64, growth_channels: int = 32, scale_ratio: float = 0.2):
+    def __init__(self, channels: int = 64, growth_channels: int = 32, scale_ratio: float = 0.2):
         """
 
         Args:
-            in_channels (int): Number of channels in the input image. (Default: 64).
+            channels (int): Number of channels in the input image. (Default: 64).
             growth_channels (int): how many filters to add each layer (`k` in paper). (Default: 32).
             scale_ratio (float): Residual channel scaling column. (Default: 0.2)
         """
         super(ResidualDenseBlock, self).__init__()
         self.conv1 = nn.Sequential(
-            nn.Conv2d(in_channels + 0 * growth_channels, growth_channels, 3, 1, 1, bias=False),
+            nn.Conv2d(channels + 0 * growth_channels, growth_channels, 3, 1, 1),
             nn.LeakyReLU(negative_slope=0.2, inplace=True)
         )
         self.conv2 = nn.Sequential(
-            nn.Conv2d(in_channels + 1 * growth_channels, growth_channels, 3, 1, 1, bias=False),
+            nn.Conv2d(channels + 1 * growth_channels, growth_channels, 3, 1, 1),
             nn.LeakyReLU(negative_slope=0.2, inplace=True)
         )
         self.conv3 = nn.Sequential(
-            nn.Conv2d(in_channels + 2 * growth_channels, growth_channels, 3, 1, 1, bias=False),
+            nn.Conv2d(channels + 2 * growth_channels, growth_channels, 3, 1, 1),
             nn.LeakyReLU(negative_slope=0.2, inplace=True)
         )
         self.conv4 = nn.Sequential(
-            nn.Conv2d(in_channels + 3 * growth_channels, growth_channels, 3, 1, 1, bias=False),
+            nn.Conv2d(channels + 3 * growth_channels, growth_channels, 3, 1, 1),
             nn.LeakyReLU(negative_slope=0.2, inplace=True)
         )
-        self.conv5 = nn.Conv2d(in_channels + 4 * growth_channels, in_channels, 3, 1, 1, bias=False)
+        self.conv5 = nn.Conv2d(channels + 4 * growth_channels, channels, 3, 1, 1)
 
         self.scale_ratio = scale_ratio
 
@@ -136,18 +136,18 @@ class ResidualDenseBlock(nn.Module):
 class ResidualInResidualDenseBlock(nn.Module):
     r"""The residual block structure of traditional ESRGAN and Dense model is defined"""
 
-    def __init__(self, in_channels: int = 64, growth_channels: int = 32, scale_ratio: float = 0.2):
+    def __init__(self, channels: int = 64, growth_channels: int = 32, scale_ratio: float = 0.2):
         """
 
         Args:
-            in_channels (int): Number of channels in the input image.
-            growth_channels (int): how many filters to add each layer (`k` in paper).
-            scale_ratio (float): Residual channel scaling column.
+            channels (int): Number of channels in the input image. (Default: 64).
+            growth_channels (int): how many filters to add each layer (`k` in paper). (Default: 32).
+            scale_ratio (float): Residual channel scaling column. (Default: 0.2)
         """
         super(ResidualInResidualDenseBlock, self).__init__()
-        self.RDB1 = ResidualDenseBlock(in_channels, growth_channels, scale_ratio)
-        self.RDB2 = ResidualDenseBlock(in_channels, growth_channels, scale_ratio)
-        self.RDB3 = ResidualDenseBlock(in_channels, growth_channels, scale_ratio)
+        self.RDB1 = ResidualDenseBlock(channels, growth_channels, scale_ratio)
+        self.RDB2 = ResidualDenseBlock(channels, growth_channels, scale_ratio)
+        self.RDB3 = ResidualDenseBlock(channels, growth_channels, scale_ratio)
 
         self.scale_ratio = scale_ratio
 

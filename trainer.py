@@ -47,6 +47,7 @@ def train_psnr(epoch: int,
                model: nn.Module,
                criterion: nn.L1Loss,
                optimizer: torch.optim.Adam,
+               scheduler: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts,
                device: torch.device):
     # switch train mode.
     model.train()
@@ -56,13 +57,15 @@ def train_psnr(epoch: int,
         lr = data[0].to(device)
         hr = data[1].to(device)
 
+        # Set discriminator gradients to zero.
+        optimizer.zero_grad()
+
         # Generating fake high resolution images from real low resolution images.
         sr = model(lr)
         # The MSE Loss of the generated fake high-resolution image and real high-resolution image is calculated.
         loss = criterion(sr, hr)
 
         # compute gradient and do Adam step
-        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
@@ -79,6 +82,8 @@ def train_psnr(epoch: int,
 
         if iters == int(total_iters):  # If the iteration is reached, exit.
             break
+
+    scheduler.step()
 
 
 def train_gan(epoch: int,
@@ -260,6 +265,8 @@ class Trainer(object):
         self.adversarial_criterion = nn.BCEWithLogitsLoss().to(self.device)
         # LPIPS Evaluating.
         self.lpips_criterion = lpips.LPIPS(net="vgg", verbose=False).to(self.device)
+        # PSNR Evaluating
+        self.psnr_criterion = nn.MSELoss().to(self.device)
         logger.info(f"Loss function:\n"
                     f"\tPerceptual loss is VGGLoss\n"
                     f"\tContent loss is L1Loss\n"
@@ -296,12 +303,13 @@ class Trainer(object):
                        model=self.generator,
                        criterion=self.content_criterion,
                        optimizer=self.psnr_optimizer,
+                       scheduler=self.psnr_scheduler,
                        device=self.device)
 
             # every 10 epoch test.
             if (psnr_epoch + 1) % 10 == 0:
                 # Test for every epoch.
-                psnr = test_psnr(self.generator, self.content_criterion, self.test_dataloader, self.device)
+                psnr = test_psnr(self.generator, self.psnr_criterion, self.test_dataloader, self.device)
                 iters = (psnr_epoch + 1) * len(self.train_dataloader)
 
                 # remember best psnr and save checkpoint

@@ -29,11 +29,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.")
     parser.add_argument("--file", type=str, required=True,
                         help="Test low resolution video name.")
-    parser.add_argument("-a", "--arch", metavar="ARCH", default="esrgan_4x4_16",
+    parser.add_argument("-a", "--arch", metavar="ARCH", default="esrgan",
                         choices=model_names,
                         help="model architecture: " +
                              " | ".join(model_names) +
-                             " (default: esrgan_4x4_16)")
+                             " (default: esrgan)")
     parser.add_argument("--upscale-factor", type=int, default=4, choices=[4],
                         help="Low to high resolution scaling factor. (default:4).")
     parser.add_argument("--model-path", default="", type=str, metavar="PATH",

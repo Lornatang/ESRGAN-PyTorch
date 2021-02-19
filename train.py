@@ -29,11 +29,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.")
     parser.add_argument("data", metavar="DIR",
                         help="path to dataset")
-    parser.add_argument("-a", "--arch", metavar="ARCH", default="esrgan_4x4_16",
+    parser.add_argument("-a", "--arch", metavar="ARCH", default="esrgan",
                         choices=model_names,
                         help="model architecture: " +
                              " | ".join(model_names) +
-                             " (default: esrgan_4x4_16)")
+                             " (default: esrgan)")
     parser.add_argument("-j", "--workers", default=8, type=int, metavar="N",
                         help="Number of data loading workers. (default:8)")
     parser.add_argument("--start-psnr-iter", default=0, type=int, metavar="N",

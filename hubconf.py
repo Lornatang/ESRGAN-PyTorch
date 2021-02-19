@@ -15,41 +15,31 @@
 """File for accessing GAN via PyTorch Hub https://pytorch.org/hub/
 Usage:
     import torch
-    model = torch.hub.load("Lornatang/ESRGAN-PyTorch", num_residual_block=16)
+    model = torch.hub.load("Lornatang/ESRGAN-PyTorch", 16, pretrained=True, progress=True, verbose=False)
 """
 import torch
+from esrgan_pytorch import Generator
 from torch.hub import load_state_dict_from_url
 
-from esrgan_pytorch import Generator
-
 model_urls = {
-    "esrgan_4x4_16": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/GAN_4x4_esrgan_16.pth",
-    "esrgan_4x4_23": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/GAN_4x4_esrgan_23.pth",
+    "RRDBNet": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/RRDBNet_4x4_16_DF2K-e31a1b2e.pth",
+    "ESRGAN": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/ESRGAN_4x4_16_DF2K-57e43f2f.pth"
 }
 
 dependencies = ["torch"]
 
 
-def create(arch, num_rrdb_blocks, pretrained, progress):
-    """ Creates a specified GAN model
-
-    Args:
-        arch (str): Arch name of model.
-        num_rrdb_blocks (int): How many layers of RRDB stack.
-        pretrained (bool): Load pretrained weights into the model.
-        progress (bool): Show progress bar when downloading weights.
-
-    Returns:
-        PyTorch model.
-    """
-    model = Generator(num_rrdb_blocks)
+def create(arch, num_residual_block, pretrained, progress):
+    model = Generator(num_residual_block)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress, map_location=torch.device("cpu"))
+        state_dict = load_state_dict_from_url(model_urls[arch],
+                                              progress=progress,
+                                              map_location=torch.device("cpu"))
         model.load_state_dict(state_dict)
     return model
 
 
-def esrgan_4x4_16(pretrained: bool = False, progress: bool = True) -> Generator:
+def rrdbnet(pretrained: bool = False, progress: bool = True) -> Generator:
     r"""GAN model architecture from the
     `"One weird trick..." <https://arxiv.org/abs/1809.00219>`_ paper.
 
@@ -57,10 +47,10 @@ def esrgan_4x4_16(pretrained: bool = False, progress: bool = True) -> Generator:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return create("esrgan_4x4_16", 16, pretrained, progress)
+    return create("RRDBNet", 16, pretrained, progress)
 
 
-def esrgan_4x4_23(pretrained: bool = False, progress: bool = True) -> Generator:
+def esrgan(pretrained: bool = False, progress: bool = True) -> Generator:
     r"""GAN model architecture from the
     `"One weird trick..." <https://arxiv.org/abs/1809.00219>`_ paper.
 
@@ -68,4 +58,4 @@ def esrgan_4x4_23(pretrained: bool = False, progress: bool = True) -> Generator:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return create("esrgan_4x4_23", 23, pretrained, progress)
+    return create("ESRGAN", 16, pretrained, progress)

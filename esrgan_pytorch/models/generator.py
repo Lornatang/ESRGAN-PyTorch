@@ -17,8 +17,8 @@ import torch.nn.functional as F
 from torch.hub import load_state_dict_from_url
 
 model_urls = {
-    "esrgan_4x4_16": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/GAN_esrgan_4x4_16.pth",
-    "esrgan_4x4_23": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/GAN_esrgan_4x4_23.pth"
+    "RRDBNet": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/RRDBNet_4x4_16_DF2K-e31a1b2e.pth",
+    "ESRGAN": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/ESRGAN_4x4_16_DF2K-57e43f2f.pth"
 }
 
 
@@ -44,7 +44,7 @@ class Generator(nn.Module):
         # 16/23 ResidualInResidualDenseBlock layer
         rrdb_blocks = []
         for _ in range(num_rrdb_blocks):
-            rrdb_blocks += [ResidualInResidualDenseBlock(channels=64, growth_channels=32, scale_ratio=0.2)]
+            rrdb_blocks += [ResidualInResidualDenseBlock(64, 32, 0.2)]
         self.Trunk_RRDB = nn.Sequential(*rrdb_blocks)
 
         # Second conv layer post residual blocks
@@ -89,22 +89,22 @@ class ResidualDenseBlock(nn.Module):
         """
         super(ResidualDenseBlock, self).__init__()
         self.conv1 = nn.Sequential(
-            nn.Conv2d(channels + 0 * growth_channels, growth_channels, 3, 1, 1),
+            nn.Conv2d(channels + 0 * growth_channels, growth_channels, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(negative_slope=0.2, inplace=True)
         )
         self.conv2 = nn.Sequential(
-            nn.Conv2d(channels + 1 * growth_channels, growth_channels, 3, 1, 1),
+            nn.Conv2d(channels + 1 * growth_channels, growth_channels, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(negative_slope=0.2, inplace=True)
         )
         self.conv3 = nn.Sequential(
-            nn.Conv2d(channels + 2 * growth_channels, growth_channels, 3, 1, 1),
+            nn.Conv2d(channels + 2 * growth_channels, growth_channels, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(negative_slope=0.2, inplace=True)
         )
         self.conv4 = nn.Sequential(
-            nn.Conv2d(channels + 3 * growth_channels, growth_channels, 3, 1, 1),
+            nn.Conv2d(channels + 3 * growth_channels, growth_channels, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(negative_slope=0.2, inplace=True)
         )
-        self.conv5 = nn.Conv2d(channels + 4 * growth_channels, channels, 3, 1, 1)
+        self.conv5 = nn.Conv2d(channels + 4 * growth_channels, channels, kernel_size=3, stride=1, padding=1)
 
         self.scale_ratio = scale_ratio
 
@@ -162,12 +162,14 @@ class ResidualInResidualDenseBlock(nn.Module):
 def _esrgan(arch, num_residual_block, pretrained, progress):
     model = Generator(num_residual_block)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
+        state_dict = load_state_dict_from_url(model_urls[arch],
+                                              progress=progress,
+                                              map_location=torch.device("cpu"))
         model.load_state_dict(state_dict)
     return model
 
 
-def esrgan_4x4_16(pretrained: bool = False, progress: bool = True) -> Generator:
+def rrdbnet(pretrained: bool = False, progress: bool = True) -> Generator:
     r"""GAN model architecture from the
     `"One weird trick..." <https://arxiv.org/abs/1809.00219>`_ paper.
 
@@ -175,10 +177,10 @@ def esrgan_4x4_16(pretrained: bool = False, progress: bool = True) -> Generator:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _esrgan("esrgan_4x4_16", 16, pretrained, progress)
+    return _esrgan("RRDBNet", 16, pretrained, progress)
 
 
-def esrgan_4x4_23(pretrained: bool = False, progress: bool = True) -> Generator:
+def esrgan(pretrained: bool = False, progress: bool = True) -> Generator:
     r"""GAN model architecture from the
     `"One weird trick..." <https://arxiv.org/abs/1809.00219>`_ paper.
 
@@ -186,4 +188,4 @@ def esrgan_4x4_23(pretrained: bool = False, progress: bool = True) -> Generator:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _esrgan("esrgan_4x4_23", 23, pretrained, progress)
+    return _esrgan("ESRGAN", 16, pretrained, progress)

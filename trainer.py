@@ -29,8 +29,9 @@ from esrgan_pytorch.loss import VGGLoss
 from esrgan_pytorch.models.discriminator import discriminator
 from esrgan_pytorch.utils.common import init_torch_seeds
 from esrgan_pytorch.utils.common import save_checkpoint
+from esrgan_pytorch.utils.common import weights_init
 from esrgan_pytorch.utils.device import select_device
-from esrgan_pytorch.utils.estimate import test_lpips
+from esrgan_pytorch.utils.estimate import test_gan
 from esrgan_pytorch.utils.estimate import test_psnr
 
 model_names = sorted(name for name in models.__dict__
@@ -45,7 +46,7 @@ def train_psnr(epoch: int,
                total_iters: int,
                dataloader: torch.utils.data.DataLoader,
                model: nn.Module,
-               criterion: nn.L1Loss,
+               content_criterion: nn.L1Loss,
                optimizer: torch.optim.Adam,
                scheduler: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts,
                device: torch.device):
@@ -57,15 +58,13 @@ def train_psnr(epoch: int,
         lr = data[0].to(device)
         hr = data[1].to(device)
 
-        # Set discriminator gradients to zero.
-        optimizer.zero_grad()
-
         # Generating fake high resolution images from real low resolution images.
         sr = model(lr)
         # The MSE Loss of the generated fake high-resolution image and real high-resolution image is calculated.
-        loss = criterion(sr, hr)
+        loss = content_criterion(sr, hr)
 
         # compute gradient and do Adam step
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
@@ -190,10 +189,12 @@ class Trainer(object):
                                        upscale_factor=args.upscale_factor)
         self.train_dataloader = torch.utils.data.DataLoader(train_dataset,
                                                             batch_size=args.batch_size,
+                                                            shuffle=True,
                                                             pin_memory=True,
                                                             num_workers=int(args.workers))
         self.test_dataloader = torch.utils.data.DataLoader(test_dataset,
                                                            batch_size=args.batch_size,
+                                                           shuffle=True,
                                                            pin_memory=True,
                                                            num_workers=int(args.workers))
 
@@ -219,6 +220,9 @@ class Trainer(object):
         logger.info(f"Creating discriminator model")
         self.discriminator = discriminator().to(self.device)
 
+        self.generator = self.generator.apply(weights_init)
+        self.discriminator = self.discriminator.apply(weights_init)
+
         # Parameters of pre training model.
         self.start_psnr_epoch = math.floor(args.start_psnr_iter / len(self.train_dataloader))
         self.psnr_epochs = math.ceil(args.psnr_iters / len(self.train_dataloader))
@@ -233,9 +237,8 @@ class Trainer(object):
                     f"\tIters is {args.psnr_iters}\n"
                     f"\tEpoch is {self.psnr_epochs}\n"
                     f"\tOptimizer Adam\n"
-                    f"\tLearning rate {args.psnr_lr}\n"
-                    f"\tBetas (0.9, 0.999)\n"
-                    f"\tScheduler CosineAnnealingWarmRestarts.")
+                    f"\tLearning rate {args.lr}\n"
+                    f"\tBetas (0.9, 0.999)")
 
         # Parameters of GAN training model.
         self.start_epoch = math.floor(args.start_iter / len(self.train_dataloader))
@@ -290,7 +293,7 @@ class Trainer(object):
 
         # Writer train PSNR model log.
         if self.args.start_psnr_iter == 0:
-            with open(f"ResNet_{args.arch}.csv", "w+") as f:
+            with open(f"RRDBNet.csv", "w+") as f:
                 writer = csv.writer(f)
                 writer.writerow(["Iter", "PSNR"])
 
@@ -301,38 +304,36 @@ class Trainer(object):
                        total_iters=args.psnr_iters,
                        dataloader=self.train_dataloader,
                        model=self.generator,
-                       criterion=self.content_criterion,
+                       content_criterion=self.content_criterion,
                        optimizer=self.psnr_optimizer,
                        scheduler=self.psnr_scheduler,
                        device=self.device)
 
-            # every 10 epoch test.
-            if (psnr_epoch + 1) % 10 == 0:
-                # Test for every epoch.
-                psnr = test_psnr(self.generator, self.psnr_criterion, self.test_dataloader, self.device)
-                iters = (psnr_epoch + 1) * len(self.train_dataloader)
+            # Test for every epoch.
+            psnr = test_psnr(self.generator, self.psnr_criterion, self.test_dataloader, self.device)
+            iters = (psnr_epoch + 1) * len(self.train_dataloader)
 
-                # remember best psnr and save checkpoint
-                is_best = psnr > best_psnr
-                best_psnr = max(psnr, best_psnr)
+            # remember best psnr and save checkpoint
+            is_best = psnr > best_psnr
+            best_psnr = max(psnr, best_psnr)
 
-                # The model is saved every 1 epoch.
-                save_checkpoint(
-                    {"iter": iters,
-                     "state_dict": self.generator.state_dict(),
-                     "best_psnr": best_psnr,
-                     "optimizer": self.psnr_optimizer.state_dict()
-                     }, is_best,
-                    os.path.join("weights", f"ResNet_{args.arch}_iter_{iters}.pth"),
-                    os.path.join("weights", f"ResNet_{args.arch}.pth"))
+            # The model is saved every 1 epoch.
+            save_checkpoint(
+                {"iter": iters,
+                 "state_dict": self.generator.state_dict(),
+                 "best_psnr": best_psnr,
+                 "optimizer": self.psnr_optimizer.state_dict()
+                 }, is_best,
+                os.path.join("weights", f"RRDBNet_iter_{iters}.pth"),
+                os.path.join("weights", f"RRDBNet.pth"))
 
-                # Writer training log
-                with open(f"ResNet_{args.arch}.csv", "a+") as f:
-                    writer = csv.writer(f)
-                    writer.writerow([iters, psnr])
+            # Writer training log
+            with open(f"RRDBNet.csv", "a+") as f:
+                writer = csv.writer(f)
+                writer.writerow([iters, psnr])
 
         # Load best generator model weight.
-        self.generator.load_state_dict(torch.load(os.path.join("weights", f"ResNet_{args.arch}.pth"), self.device))
+        self.generator.load_state_dict(torch.load(os.path.join("weights", f"RRDBNet.pth"), self.device))
 
         # Loading SRGAN training model.
         if args.netG != "":
@@ -343,9 +344,9 @@ class Trainer(object):
 
         # Writer train GAN model log.
         if args.start_iter == 0:
-            with open(f"GAN_{args.arch}.csv", "w+") as f:
+            with open(f"ESRGAN.csv", "w+") as f:
                 writer = csv.writer(f)
-                writer.writerow(["Iter", "LPIPS"])
+                writer.writerow(["Iter", "PSNR", "LPIPS"])
 
         for epoch in range(self.start_epoch, self.epochs):
             # Train epoch.
@@ -364,24 +365,26 @@ class Trainer(object):
                       generator_scheduler=self.generator_scheduler,
                       device=self.device)
             # Test for every epoch.
-            lpips = test_lpips(self.generator, self.lpips_criterion, self.test_dataloader, self.device)
+            psnr, lpips = test_gan(self.generator, self.lpips_criterion, self.test_dataloader, self.device)
             iters = (epoch + 1) * len(self.train_dataloader)
 
             # remember best psnr and save checkpoint
             is_best = lpips < best_lpips
+            best_psnr = max(psnr, best_psnr)
             best_lpips = min(lpips, best_lpips)
 
             # The model is saved every 1 epoch.
             save_checkpoint(
                 {"iter": iters,
                  "state_dict": self.generator.state_dict(),
+                 "best_psnr": best_psnr,
                  "best_lpips": best_lpips,
                  "optimizer": self.generator_optimizer.state_dict()
                  }, is_best,
-                os.path.join("weights", f"GAN_{args.arch}_iter_{iters}.pth"),
-                os.path.join("weights", f"GAN_{args.arch}.pth"))
+                os.path.join("weights", f"ESRGAN_iter_{iters}.pth"),
+                os.path.join("weights", f"ESRGAN.pth"))
 
             # Writer training log
-            with open(f"GAN_{args.arch}.csv", "a+") as f:
+            with open(f"ESRGAN.csv", "a+") as f:
                 writer = csv.writer(f)
-                writer.writerow([iters, lpips])
+                writer.writerow([iters, psnr, lpips])

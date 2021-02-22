@@ -69,22 +69,23 @@ class Test(object):
 
         # Start evaluate model performance.
         progress_bar = tqdm(enumerate(self.dataloader), total=len(self.dataloader))
-        # Concat image.
-        images = []
 
         for i, (input, bicubic, target) in progress_bar:
             # Set model gradients to zero
             lr = input.to(self.device)
+            bicubic = bicubic.to(self.device)
             hr = target.to(self.device)
 
+            # Super-resolution.
             sr = inference(self.model, lr)
-            vutils.save_image(sr, f"{args.outf}/sr_{i}.bmp")  # Save super resolution image.
-            vutils.save_image(hr, f"{args.outf}/hr_{i}.bmp")  # Save high resolution image.
 
             # Evaluate performance
             if args.detail:
-                value = image_quality_evaluation(f"{self.args.outf}/sr_{i}.bmp", f"{self.args.outf}/hr_{i}.bmp",
-                                                 self.device)
+                vutils.save_image(sr, os.path.join("benchmark", "sr.bmp"))  # Save super resolution image.
+                vutils.save_image(hr, os.path.join("benchmark", "hr.bmp"))  # Save high resolution image.
+                value = image_quality_evaluation(sr_filename=os.path.join("benchmark", "sr.bmp"),
+                                                 hr_filename=os.path.join("benchmark", "hr.bmp"),
+                                                 device=self.device)
 
                 total_mse_value += value[0]
                 total_rmse_value += value[1]
@@ -101,19 +102,14 @@ class Test(object):
             else:
                 mse_value = ((sr - hr) ** 2).data.mean()
                 psnr_value = 10 * math.log10(1. / mse_value)
+                ssim_value = ssim(hr, sr)
                 total_psnr_value += psnr_value
-                progress_bar.set_description(f"[{i + 1}/{len(self.dataloader)}] PSNR: {psnr_value:.2f}dB")
+                total_ssim_value += ssim_value
+                progress_bar.set_description(f"[{i + 1}/{len(self.dataloader)}] "
+                                             f"PSNR: {psnr_value:.2f}dB SSIM: {ssim_value:.4f}.")
 
-            images.extend([hr.data.cpu().squeeze(0), bicubic.squeeze(0), sr.data.cpu().squeeze(0)])
-
-        images = torch.stack(images)
-        images = torch.chunk(images, len(self.dataloader) // 3)
-        bar = tqdm(images, desc="[saving testing results]")
-        index = 1
-        for image in bar:
-            image = vutils.make_grid(image, nrow=3, padding=5)
-            vutils.save_image(image, f"{args.outf}/{index}.bmp", padding=5)
-            index += 1
+            images = torch.cat([bicubic, sr, hr], dim=-1)
+            vutils.save_image(images, os.path.join("benchmark", f"{i + 1}.bmp"), padding=10)
 
         print(f"Performance avg results:\n")
         print(f"indicator Score\n")
@@ -129,7 +125,8 @@ class Test(object):
                   f"VIF       {total_vif_value / len(self.dataloader):.4f}\n"
                   f"LPIPS     {total_lpips_value / len(self.dataloader):.4f}\n")
         else:
-            print(f"PSNR      {total_psnr_value / len(self.dataloader):.2f}\n")
+            print(f"PSNR      {total_psnr_value / len(self.dataloader):.2f}\n"
+                  f"SSIM      {total_ssim_value / len(self.dataloader):.4f}\n")
 
 
 class Estimate(object):
@@ -144,9 +141,8 @@ class Estimate(object):
         lr = process_image(img, self.device)
 
         sr, use_time = inference(self.model, lr, statistical_time=True)
-        vutils.save_image(sr, f"{args.outf}/{args.lr.split('/')[-1]}")  # Save super resolution image.
-
-        value = image_quality_evaluation(f"{args.outf}/{args.lr}", args.hr, self.device)
+        vutils.save_image(sr, os.path.join("test", f"{args.lr.split('/')[-1]}"))  # Save super resolution image.
+        value = image_quality_evaluation(os.path.join("test", f"{args.lr.split('/')[-1]}"), args.hr, self.device)
 
         print(f"Performance avg results:\n")
         print(f"indicator Score\n")
@@ -185,10 +181,16 @@ class Video(object):
         self.sr_size = (self.size[0] * args.upscale_factor, self.size[1] * args.upscale_factor)
         self.pare_size = (self.sr_size[0] * 2 + 10, self.sr_size[1] + 10 + self.sr_size[0] // 5 - 9)
         # Video write loader.
-        self.sr_writer = cv2.VideoWriter(f"video/sr_{args.scale_factor}x_{os.path.basename(args.file)}",
-                                         cv2.VideoWriter_fourcc(*"MPEG"), self.fps, self.sr_size)
-        self.compare_writer = cv2.VideoWriter(f"video/compare_{args.scale_factor}x_{os.path.basename(args.file)}",
-                                              cv2.VideoWriter_fourcc(*"MPEG"), self.fps, self.pare_size)
+        self.sr_writer = cv2.VideoWriter(
+            os.path.join("video", f"sr_{args.upscale_factor}x_{os.path.basename(args.file)}"),
+            cv2.VideoWriter_fourcc(*"MPEG"),
+            self.fps,
+            self.sr_size)
+        self.compare_writer = cv2.VideoWriter(
+            os.path.join("video", f"compare_{args.upscale_factor}x_{os.path.basename(args.file)}"),
+            cv2.VideoWriter_fourcc(*"MPEG"),
+            self.fps,
+            self.pare_size)
 
     def run(self):
         args = self.args
@@ -243,7 +245,7 @@ class Video(object):
 
                 if args.view:
                     # display video
-                    cv2.imshow("LR video convert HR video ", final_image)
+                    cv2.imshow("LR video convert SR video ", final_image)
                     if cv2.waitKey(1) & 0xFF == ord("q"):
                         break
 

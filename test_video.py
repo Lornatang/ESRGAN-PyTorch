@@ -29,11 +29,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.")
     parser.add_argument("--file", type=str, required=True,
                         help="Test low resolution video name.")
-    parser.add_argument("-a", "--arch", metavar="ARCH", default="esrgan",
+    parser.add_argument("-a", "--arch", metavar="ARCH", default="esrgan16",
                         choices=model_names,
                         help="model architecture: " +
                              " | ".join(model_names) +
-                             " (default: esrgan)")
+                             " (default: esrgan16)")
     parser.add_argument("--upscale-factor", type=int, default=4, choices=[4],
                         help="Low to high resolution scaling factor. (default:4).")
     parser.add_argument("--model-path", default="", type=str, metavar="PATH",
@@ -42,8 +42,6 @@ if __name__ == "__main__":
                         help="Use pre-trained model.")
     parser.add_argument("--view", dest="view", action="store_true",
                         help="Super resolution real time to show.")
-    parser.add_argument("--outf", default="test", type=str, metavar="PATH",
-                        help="The location of the image in the evaluation process. (default: ``test``).")
     parser.add_argument("--device", default="0",
                         help="device id i.e. `0` or `0,1` or `cpu`. (default: ``0``).")
     args = parser.parse_args()
@@ -52,7 +50,7 @@ if __name__ == "__main__":
     print("Run Testing Engine.\n")
     print(args)
 
-    create_folder(args.outf)
+    create_folder("video")
 
     logger.info("TestEngine:")
     print("\tAPI version .......... 0.1.1")

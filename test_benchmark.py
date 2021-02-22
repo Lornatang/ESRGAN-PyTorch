@@ -29,11 +29,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.")
     parser.add_argument("data", metavar="DIR",
                         help="path to dataset")
-    parser.add_argument("-a", "--arch", metavar="ARCH", default="esrgan",
+    parser.add_argument("-a", "--arch", metavar="ARCH", default="esrgan16",
                         choices=model_names,
                         help="model architecture: " +
                              " | ".join(model_names) +
-                             " (default: esrgan)")
+                             " (default: esrgan16)")
     parser.add_argument("-j", "--workers", default=8, type=int, metavar="N",
                         help="Number of data loading workers. (default:8)")
     parser.add_argument("-b", "--batch-size", default=16, type=int, metavar="N",
@@ -50,8 +50,6 @@ if __name__ == "__main__":
                         help="Use pre-trained model.")
     parser.add_argument("--detail", dest="detail", action="store_true",
                         help="Evaluate all indicators. It is very slow.")
-    parser.add_argument("--outf", default="test", type=str, metavar="PATH",
-                        help="The location of the image in the evaluation process. (default: ``test``).")
     parser.add_argument("--device", default="0",
                         help="device id i.e. `0` or `0,1` or `cpu`. (default: ``0``).")
 
@@ -61,7 +59,7 @@ if __name__ == "__main__":
     print("Run Testing Engine.\n")
     print(args)
 
-    create_folder(args.outf)
+    create_folder("benchmark")
 
     logger.info("TestEngine:")
     print("\tAPI version .......... 0.1.1")

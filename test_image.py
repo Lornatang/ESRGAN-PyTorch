@@ -29,17 +29,19 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.")
     parser.add_argument("--lr", type=str, required=True,
                         help="Test low resolution image name.")
-    parser.add_argument("--hr", type=str, required=True,
+    parser.add_argument("--hr", type=str,
                         help="Raw high resolution image name.")
     parser.add_argument("-a", "--arch", metavar="ARCH", default="esrgan16",
                         choices=model_names,
                         help="model architecture: " +
                              " | ".join(model_names) +
                              " (default: esrgan16)")
+    parser.add_argument("--image-size", type=int, default=96,
+                        help="Image size of real sample. (default:96).")
     parser.add_argument("--upscale-factor", type=int, default=4, choices=[4],
                         help="Low to high resolution scaling factor. (default:4).")
-    parser.add_argument("--model-path", default="", type=str, metavar="PATH",
-                        help="Path to latest checkpoint for model. (default: ````).")
+    parser.add_argument("--model-path", default="weights/ESRGAN.pth", type=str, metavar="PATH",
+                        help="Path to latest checkpoint for model. (default: ``weights/ESRGAN.pth``).")
     parser.add_argument("--pretrained", dest="pretrained", action="store_true",
                         help="Use pre-trained model.")
     parser.add_argument("--detail", dest="detail", action="store_true",

@@ -44,8 +44,8 @@ if __name__ == "__main__":
                         help="Image size of real sample. (default:128).")
     parser.add_argument("--upscale-factor", type=int, default=4, choices=[4],
                         help="Low to high resolution scaling factor. (default:4).")
-    parser.add_argument("--model-path", default="", type=str, metavar="PATH",
-                        help="Path to latest checkpoint for model. (default: ````).")
+    parser.add_argument("--model-path", default="weights/ESRGAN.pth", type=str, metavar="PATH",
+                        help="Path to latest checkpoint for model. (default: ``weights/ESRGAN.pth``).")
     parser.add_argument("--pretrained", dest="pretrained", action="store_true",
                         help="Use pre-trained model.")
     parser.add_argument("--detail", dest="detail", action="store_true",

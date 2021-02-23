@@ -63,9 +63,8 @@ $ bash download_dataset.sh
 #### Test benchmark
 
 ```text
-usage: test_benchmark.py [-h] [-a ARCH] [-j N] [-b N] [--upscale-factor {4}]
-                         [--model-path PATH] [--pretrained] [--detail]
-                         [--outf PATH] [--device DEVICE]
+usage: test_benchmark.py [-h] [-a ARCH] [-j N] [-b N] [--image-size IMAGE_SIZE] [--upscale-factor {4}] [--model-path PATH] [--pretrained] [--detail]
+                         [--device DEVICE]
                          DIR
 
 ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.
@@ -75,32 +74,28 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -a ARCH, --arch ARCH  model architecture: discriminator | esrgan_4x4_16 |
-                        esrgan_4x4_23 | load_state_dict_from_url (default:
-                        esrgan_4x4_16)
+  -a ARCH, --arch ARCH  model architecture: discriminator | esrgan16 | esrgan23 | load_state_dict_from_url | rrdbnet16 | rrdbnet23 (default:
+                        esrgan16)
   -j N, --workers N     Number of data loading workers. (default:8)
-  -b N, --batch-size N  mini-batch size (default: 16), this is the total batch
-                        size of all GPUs on the current node when using Data
-                        Parallel or Distributed Data Parallel.
+  -b N, --batch-size N  mini-batch size (default: 16), this is the total batch size of all GPUs on the current node when using Data Parallel or
+                        Distributed Data Parallel.
+  --image-size IMAGE_SIZE
+                        Image size of real sample. (default:128).
   --upscale-factor {4}  Low to high resolution scaling factor. (default:4).
-  --model-path PATH     Path to latest checkpoint for model. (default: ````).
+  --model-path PATH     Path to latest checkpoint for model. (default: ``weights/ESRGAN.pth``).
   --pretrained          Use pre-trained model.
   --detail              Evaluate all indicators. It is very slow.
-  --outf PATH           The location of the image in the evaluation process.
-                        (default: ``test``).
-  --device DEVICE       device id i.e. `0` or `0,1` or `cpu`. (default:
-                        ``0``).
+  --device DEVICE       device id i.e. `0` or `0,1` or `cpu`. (default: ``0``).
 
 # Example
-$ python test_benchmark.py data/DIV2K --arch esrgan_4x4_16 --upscale-factor 4 --pretrained --device 0
+$ python3 test_benchmark.py <path-to-dataset> -a esrgan16 --pretrained
 ```
 
 #### Test image
 
 ```text
-usage: test_image.py [-h] --lr LR --hr HR [-a ARCH] [--upscale-factor {4}]
-                     [--model-path PATH] [--pretrained] [--detail]
-                     [--outf PATH] [--device DEVICE]
+usage: test_image.py [-h] --lr LR [--hr HR] [-a ARCH] [--image-size IMAGE_SIZE] [--upscale-factor {4}] [--model-path PATH] [--pretrained] [--detail]
+                     [--device DEVICE]
 
 ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.
 
@@ -108,48 +103,40 @@ optional arguments:
   -h, --help            show this help message and exit
   --lr LR               Test low resolution image name.
   --hr HR               Raw high resolution image name.
-  -a ARCH, --arch ARCH  model architecture: discriminator | esrgan_4x4_16 |
-                        esrgan_4x4_23 | load_state_dict_from_url (default:
-                        esrgan_4x4_16)
+  -a ARCH, --arch ARCH  model architecture: discriminator | esrgan16 | esrgan23 | load_state_dict_from_url | rrdbnet16 | rrdbnet23 (default:
+                        esrgan16)
+  --image-size IMAGE_SIZE
+                        Image size of real sample. (default:96).
   --upscale-factor {4}  Low to high resolution scaling factor. (default:4).
-  --model-path PATH     Path to latest checkpoint for model. (default: ````).
+  --model-path PATH     Path to latest checkpoint for model. (default: ``weights/ESRGAN.pth``).
   --pretrained          Use pre-trained model.
   --detail              Evaluate all indicators. It is very slow.
-  --outf PATH           The location of the image in the evaluation process.
-                        (default: ``test``).
-  --device DEVICE       device id i.e. `0` or `0,1` or `cpu`. (default:
-                        ``0``).
+  --device DEVICE       device id i.e. `0` or `0,1` or `cpu`. (default: ``0``).
 
 # Example
-$ python test_image.py --lr lr.png --hr hr.png --arch esrgan_4x4_16 --upscale-factor 4 --pretrained --device 0
+$ python3 test_benchmark.py <path-to-dataset> -a esrgan16 --pretrained
 ```
 
 #### Test video
 
 ```text
-usage: test_video.py [-h] --file FILE [-a ARCH] [--upscale-factor {4}]
-                     [--model-path PATH] [--pretrained] [--view] [--outf PATH]
-                     [--device DEVICE]
+usage: test_video.py [-h] --file FILE [-a ARCH] [--upscale-factor {4}] [--model-path PATH] [--pretrained] [--view] [--device DEVICE]
 
 ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.
 
 optional arguments:
   -h, --help            show this help message and exit
   --file FILE           Test low resolution video name.
-  -a ARCH, --arch ARCH  model architecture: discriminator | esrgan_4x4_16 |
-                        esrgan_4x4_23 | load_state_dict_from_url (default:
-                        esrgan_4x4_16)
+  -a ARCH, --arch ARCH  model architecture: discriminator | esrgan16 | esrgan23 | load_state_dict_from_url | rrdbnet16 | rrdbnet23 (default:
+                        esrgan16)
   --upscale-factor {4}  Low to high resolution scaling factor. (default:4).
-  --model-path PATH     Path to latest checkpoint for model. (default: ````).
+  --model-path PATH     Path to latest checkpoint for model. (default: ``weights/ESRGAN.pth``).
   --pretrained          Use pre-trained model.
   --view                Super resolution real time to show.
-  --outf PATH           The location of the image in the evaluation process.
-                        (default: ``test``).
-  --device DEVICE       device id i.e. `0` or `0,1` or `cpu`. (default:
-                        ``0``).
+  --device DEVICE       device id i.e. `0` or `0,1` or `cpu`. (default: ``0``).
                         
 # Example
-$ python test_video.py --file lr.mp4 --arch esrgan_4x4_16 --upscale-factor 4 --pretrained --view --device 0
+$ python3 test_image.py --lr <path-to-lr> --hr <path-to-hr> -a esrgan16 --pretrained --eval --detail
 ```
 
 Low resolution / Recovered High Resolution / Ground Truth
@@ -160,11 +147,9 @@ Low resolution / Recovered High Resolution / Ground Truth
 ### Train (e.g DIV2K)
 
 ```text
-usage: train.py [-h] [-a ARCH] [-j N] [--start-psnr-iter N] [--psnr-iters N]
-                [--start-iter N] [--iters N] [-b N] [--psnr-lr PSNR_LR]
-                [--lr LR] [--image-size IMAGE_SIZE] [--upscale-factor {4}]
-                [--model-path PATH] [--pretrained] [--netP PATH] [--netD PATH]
-                [--netG PATH] [--manualSeed MANUALSEED] [--device DEVICE]
+usage: train.py [-h] [-a ARCH] [-j N] [--start-psnr-iter N] [--psnr-iters N] [--start-iter N] [--iters N] [-b N] [--psnr-lr PSNR_LR] [--lr LR]
+                [--image-size IMAGE_SIZE] [--upscale-factor {4}] [--model-path PATH] [--pretrained] [--netP PATH] [--netD PATH] [--netG PATH]
+                [--manualSeed MANUALSEED] [--device DEVICE]
                 DIR
 
 ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.
@@ -174,19 +159,15 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -a ARCH, --arch ARCH  model architecture: discriminator | esrgan_4x4_16 |
-                        esrgan_4x4_23 | load_state_dict_from_url (default:
-                        esrgan_4x4_16)
+  -a ARCH, --arch ARCH  model architecture: discriminator | esrgan16 | esrgan23 | load_state_dict_from_url | rrdbnet16 | rrdbnet23 (default:
+                        esrgan16)
   -j N, --workers N     Number of data loading workers. (default:8)
   --start-psnr-iter N   manual iter number (useful on restarts)
-  --psnr-iters N        The number of iterations is needed in the training of
-                        PSNR model. (default:1000000)
+  --psnr-iters N        The number of iterations is needed in the training of PSNR model. (default:1000000)
   --start-iter N        manual iter number (useful on restarts)
-  --iters N             The training of srgan model requires the number of
-                        iterations. (default:400000)
-  -b N, --batch-size N  mini-batch size (default: 16), this is the total batch
-                        size of all GPUs on the current node when using Data
-                        Parallel or Distributed Data Parallel.
+  --iters N             The training of srgan model requires the number of iterations. (default:400000)
+  -b N, --batch-size N  mini-batch size (default: 16), this is the total batch size of all GPUs on the current node when using Data Parallel or
+                        Distributed Data Parallel.
   --psnr-lr PSNR_LR     Learning rate. (default:0.0002)
   --lr LR               Learning rate. (default:0.0001)
   --image-size IMAGE_SIZE
@@ -195,24 +176,23 @@ optional arguments:
   --model-path PATH     Path to latest checkpoint for model. (default: ````).
   --pretrained          Use pre-trained model.
   --netP PATH           Path to latest psnr checkpoint. (default: ````).
-  --netD PATH           Path to latest discriminator checkpoint. (default:
-                        ````).
+  --netD PATH           Path to latest discriminator checkpoint. (default: ````).
   --netG PATH           Path to latest generator checkpoint. (default: ````).
   --manualSeed MANUALSEED
                         Seed for initializing training. (default:1111)
   --device DEVICE       device id i.e. `0` or `0,1` or `cpu`. (default: ````).
-
+  
 # Example (e.g DIV2K)
-$ python train.py data/DIV2K --arch esrgan_4x4_16 --device 0
+$ python3 train.py <path-to-dataset> -a esrgan16 --device 0
 ```
 
 If you want to load weights that you've trained before, run the following command.
 
 ```bash
-$ python train.py data/DIV2K \
-                  --arch esrgan_4x4_16 \
+$ python3 train.py data/DIV2K \
+                  --arch esrgan16 \
                   --start-psnr-iter 150000 \
-                  --netP weights/ResNet_srgan_4x4_16_iter_150000.pth \
+                  --netP weights/ESRGAN_iter_150000.pth \
                   --device 0
 ```
 

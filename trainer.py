@@ -234,7 +234,7 @@ class Trainer(object):
                                                             num_workers=int(args.workers))
         self.test_dataloader = torch.utils.data.DataLoader(test_dataset,
                                                            batch_size=args.batch_size,
-                                                           shuffle=True,
+                                                           shuffle=False,
                                                            pin_memory=True,
                                                            num_workers=int(args.workers))
 

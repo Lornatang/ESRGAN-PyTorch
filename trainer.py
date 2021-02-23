@@ -60,7 +60,7 @@ def train_psnr(epoch: int,
         lr = input.to(device)
         hr = target.to(device)
 
-        model.zero_grad()
+        optimizer.zero_grad()
         # Runs the forward pass with autocasting.
         with amp.autocast():
             # Generating fake high resolution images from real low resolution images.
@@ -129,7 +129,7 @@ def train_gan(epoch: int,
         # (1) Update D network: E(x~real)[fake(D(x))] + E(x~fake)[fake(D(x))]
         ##############################################
         # Set discriminator gradients to zero.
-        discriminator.zero_grad()
+        discriminator_optimizer.zero_grad()
         # Runs the forward pass with autocasting.
         with amp.autocast():
             # Generating fake high resolution images from real low resolution images.
@@ -164,7 +164,7 @@ def train_gan(epoch: int,
         # (2) Update G network: E(x~real)[g(D(x))] + E(x~fake)[g(D(x))]
         ##############################################
         # Set discriminator gradients to zero.
-        generator.zero_grad()
+        generator_optimizer.zero_grad()
         # Runs the forward pass with autocasting.
         with amp.autocast():
             # The pixel-wise MSE loss is calculated.

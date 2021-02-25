@@ -82,6 +82,7 @@ def test_psnr(model: nn.Module, psnr_criterion: nn.MSELoss, dataloader: torch.ut
 
         with torch.no_grad():
             sr = model(lr)
+
         # The MSE Loss of the generated fake high-resolution image and real high-resolution image is calculated.
         psnr = 10 * math.log10(1. / psnr_criterion(sr, hr).item())
         total_psnr += psnr

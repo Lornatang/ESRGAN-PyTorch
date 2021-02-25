@@ -22,8 +22,6 @@ from esrgan_pytorch import Generator
 from torch.hub import load_state_dict_from_url
 
 model_urls = {
-    "rrdbnet16": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/RRDBNet_4x4_16_DF2K-e31a1b2e.pth",
-    "rrdbnet23": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/RRDBNet_4x4_23_DF2K-e31a1b2e.pth",
     "esrgan16": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/ESRGAN_4x4_16_DF2K-57e43f2f.pth",
     "esrgan23": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/ESRGAN_4x4_23_DF2K-57e43f2f.pth"
 }

@@ -44,6 +44,8 @@ if __name__ == "__main__":
                         help="Path to latest checkpoint for model. (default: ``weights/ESRGAN.pth``).")
     parser.add_argument("--pretrained", dest="pretrained", action="store_true",
                         help="Use pre-trained model.")
+    parser.add_argument("--eval", dest="eval", action="store_true",
+                        help="Evaluate the image quality.")
     parser.add_argument("--detail", dest="detail", action="store_true",
                         help="Evaluate all indicators. It is very slow.")
     parser.add_argument("--device", default="0",

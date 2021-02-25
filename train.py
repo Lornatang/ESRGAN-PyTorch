@@ -39,7 +39,8 @@ if __name__ == "__main__":
     parser.add_argument("--start-psnr-iter", default=0, type=int, metavar="N",
                         help="manual iter number (useful on restarts)")
     parser.add_argument("--psnr-iters", default=1000000, type=int, metavar="N",
-                        help="The number of iterations is needed in the training of PSNR model. (default:1000000)")
+                        help="The number of iterations is needed in the training "
+                             "of PSNR model. (default:1000000)")
     parser.add_argument("--start-iter", default=0, type=int, metavar="N",
                         help="manual iter number (useful on restarts)")
     parser.add_argument("--iters", default=400000, type=int, metavar="N",
@@ -76,9 +77,9 @@ if __name__ == "__main__":
     print("Run Training Engine.\n")
     print(args)
 
-    create_folder("run")
-    create_folder("run/hr")
-    create_folder("run/sr")
+    create_folder("runs")
+    create_folder("runs/hr")
+    create_folder("runs/sr")
     create_folder("weights")
 
     logger.info("TrainingEngine:")

@@ -171,28 +171,6 @@ def _esrgan(arch, num_residual_block, pretrained, progress):
     return model
 
 
-def rrdbnet16(pretrained: bool = False, progress: bool = True) -> Generator:
-    r"""GAN model architecture from the
-    `"One weird trick..." <https://arxiv.org/abs/1809.00219>`_ paper.
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-    """
-    return _esrgan("rrdbnet16", 16, pretrained, progress)
-
-
-def rrdbnet23(pretrained: bool = False, progress: bool = True) -> Generator:
-    r"""GAN model architecture from the
-    `"One weird trick..." <https://arxiv.org/abs/1809.00219>`_ paper.
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-    """
-    return _esrgan("rrdbnet23", 23, pretrained, progress)
-
-
 def esrgan16(pretrained: bool = False, progress: bool = True) -> Generator:
     r"""GAN model architecture from the
     `"One weird trick..." <https://arxiv.org/abs/1809.00219>`_ paper.

@@ -31,7 +31,6 @@ from esrgan_pytorch.loss import VGGLoss
 from esrgan_pytorch.models.discriminator import discriminator
 from esrgan_pytorch.utils.common import init_torch_seeds
 from esrgan_pytorch.utils.common import save_checkpoint
-from esrgan_pytorch.utils.common import weights_init
 from esrgan_pytorch.utils.device import select_device
 from esrgan_pytorch.utils.estimate import test_gan
 from esrgan_pytorch.utils.estimate import test_psnr

@@ -49,6 +49,7 @@ def train_psnr(epoch: int,
                dataloader: torch.utils.data.DataLoader,
                model: nn.Module,
                pixel_criterion: nn.L1Loss,
+               psnr_criterion: nn.MSELoss,
                optimizer: torch.optim.Adam,
                scheduler: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts,
                scaler: amp.GradScaler,
@@ -88,7 +89,7 @@ def train_psnr(epoch: int,
 
         iters = i + epoch * len(dataloader) + 1
         writer.add_scalar("Train/L1 Loss", pixel_loss.item(), iters)
-        writer.add_scalar("Train/PSNR", 10 * math.log10(1. / pixel_criterion(sr, hr).item()), iters)
+        writer.add_scalar("Train/PSNR", 10 * math.log10(1. / psnr_criterion(sr, hr).item()), iters)
 
         # The image is saved every 1000 epoch.
         if iters % 1000 == 0:
@@ -246,12 +247,12 @@ class Trainer(object):
         self.train_dataloader = torch.utils.data.DataLoader(train_dataset,
                                                             batch_size=args.batch_size,
                                                             shuffle=True,
-                                                            pin_memory=True,
+                                                            pin_memory=False,
                                                             num_workers=int(args.workers))
         self.test_dataloader = torch.utils.data.DataLoader(test_dataset,
                                                            batch_size=args.batch_size,
                                                            shuffle=False,
-                                                           pin_memory=True,
+                                                           pin_memory=False,
                                                            num_workers=int(args.workers))
 
         logger.info(f"Train Dataset information:\n"
@@ -275,9 +276,6 @@ class Trainer(object):
             self.generator = models.__dict__[args.arch]().to(self.device)
         logger.info(f"Creating discriminator model")
         self.discriminator = discriminator().to(self.device)
-
-        self.generator = self.generator.apply(weights_init)
-        self.discriminator = self.discriminator.apply(weights_init)
 
         # Parameters of pre training model.
         self.start_psnr_epoch = math.floor(args.start_psnr_iter / len(self.train_dataloader))
@@ -364,6 +362,7 @@ class Trainer(object):
                            dataloader=self.train_dataloader,
                            model=self.generator,
                            pixel_criterion=self.pixel_criterion,
+                           psnr_criterion=self.psnr_criterion,
                            optimizer=self.psnr_optimizer,
                            scheduler=self.psnr_scheduler,
                            scaler=self.scaler,
@@ -376,6 +375,7 @@ class Trainer(object):
                                  dataloader=self.test_dataloader,
                                  device=self.device)
                 iters = (psnr_epoch + 1) * len(self.train_dataloader)
+                self.psnr_writer.add_scalar("Test/PSNR", psnr, psnr_epoch)
 
                 # remember best psnr and save checkpoint
                 is_best = psnr > best_psnr

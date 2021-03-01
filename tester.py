@@ -174,7 +174,7 @@ class Estimate(object):
                       f"Use time: {use_time * 1000:.2f}ms | {use_time:.4f}s")
             else:
                 print(f"PSNR      {value[2]:.2f}\n"
-                      f"SSIM      {value[3][0]:.2f}\n"
+                      f"SSIM      {value[3][0]:.4f}\n"
                       f"Use time: {use_time * 1000:.2f}ms | {use_time:.4f}s")
         else:
             sr = inference(self.model, lr)

@@ -59,8 +59,8 @@ def train_psnr(epoch: int,
     progress_bar = tqdm(enumerate(dataloader), total=len(dataloader))
     for i, (input, target) in progress_bar:
         # Move data to special device.
-        lr = input.to(device)
-        hr = target.to(device)
+        lr = input.to(device, non_blocking=True)
+        hr = target.to(device, non_blocking=True)
 
         optimizer.zero_grad()
         # Runs the forward pass with autocasting.
@@ -123,8 +123,8 @@ def train_gan(epoch: int,
     discriminator.train()
     progress_bar = tqdm(enumerate(dataloader), total=len(dataloader))
     for i, (input, target) in progress_bar:
-        lr = input.to(device)
-        hr = target.to(device)
+        lr = input.to(device, non_blocking=True)
+        hr = target.to(device, non_blocking=True)
         batch_size = lr.size(0)
 
         # The real sample label is 1, and the generated sample label is 0.

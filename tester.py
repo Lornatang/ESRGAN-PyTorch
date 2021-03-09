@@ -24,7 +24,7 @@ import torchvision.utils as vutils
 from PIL import Image
 from tqdm import tqdm
 
-from esrgan_pytorch.dataset import CustomTestDataset
+from esrgan_pytorch.dataset import BaseTestDataset
 from esrgan_pytorch.utils.calculate_ssim import ssim
 from esrgan_pytorch.utils.common import configure
 from esrgan_pytorch.utils.common import inference
@@ -41,8 +41,7 @@ class Test(object):
         self.model, self.device = configure(args)
 
         logger.info("Load testing dataset")
-        dataset = CustomTestDataset(root=os.path.join(args.data, "test"),
-                                    image_size=args.image_size)
+        dataset = BaseTestDataset(root=os.path.join(args.data, "test"), image_size=args.image_size)
         self.dataloader = torch.utils.data.DataLoader(dataset,
                                                       batch_size=args.batch_size,
                                                       pin_memory=True,

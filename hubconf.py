@@ -11,15 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
 """File for accessing GAN via PyTorch Hub https://pytorch.org/hub/
 Usage:
     import torch
-    model = torch.hub.load("Lornatang/ESRGAN-PyTorch", "esrgan16", 16, pretrained=True, progress=True, verbose=False)
+    model = torch.hub.load("Lornatang/ESRGAN-PyTorch", "esrgan16", pretrained=True, progress=True, verbose=False)
 """
 import torch
-from esrgan_pytorch import Generator
 from torch.hub import load_state_dict_from_url
+
+from esrgan_pytorch import Generator
 
 model_urls = {
     "esrgan16": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/ESRGAN_4x4_16_DF2K-57e43f2f.pth",
@@ -37,28 +37,6 @@ def create(arch, num_residual_block, pretrained, progress):
                                               map_location=torch.device("cpu"))
         model.load_state_dict(state_dict)
     return model
-
-
-def rrdbnet16(pretrained: bool = False, progress: bool = True) -> Generator:
-    r"""GAN model architecture from the
-    `"One weird trick..." <https://arxiv.org/abs/1809.00219>`_ paper.
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-    """
-    return create("rrdbnet16", 16, pretrained, progress)
-
-
-def rrdbnet23(pretrained: bool = False, progress: bool = True) -> Generator:
-    r"""GAN model architecture from the
-    `"One weird trick..." <https://arxiv.org/abs/1809.00219>`_ paper.
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-    """
-    return create("rrdbnet23", 23, pretrained, progress)
 
 
 def esrgan16(pretrained: bool = False, progress: bool = True) -> Generator:

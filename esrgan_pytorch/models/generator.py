@@ -17,8 +17,6 @@ import torch.nn.functional as F
 from torch.hub import load_state_dict_from_url
 
 model_urls = {
-    "rrdbnet16": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/RRDBNet_4x4_16_DF2K-e31a1b2e.pth",
-    "rrdbnet23": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/RRDBNet_4x4_23_DF2K-e31a1b2e.pth",
     "esrgan16": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/ESRGAN_4x4_16_DF2K-57e43f2f.pth",
     "esrgan23": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/ESRGAN_4x4_23_DF2K-57e43f2f.pth"
 }
@@ -47,7 +45,7 @@ class Generator(nn.Module):
         rrdb_blocks = []
         for _ in range(num_rrdb_blocks):
             rrdb_blocks += [ResidualInResidualDenseBlock(64, 32, 0.2)]
-        self.Trunk_RRDB = nn.Sequential(*rrdb_blocks)
+        self.trunk = nn.Sequential(*rrdb_blocks)
 
         # Second conv layer post residual blocks
         self.conv2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
@@ -65,9 +63,9 @@ class Generator(nn.Module):
         # Final output layer
         self.conv4 = nn.Conv2d(64, 3, kernel_size=3, stride=1, padding=1)
 
-    def forward(self, input: torch.Tensor) -> torch.Tensor:
-        out1 = self.conv1(input)
-        trunk = self.Trunk_RRDB(out1)
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out1 = self.conv1(x)
+        trunk = self.trunk(out1)
         out2 = self.conv2(trunk)
         out = torch.add(out1, out2)
         out = F.leaky_relu(self.up1(F.interpolate(out, scale_factor=2, mode="nearest")), 0.2, True)
@@ -125,14 +123,14 @@ class ResidualDenseBlock(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias.data, 0.0)
 
-    def forward(self, input: torch.Tensor) -> torch.Tensor:
-        conv1 = self.conv1(input)
-        conv2 = self.conv2(torch.cat((input, conv1), 1))
-        conv3 = self.conv3(torch.cat((input, conv1, conv2), 1))
-        conv4 = self.conv4(torch.cat((input, conv1, conv2, conv3), 1))
-        conv5 = self.conv5(torch.cat((input, conv1, conv2, conv3, conv4), 1))
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        conv1 = self.conv1(x)
+        conv2 = self.conv2(torch.cat((x, conv1), 1))
+        conv3 = self.conv3(torch.cat((x, conv1, conv2), 1))
+        conv4 = self.conv4(torch.cat((x, conv1, conv2, conv3), 1))
+        conv5 = self.conv5(torch.cat((x, conv1, conv2, conv3, conv4), 1))
 
-        return conv5.mul(self.scale_ratio) + input
+        return conv5.mul(self.scale_ratio) + x
 
 
 class ResidualInResidualDenseBlock(nn.Module):
@@ -153,15 +151,15 @@ class ResidualInResidualDenseBlock(nn.Module):
 
         self.scale_ratio = scale_ratio
 
-    def forward(self, input: torch.Tensor) -> torch.Tensor:
-        out = self.RDB1(input)
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = self.RDB1(x)
         out = self.RDB2(out)
         out = self.RDB3(out)
 
-        return out.mul(self.scale_ratio) + input
+        return out.mul(self.scale_ratio) + x
 
 
-def _esrgan(arch, num_residual_block, pretrained, progress):
+def _esrgan(arch, num_residual_block, pretrained, progress) -> Generator:
     model = Generator(num_residual_block)
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls[arch],

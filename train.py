@@ -425,9 +425,9 @@ def main_worker(gpu, ngpus_per_node, args):
 
         # remember best psnr and save checkpoint
         is_best = ssim_value > best_ssim_value and lpips_value < best_lpips_value and gmsd_value < best_gmsd_value
-        best_lpips_value = max(lpips_value, best_lpips_value)
+        best_ssim_value = max(ssim_value, best_ssim_value)
         best_lpips_value = min(lpips_value, best_lpips_value)
-        best_lpips_value = min(lpips_value, best_lpips_value)
+        best_gmsd_value = min(gmsd_value, best_gmsd_value)
 
         if not args.multiprocessing_distributed or (
                 args.multiprocessing_distributed and args.rank % ngpus_per_node == 0):

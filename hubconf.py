@@ -22,8 +22,8 @@ from torch.hub import load_state_dict_from_url
 from esrgan_pytorch import Generator
 
 model_urls = {
-    "esrgan16": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/ESRGAN_4x4_16_DF2K-57e43f2f.pth",
-    "esrgan23": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/ESRGAN_4x4_23_DF2K-57e43f2f.pth"
+    "esrgan16": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/ESRGAN16_DF2K-a03a643d.pth",
+    "esrgan23": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/ESRGAN23_DF2K-13a67ca9.pth"
 }
 
 dependencies = ["torch"]

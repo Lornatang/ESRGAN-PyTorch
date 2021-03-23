@@ -96,7 +96,7 @@ optional arguments:
                         Use multi-processing distributed training to launch N processes per node, which has N GPUs. This is the fastest way to use PyTorch for either single node or multi node data parallel training
 
 # Example
-$ python3 test_benchmark.py -a srgan --pretrained --gpu 0 [image-folder with train and val folders]
+$ python3 test_benchmark.py -a esrgan16 --pretrained --gpu 0 [image-folder with train and val folders]
 ```
 
 #### Test image
@@ -118,7 +118,7 @@ optional arguments:
   --gpu GPU             GPU id to use.
   
 # Example
-$ python3 test_image.py -a srgan --lr [path-to-lr-image] --hr [Optional, path-to-hr-image] --pretrained --gpu 0
+$ python3 test_image.py -a esrgan16 --lr [path-to-lr-image] --hr [Optional, path-to-hr-image] --pretrained --gpu 0
 ```
 
 #### Test video
@@ -139,7 +139,7 @@ optional arguments:
   --view                Do you want to show SR video synchronously.
                         
 # Example
-$ python3 test_video.py -a srgan --file [path-to-video] --pretrained --gpu 0 --view 
+$ python3 test_video.py -a esrgan16 --file [path-to-video] --pretrained --gpu 0 --view 
 ```
 
 Low resolution / Recovered High Resolution / Ground Truth
@@ -191,15 +191,15 @@ optional arguments:
   --multiprocessing-distributed
                         Use multi-processing distributed training to launch N processes per node, which has N GPUs. This is the fastest way to use PyTorch for either single node or multi node data parallel training  
 # Example (e.g DIV2K)
-$ python train.py -a srgan [image-folder with train and val folders]
+$ python train.py -a esrgan16 [image-folder with train and val folders]
 # Multi-processing Distributed Data Parallel Training
-$ python3 train.py -a srgan --dist-url 'tcp://127.0.0.1:12345' --dist-backend 'nccl' --multiprocessing-distributed --world-size 1 --rank 0 [image-folder with train and val folders]
+$ python3 train.py -a esrgan16 --dist-url 'tcp://127.0.0.1:12345' --dist-backend 'nccl' --multiprocessing-distributed --world-size 1 --rank 0 [image-folder with train and val folders]
 ```
 
 If you want to load weights that you've trained before, run the following command.
 
 ```bash
-$ python3 train.py -a srgan --start-psnr-epoch 10 --resume-psnr weights/PSNR_epoch10.pth [image-folder with train and val folders] 
+$ python3 train.py -a esrgan16 --start-psnr-epoch 10 --resume-psnr weights/PSNR_epoch10.pth [image-folder with train and val folders] 
 ```
 
 ### Contributing

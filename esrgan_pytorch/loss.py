@@ -60,7 +60,7 @@ class VGGLoss(torch.nn.Module):
 
     A loss defined on feature maps of higher level features from deeper network layers
     with more potential to focus on the content of the images. We refer to this network
-    as SRGAN in the following.
+    as ESRGAN in the following.
     """
 
     def __init__(self, feature_layer: int = 35) -> None:

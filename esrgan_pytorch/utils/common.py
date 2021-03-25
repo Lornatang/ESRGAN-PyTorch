@@ -19,7 +19,7 @@ import torch
 import esrgan_pytorch.models as models
 
 __all__ = [
-    "create_folder", "configure", "save_checkpoint", "AverageMeter", "ProgressMeter"
+    "create_folder", "configure", "AverageMeter", "ProgressMeter"
 ]
 
 logger = logging.getLogger(__name__)
@@ -54,13 +54,6 @@ def configure(args):
         model.load_state_dict(torch.load(args.model_path, map_location=torch.device("cpu")), strict=False)
 
     return model
-
-
-# Copy from https://github.com/pytorch/examples/blob/master/imagenet/main.py
-def save_checkpoint(state, is_best: bool, source_filename: str, target_filename: str):
-    torch.save(state, source_filename)
-    if is_best:
-        torch.save(state["state_dict"], target_filename)
 
 
 # Copy from https://github.com/pytorch/examples/blob/master/imagenet/main.py

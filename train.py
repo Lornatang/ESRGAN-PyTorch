@@ -111,6 +111,8 @@ parser.add_argument("--multiprocessing-distributed", action="store_true",
                          "fastest way to use PyTorch for either single node or "
                          "multi node data parallel training")
 
+best_psnr_value = 0.0
+
 
 def main():
     args = parser.parse_args()
@@ -147,6 +149,7 @@ def main():
 
 
 def main_worker(gpu, ngpus_per_node, args):
+    global best_psnr_value
     args.gpu = gpu
 
     if args.gpu is not None:
@@ -359,9 +362,13 @@ def main_worker(gpu, ngpus_per_node, args):
                         "state_dict": generator.module.state_dict() if args.multiprocessing_distributed else generator.state_dict(),
                         "optimizer": psnr_optimizer.state_dict(),
                         }, os.path.join("weights", f"PSNR_epoch{epoch}.pth"))
+            if psnr_value > best_psnr_value:
+                best_psnr_value = max(psnr_value, best_psnr_value)
+                torch.save(generator.state_dict(), os.path.join("weights", f"PSNR.pth"))
 
-        # Load best PSNR model.
-        generator.load_state_dict(torch.load(os.path.join("weights", f"PSNR.pth"), map_location=f"cuda:{args.gpu}"))
+    # Load best PSNR model.
+    best_psnr_value = 0.0
+    generator.load_state_dict(torch.load(os.path.join("weights", f"PSNR.pth"), map_location=f"cuda:{args.gpu}"))
 
     for epoch in range(args.start_gan_epoch, args.gan_epochs):
         if args.distributed:
@@ -402,6 +409,9 @@ def main_worker(gpu, ngpus_per_node, args):
                         "state_dict": generator.module.state_dict() if args.multiprocessing_distributed else generator.state_dict(),
                         "optimizer": generator_optimizer.state_dict()
                         }, os.path.join("weights", f"Generator_epoch{epoch}.pth"))
+            if psnr_value > best_psnr_value:
+                best_psnr_value = max(psnr_value, best_psnr_value)
+                torch.save(generator.state_dict(), os.path.join("weights", f"GAN.pth"))
 
 
 def train_psnr(train_dataloader: torch.utils.data.DataLoader,

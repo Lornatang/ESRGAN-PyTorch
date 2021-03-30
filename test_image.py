@@ -140,9 +140,8 @@ if __name__ == "__main__":
 
     logger.info("TestingEngine:")
     print("\tAPI version .......... 0.1.0")
-    print("\tBuild ................ 2021.03.22")
+    print("\tBuild ................ 2021.03.23")
     print("##################################################\n")
     main()
 
     logger.info("Test single image performance evaluation completed successfully.\n")
-

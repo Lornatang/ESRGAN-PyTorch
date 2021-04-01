@@ -134,7 +134,7 @@ def main_worker(gpu, ngpus_per_node, args):
     args.gpu = gpu
 
     if args.gpu is not None:
-        logger.info(f"Use GPU: {args.gpu} for training.")
+        logger.info(f"Use GPU: {args.gpu} for testing.")
 
     if args.distributed:
         if args.dist_url == "env://" and args.rank == -1:
@@ -251,7 +251,7 @@ if __name__ == "__main__":
 
     logger.info("TestingEngine:")
     print("\tAPI version .......... 0.1.0")
-    print("\tBuild ................ 2021.03.23")
+    print("\tBuild ................ 2021.04.01")
     print("##################################################\n")
     main()
 

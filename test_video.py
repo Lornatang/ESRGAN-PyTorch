@@ -81,7 +81,7 @@ def main_worker(gpu, args):
     args.gpu = gpu
 
     if args.gpu is not None:
-        logger.info(f"Use GPU: {args.gpu} for training.")
+        logger.info(f"Use GPU: {args.gpu} for testing.")
 
     model = configure(args)
 
@@ -183,7 +183,7 @@ if __name__ == "__main__":
 
     logger.info("SREngine:")
     print("\tAPI version .......... 0.1.0")
-    print("\tBuild ................ 2021.03.23")
+    print("\tBuild ................ 2021.04.01")
     print("##################################################\n")
     main()
 

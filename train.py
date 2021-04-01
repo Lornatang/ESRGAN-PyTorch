@@ -21,6 +21,7 @@ import warnings
 
 import torch
 import torch.backends.cudnn as cudnn
+import torch.cuda.amp as amp
 import torch.distributed as dist
 import torch.multiprocessing as mp
 import torch.nn as nn
@@ -185,19 +186,15 @@ def main_worker(gpu, ngpus_per_node, args):
             # ourselves based on the total number of GPUs we have
             args.batch_size = int(args.batch_size / ngpus_per_node)
             args.workers = int((args.workers + ngpus_per_node - 1) / ngpus_per_node)
-            discriminator = nn.parallel.DistributedDataParallel(module=discriminator,
-                                                                device_ids=[args.gpu],
-                                                                find_unused_parameters=True)
-            generator = nn.parallel.DistributedDataParallel(module=generator,
-                                                            device_ids=[args.gpu],
-                                                            find_unused_parameters=True)
+            discriminator = nn.parallel.DistributedDataParallel(module=discriminator, device_ids=[args.gpu])
+            generator = nn.parallel.DistributedDataParallel(module=generator, device_ids=[args.gpu])
         else:
             discriminator.cuda()
             generator.cuda()
             # DistributedDataParallel will divide and allocate batch_size to all
             # available GPUs if device_ids are not set
-            discriminator = nn.parallel.DistributedDataParallel(discriminator, find_unused_parameters=True)
-            generator = nn.parallel.DistributedDataParallel(generator, find_unused_parameters=True)
+            discriminator = nn.parallel.DistributedDataParallel(discriminator)
+            generator = nn.parallel.DistributedDataParallel(generator)
     elif args.gpu is not None:
         torch.cuda.set_device(args.gpu)
         discriminator = discriminator.cuda(args.gpu)
@@ -333,6 +330,10 @@ def main_worker(gpu, ngpus_per_node, args):
 
     cudnn.benchmark = True
 
+    # The mixed precision training is used in PSNR-oral.
+    scaler = amp.GradScaler()
+    logger.info("Turn on mixed precision training.")
+
     # Create a SummaryWriter at the beginning of training.
     psnr_writer = SummaryWriter(f"runs/{args.arch}_psnr_logs")
     gan_writer = SummaryWriter(f"runs/{args.arch}_gan_logs")
@@ -352,6 +353,7 @@ def main_worker(gpu, ngpus_per_node, args):
                    psnr_optimizer=psnr_optimizer,
                    epoch=epoch,
                    writer=psnr_writer,
+                   scaler=scaler,
                    args=args)
 
         psnr_scheduler.step()
@@ -428,6 +430,7 @@ def train_psnr(train_dataloader: torch.utils.data.DataLoader,
                psnr_optimizer: torch.optim.Adam,
                epoch: int,
                writer: SummaryWriter,
+               scaler: amp.GradScaler,
                args: argparse.ArgumentParser.parse_args):
     batch_time = AverageMeter("Time", ":6.4f")
     l1_losses = AverageMeter("L1 Loss", ":.6f")
@@ -443,14 +446,15 @@ def train_psnr(train_dataloader: torch.utils.data.DataLoader,
             lr = lr.cuda(args.gpu, non_blocking=True)
             hr = hr.cuda(args.gpu, non_blocking=True)
 
-        generator.zero_grad()
+        psnr_optimizer.zero_grad()
 
-        # Generating fake high resolution images from real low resolution images.
-        sr = generator(lr)
-        # The L1 Loss of the generated fake high-resolution image and real high-resolution image is calculated.
-        l1_loss = pixel_criterion(sr, hr)
-        l1_loss.backward()
-        psnr_optimizer.step()
+        with amp.autocast():
+            sr = generator(lr)
+            l1_loss = pixel_criterion(sr, hr)
+
+        scaler.scale(l1_loss).backward()
+        scaler.step(psnr_optimizer)
+        scaler.update()
 
         # measure elapsed time
         batch_time.update(time.time() - end)
@@ -466,7 +470,7 @@ def train_psnr(train_dataloader: torch.utils.data.DataLoader,
         if i % 100 == 0:
             progress.display(i)
 
-        # Save images every 1000 iterations.
+        # Save image every 1000 batches.
         if iters % 1000 == 0:
             vutils.save_image(hr, os.path.join("runs", "hr", f"PSNR_{iters}.bmp"))
             sr = generator(lr)

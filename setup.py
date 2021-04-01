@@ -25,7 +25,7 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 # Package meta-data
-NAME = "srgan_pytorch"
+NAME = "esrgan_pytorch"
 DESCRIPTION = "Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network."
 URL = "https://github.com/Lornatang/SRGAN-PyTorch"
 EMAIL = "liu_changyu@dakewe.com"

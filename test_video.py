@@ -42,11 +42,11 @@ logging.basicConfig(format="[ %(levelname)s ] %(message)s", level=logging.INFO)
 parser = argparse.ArgumentParser(description="ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.")
 parser.add_argument("--file", type=str, required=True,
                     help="Test low resolution video name.")
-parser.add_argument("-a", "--arch", metavar="ARCH", default="srgan",
+parser.add_argument("-a", "--arch", metavar="ARCH", default="esrgan16",
                     choices=model_names,
                     help="Model architecture: " +
                          " | ".join(model_names) +
-                         " (default: srgan)")
+                         " (default: esrgan16)")
 parser.add_argument("--upscale-factor", type=int, default=4, choices=[4],
                     help="Low to high resolution scaling factor. (default: 4)")
 parser.add_argument("--model-path", default="", type=str, metavar="PATH",

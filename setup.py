@@ -26,8 +26,8 @@ from setuptools import find_packages, setup, Command
 
 # Package meta-data
 NAME = "esrgan_pytorch"
-DESCRIPTION = "Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network."
-URL = "https://github.com/Lornatang/SRGAN-PyTorch"
+DESCRIPTION = "ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks."
+URL = "https://github.com/Lornatang/ESRGAN-PyTorch"
 EMAIL = "liu_changyu@dakewe.com"
 AUTHOR = "Liu Changyu"
 REQUIRES_PYTHON = ">=3.8.0"

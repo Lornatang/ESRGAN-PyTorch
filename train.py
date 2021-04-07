@@ -371,7 +371,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
         # train for one epoch
         train_gan(train_dataloader, discriminator, generator, pixel_criterion, content_criterion, adversarial_criterion, discriminator_optimizer,
-                  generator_optimizer, epoch, gan_writer, args)
+                  generator_optimizer, epoch, scaler, gan_writer, args)
 
         discriminator_scheduler.step()
         generator_scheduler.step()
@@ -463,6 +463,7 @@ def train_gan(train_dataloader: torch.utils.data.DataLoader,
               discriminator_optimizer: torch.optim.Adam,
               generator_optimizer: torch.optim.Adam,
               epoch: int,
+              scaler: amp.GradScaler,
               writer: SummaryWriter,
               args: argparse.ArgumentParser.parse_args):
     batch_time = AverageMeter("Time", ":.4f")
@@ -498,40 +499,52 @@ def train_gan(train_dataloader: torch.utils.data.DataLoader,
         ##############################################
         # (1) Update D network: E(hr)[fake(C(D(hr) - E(sr)C(sr)))] + E(sr)[fake(C(fake) - E(real)C(real))]
         ##############################################
-        discriminator.zero_grad()
+        discriminator_optimizer.zero_grad()
 
-        # Generating fake high resolution images from real low resolution images.
-        sr = generator(lr)
+        with amp.autocast():
+            sr = generator(lr)
+            # It makes the discriminator distinguish between real sample and fake sample.
+            real_output = discriminator(hr)
+            fake_output = discriminator(sr.detach())
 
-        real_output = discriminator(hr)
-        fake_output = discriminator(sr.detach())
+            # Adversarial loss for real and fake images (relativistic average GAN)
+            d_loss_real = adversarial_criterion(real_output - torch.mean(fake_output), real_label)
+            d_loss_fake = adversarial_criterion(fake_output - torch.mean(real_output), fake_label)
 
-        # Adversarial loss for real and fake images (relativistic average GAN)
-        d_loss_real = adversarial_criterion(real_output - torch.mean(fake_output), real_label)
-        d_loss_fake = adversarial_criterion(fake_output - torch.mean(real_output), fake_label)
-        # Count all discriminator losses.
-        d_loss = (d_loss_real + d_loss_fake) / 2
+            # Count all discriminator losses.
+            d_loss = (d_loss_real + d_loss_fake) / 2
 
-        d_loss.backward()
-        discriminator_optimizer.step()
+        scaler.scale(d_loss).backward()
+        scaler.step(discriminator_optimizer)
+        scaler.update()
 
         ##############################################
         # (2) Update G network: E(hr)[sr(C(D(hr) - E(sr)C(sr)))] + E(sr)[sr(C(fake) - E(real)C(real))]
         ##############################################
+        generator_optimizer.zero_grad()
+
+        with amp.autocast():
+            sr = generator(lr)
+            # It makes the discriminator unable to distinguish the real samples and fake samples.
+            real_output = discriminator(hr.detach())
+            fake_output = discriminator(sr)
+
+            # Calculate the absolute value of pixels with L1 loss.
+            pixel_loss = pixel_criterion(sr, hr.detach())
+            # # The 35th layer in VGG19 is used as the feature extractor by default.
+            content_loss = content_criterion(sr, hr.detach())
+            # Adversarial loss for real and fake images (relativistic average GAN)
+            adversarial_loss = adversarial_criterion(fake_output - torch.mean(real_output), real_label)
+
+            # Count all generator losses.
+            g_loss = 10 * pixel_loss + 1 * content_loss + 0.005 * adversarial_loss
+
+        scaler.scale(g_loss).backward()
+        scaler.step(generator_optimizer)
+        scaler.update()
+
         # Set generator gradients to zero.
         generator.zero_grad()
-
-        pixel_loss = pixel_criterion(sr, hr.detach())
-        content_loss = content_criterion(sr, hr.detach())
-        real_output = discriminator(hr.detach())
-        fake_output = discriminator(sr)
-        # Adversarial loss for real and fake images (relativistic average GAN)
-        adversarial_loss = adversarial_criterion(fake_output - torch.mean(real_output), real_label)
-        # Count all generator losses.
-        g_loss = 10 * pixel_loss + 1 * content_loss + 0.005 * adversarial_loss
-
-        g_loss.backward()
-        generator_optimizer.step()
 
         # measure elapsed time
         batch_time.update(time.time() - end)

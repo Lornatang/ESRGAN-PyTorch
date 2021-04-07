@@ -19,7 +19,7 @@ Usage:
 import torch
 from torch.hub import load_state_dict_from_url
 
-from esrgan_pytorch import Generator
+from esrgan_pytorch.models.generator import Generator
 
 model_urls = {
     "esrgan16": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/ESRGAN16_DF2K-a03a643d.pth",
@@ -32,9 +32,7 @@ dependencies = ["torch"]
 def create(arch, num_residual_block, pretrained, progress):
     model = Generator(num_residual_block)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls[arch],
-                                              progress=progress,
-                                              map_location=torch.device("cpu"))
+        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress, map_location=torch.device("cpu"))
         model.load_state_dict(state_dict)
     return model
 

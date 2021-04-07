@@ -23,7 +23,7 @@ model_urls = {
 
 
 class Generator(nn.Module):
-    def __init__(self, num_rrdb_blocks=16):
+    def __init__(self, num_rrdb_blocks: int):
         r""" This is an esrgan model defined by the author himself.
 
         We use two settings for our generator – one of them contains 8 residual blocks, with a capacity similar
@@ -39,29 +39,29 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
 
         # First layer
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1)
+        self.conv1 = nn.Conv2d(3, 64, 3, 1, 1)
 
-        # 16/23 ResidualInResidualDenseBlock layer
-        rrdb_blocks = []
+        # 16/23 ResidualInResidualDenseBlock layer.
+        trunk = []
         for _ in range(num_rrdb_blocks):
-            rrdb_blocks += [ResidualInResidualDenseBlock(64, 32, 0.2)]
-        self.trunk = nn.Sequential(*rrdb_blocks)
+            trunk += [ResidualInResidualDenseBlock(64, 32, 0.2)]
+        self.trunk = nn.Sequential(*trunk)
 
         # Second conv layer post residual blocks
-        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(64, 64, 3, 1, 1)
 
         # Upsampling layers
-        self.up1 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
-        self.up2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
+        self.up1 = nn.Conv2d(64, 64, 3, 1, 1)
+        self.up2 = nn.Conv2d(64, 64, 3, 1, 1)
 
         # Next layer after upper sampling
         self.conv3 = nn.Sequential(
-            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
-            nn.LeakyReLU(negative_slope=0.2, inplace=True)
+            nn.Conv2d(64, 64, 3, 1, 1),
+            nn.LeakyReLU(0.2, True)
         )
 
         # Final output layer
-        self.conv4 = nn.Conv2d(64, 3, kernel_size=3, stride=1, padding=1)
+        self.conv4 = nn.Conv2d(64, 3, 3, 1, 1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out1 = self.conv1(x)
@@ -79,32 +79,32 @@ class Generator(nn.Module):
 class ResidualDenseBlock(nn.Module):
     r"""The residual block structure of traditional SRGAN and Dense model is defined"""
 
-    def __init__(self, channels: int = 64, growth_channels: int = 32, scale_ratio: float = 0.2):
+    def __init__(self, channels: int, growth_channels: int, scale_ratio: float):
         """
 
         Args:
-            channels (int): Number of channels in the input image. (Default: 64).
-            growth_channels (int): how many filters to add each layer (`k` in paper). (Default: 32).
-            scale_ratio (float): Residual channel scaling column. (Default: 0.2)
+            channels (int): Number of channels in the input image.
+            growth_channels (int): how many filters to add each layer (`k` in paper).
+            scale_ratio (float): Residual channel scaling column.
         """
         super(ResidualDenseBlock, self).__init__()
         self.conv1 = nn.Sequential(
-            nn.Conv2d(channels + 0 * growth_channels, growth_channels, kernel_size=3, stride=1, padding=1),
-            nn.LeakyReLU(negative_slope=0.2, inplace=True)
+            nn.Conv2d(channels + 0 * growth_channels, growth_channels, 3, 1, 1),
+            nn.LeakyReLU(0.2, True)
         )
         self.conv2 = nn.Sequential(
-            nn.Conv2d(channels + 1 * growth_channels, growth_channels, kernel_size=3, stride=1, padding=1),
-            nn.LeakyReLU(negative_slope=0.2, inplace=True)
+            nn.Conv2d(channels + 1 * growth_channels, growth_channels, 3, 1, 1),
+            nn.LeakyReLU(0.2, True)
         )
         self.conv3 = nn.Sequential(
-            nn.Conv2d(channels + 2 * growth_channels, growth_channels, kernel_size=3, stride=1, padding=1),
-            nn.LeakyReLU(negative_slope=0.2, inplace=True)
+            nn.Conv2d(channels + 2 * growth_channels, growth_channels, 3, 1, 1),
+            nn.LeakyReLU(0.2, True)
         )
         self.conv4 = nn.Sequential(
-            nn.Conv2d(channels + 3 * growth_channels, growth_channels, kernel_size=3, stride=1, padding=1),
-            nn.LeakyReLU(negative_slope=0.2, inplace=True)
+            nn.Conv2d(channels + 3 * growth_channels, growth_channels, 3, 1, 1),
+            nn.LeakyReLU(0.2, True)
         )
-        self.conv5 = nn.Conv2d(channels + 4 * growth_channels, channels, kernel_size=3, stride=1, padding=1)
+        self.conv5 = nn.Conv2d(channels + 4 * growth_channels, channels, 3, 1, 1)
 
         self.scale_ratio = scale_ratio
 
@@ -136,13 +136,13 @@ class ResidualDenseBlock(nn.Module):
 class ResidualInResidualDenseBlock(nn.Module):
     r"""The residual block structure of traditional ESRGAN and Dense model is defined"""
 
-    def __init__(self, channels: int = 64, growth_channels: int = 32, scale_ratio: float = 0.2):
+    def __init__(self, channels: int, growth_channels: int, scale_ratio: float):
         """
 
         Args:
-            channels (int): Number of channels in the input image. (Default: 64).
-            growth_channels (int): how many filters to add each layer (`k` in paper). (Default: 32).
-            scale_ratio (float): Residual channel scaling column. (Default: 0.2)
+            channels (int): Number of channels in the input image.
+            growth_channels (int): how many filters to add each layer (`k` in paper).
+            scale_ratio (float): Residual channel scaling column.
         """
         super(ResidualInResidualDenseBlock, self).__init__()
         self.RDB1 = ResidualDenseBlock(channels, growth_channels, scale_ratio)
@@ -162,9 +162,7 @@ class ResidualInResidualDenseBlock(nn.Module):
 def _esrgan(arch, num_residual_block, pretrained, progress) -> Generator:
     model = Generator(num_residual_block)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls[arch],
-                                              progress=progress,
-                                              map_location=torch.device("cpu"))
+        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress, map_location=torch.device("cpu"))
         model.load_state_dict(state_dict)
     return model
 

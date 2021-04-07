@@ -111,7 +111,7 @@ def main_worker(gpu, args):
     if args.hr:
         hr = process_image(Image.open(args.hr), args.gpu)
         vutils.save_image(hr, os.path.join("tests", f"hr_{filename}"))
-        images = torch.cat([bicubic, sr, hr], dim=-1)
+        images = torch.cat([bicubic, sr, hr], -1)
 
         value = iqa(sr, hr, args.gpu)
         print(f"Performance avg results:\n")
@@ -124,7 +124,7 @@ def main_worker(gpu, args):
               f"LPIPS     {value[4]:6.4f}\n"
               f"GMSD      {value[5]:6.4f}\n")
     else:
-        images = torch.cat([bicubic, sr], dim=-1)
+        images = torch.cat([bicubic, sr], -1)
 
     vutils.save_image(lr, os.path.join("tests", f"lr_{filename}"))
     vutils.save_image(bicubic, os.path.join("tests", f"bicubic_{filename}"))

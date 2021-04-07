@@ -33,8 +33,8 @@ import torchvision.utils as vutils
 from torch.utils.tensorboard import SummaryWriter
 
 import esrgan_pytorch.models as models
-from esrgan_pytorch.dataset import BaseTestDataset
-from esrgan_pytorch.dataset import BaseTrainDataset
+from esrgan_pytorch.dataset import CustomTestDataset
+from esrgan_pytorch.dataset import CustomTrainDataset
 from esrgan_pytorch.loss import VGGLoss
 from esrgan_pytorch.models.discriminator import discriminator_for_vgg
 from esrgan_pytorch.utils.common import AverageMeter
@@ -239,8 +239,8 @@ def main_worker(gpu, ngpus_per_node, args):
 
     logger.info("Load training dataset")
     # Selection of appropriate treatment equipment.
-    train_dataset = BaseTrainDataset(os.path.join(args.data, "train"), args.image_size, args.upscale_factor)
-    test_dataset = BaseTestDataset(os.path.join(args.data, "test"), args.image_size, args.upscale_factor)
+    train_dataset = CustomTrainDataset(os.path.join(args.data, "train"), args.sampler_frequency)
+    test_dataset = CustomTestDataset(os.path.join(args.data, "test"), args.image_size, args.sampler_frequency)
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)

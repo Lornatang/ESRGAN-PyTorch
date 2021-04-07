@@ -63,18 +63,18 @@ $ bash download_dataset.sh
 #### Test benchmark
 
 ```text
-usage: test_benchmark.py [-h] [-a ARCH] [-j N] [-b N] [--sampler-frequency N] [--image-size IMAGE_SIZE] [--upscale-factor {4}] [--model-path PATH] [--pretrained] [--world-size WORLD_SIZE] [--rank RANK] [--dist-url DIST_URL] [--dist-backend DIST_BACKEND] [--seed SEED]
-                         [--gpu GPU] [--multiprocessing-distributed]
+usage: test_benchmark.py [-h] [-a ARCH] [-j N] [-b N] [--sampler-frequency N] [--image-size IMAGE_SIZE] [--upscale-factor {4}] [--model-path PATH] [--pretrained] [--world-size WORLD_SIZE] [--rank RANK] [--dist-url DIST_URL]
+                         [--dist-backend DIST_BACKEND] [--seed SEED] [--gpu GPU] [--multiprocessing-distributed]
                          DIR
 
 ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.
 
 positional arguments:
-  DIR                   path to dataset
+  DIR                   Path to dataset.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -a ARCH, --arch ARCH  Model architecture: esrgan16 | esrgan23 | load_state_dict_from_url (default: esrgan16)
+  -a ARCH, --arch ARCH  Model architecture: esrgan16 | esrgan23 (default: esrgan16)
   -j N, --workers N     Number of data loading workers. (default: 4)
   -b N, --batch-size N  mini-batch size (default: 16), this is the total batch size of all GPUs on the current node when using Data Parallel or Distributed Data Parallel
   --sampler-frequency N
@@ -93,7 +93,7 @@ optional arguments:
   --seed SEED           Seed for initializing training.
   --gpu GPU             GPU id to use.
   --multiprocessing-distributed
-                        Use multi-processing distributed training to launch N processes per node, which has N GPUs. This is the fastest way to use PyTorch for either single node or multi node data parallel training
+                        Use multi-processing distributed testing to launch N processes per node, which has N GPUs. This is the fastest way to use PyTorch for either single node or multi node data parallel testing.
 
 # Example
 $ python3 test_benchmark.py -a esrgan16 --pretrained --gpu 0 [image-folder with train and val folders]
@@ -110,11 +110,11 @@ optional arguments:
   -h, --help            show this help message and exit
   --lr LR               Test low resolution image name.
   --hr HR               Raw high resolution image name.
-  -a ARCH, --arch ARCH  Model architecture: esrgan16 | esrgan23 | load_state_dict_from_url (default: esrgan16)
+  -a ARCH, --arch ARCH  Model architecture: esrgan16 | esrgan23 (default: esrgan16)
   --upscale-factor {4}  Low to high resolution scaling factor. (default: 4)
   --model-path PATH     Path to latest checkpoint for model.
   --pretrained          Use pre-trained model.
-  --seed SEED           Seed for initializing training.
+  --seed SEED           Seed for initializing testing.
   --gpu GPU             GPU id to use.
   
 # Example
@@ -124,17 +124,18 @@ $ python3 test_image.py -a esrgan16 --lr [path-to-lr-image] --hr [Optional, path
 #### Test video
 
 ```text
-usage: test_video.py [-h] --file FILE [-a ARCH] [--upscale-factor {4}] [--model-path PATH] [--pretrained] [--gpu GPU] [--view]
+usage: test_video.py [-h] --file FILE [-a ARCH] [--upscale-factor {4}] [--model-path PATH] [--pretrained] [--seed SEED] [--gpu GPU] [--view]
 
 ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.
 
 optional arguments:
   -h, --help            show this help message and exit
   --file FILE           Test low resolution video name.
-  -a ARCH, --arch ARCH  Model architecture: esrgan16 | esrgan23 | load_state_dict_from_url (default: srgan)
+  -a ARCH, --arch ARCH  Model architecture: esrgan16 | esrgan23 (default: esrgan16)
   --upscale-factor {4}  Low to high resolution scaling factor. (default: 4)
   --model-path PATH     Path to latest checkpoint for model.
   --pretrained          Use pre-trained model.
+  --seed SEED           Seed for initializing testing.
   --gpu GPU             GPU id to use.
   --view                Do you want to show SR video synchronously.
                         
@@ -150,22 +151,23 @@ Low resolution / Recovered High Resolution / Ground Truth
 ### Train (e.g DIV2K)
 
 ```text
-usage: train.py [-h] [-a ARCH] [-j N] [--psnr-epochs N] [--start-psnr-epoch N] [--gan-epochs N] [--start-gan-epoch N] [-b N] [--sampler-frequency N] [--psnr-lr PSNR_LR] [--gan-lr GAN_LR] [--image-size IMAGE_SIZE] [--upscale-factor {4}] [--model-path PATH]
-                [--resume_psnr PATH] [--resume_d PATH] [--resume_g PATH] [--pretrained] [--world-size WORLD_SIZE] [--rank RANK] [--dist-url DIST_URL] [--dist-backend DIST_BACKEND] [--seed SEED] [--gpu GPU] [--multiprocessing-distributed]
+usage: train.py [-h] [-a ARCH] [-j N] [--psnr-epochs N] [--start-psnr-epoch N] [--gan-epochs N] [--start-gan-epoch N] [-b N] [--sampler-frequency N] [--psnr-lr PSNR_LR] [--gan-lr GAN_LR] [--image-size IMAGE_SIZE] [--upscale-factor {4}]
+                [--model-path PATH] [--resume_psnr PATH] [--resume_d PATH] [--resume_g PATH] [--pretrained] [--world-size WORLD_SIZE] [--rank RANK] [--dist-url DIST_URL] [--dist-backend DIST_BACKEND] [--seed SEED] [--gpu GPU]
+                [--multiprocessing-distributed]
                 DIR
 
 ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.
 
 positional arguments:
-  DIR                   path to dataset
+  DIR                   Path to dataset
 
 optional arguments:
   -h, --help            show this help message and exit
-  -a ARCH, --arch ARCH  Model architecture: esrgan16 | esrgan23 | load_state_dict_from_url (default: esrgan16)
+  -a ARCH, --arch ARCH  Model architecture: esrgan16 | esrgan23 (default: esrgan16)
   -j N, --workers N     Number of data loading workers. (default: 4)
-  --psnr-epochs N       Number of total psnr epochs to run. (default: 160)
+  --psnr-epochs N       Number of total psnr epochs to run. (default: 4630)
   --start-psnr-epoch N  Manual psnr epoch number (useful on restarts). (default: 0)
-  --gan-epochs N        Number of total gan epochs to run. (default: 64)
+  --gan-epochs N        Number of total gan epochs to run. (default: 1852)
   --start-gan-epoch N   Manual gan epoch number (useful on restarts). (default: 0)
   -b N, --batch-size N  mini-batch size (default: 16), this is the total batch size of all GPUs on the current node when using Data Parallel or Distributed Data Parallel
   --sampler-frequency N
@@ -181,7 +183,7 @@ optional arguments:
   --resume_g PATH       Path to latest psnr-oral checkpoint.
   --pretrained          Use pre-trained model.
   --world-size WORLD_SIZE
-                        Number of nodes for distributed training
+                        Number of nodes for distributed training.
   --rank RANK           Node rank for distributed training
   --dist-url DIST_URL   url used to set up distributed training. (default: tcp://59.110.31.55:12345)
   --dist-backend DIST_BACKEND
@@ -189,7 +191,8 @@ optional arguments:
   --seed SEED           Seed for initializing training.
   --gpu GPU             GPU id to use.
   --multiprocessing-distributed
-                        Use multi-processing distributed training to launch N processes per node, which has N GPUs. This is the fastest way to use PyTorch for either single node or multi node data parallel training  
+                        Use multi-processing distributed training to launch N processes per node, which has N GPUs. This is the fastest way to use PyTorch for either single node or multi node data parallel training.
+                        
 # Example (e.g DIV2K)
 $ python train.py -a esrgan16 [image-folder with train and val folders]
 # Multi-processing Distributed Data Parallel Training

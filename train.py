@@ -537,7 +537,7 @@ def train_gan(train_dataloader: torch.utils.data.DataLoader,
             adversarial_loss = adversarial_criterion(fake_output - torch.mean(real_output), real_label)
 
             # Count all generator losses.
-            g_loss = 10 * pixel_loss + 1 * content_loss + 0.005 * adversarial_loss
+            g_loss = 0.01 * pixel_loss + 1 * content_loss + 0.005 * adversarial_loss
 
         scaler.scale(g_loss).backward()
         scaler.step(generator_optimizer)

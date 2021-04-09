@@ -159,7 +159,7 @@ class ResidualInResidualDenseBlock(nn.Module):
         return out.mul(self.scale_ratio) + x
 
 
-def _esrgan(arch, num_residual_block, pretrained, progress) -> Generator:
+def _gan(arch, num_residual_block, pretrained, progress) -> Generator:
     model = Generator(num_residual_block)
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls[arch], progress=progress, map_location=torch.device("cpu"))
@@ -174,7 +174,7 @@ def esrgan16(pretrained: bool = False, progress: bool = True) -> Generator:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return create("esrgan16", 16, pretrained, progress)
+    return _gan("esrgan16", 16, pretrained, progress)
 
 
 def esrgan23(pretrained: bool = False, progress: bool = True) -> Generator:
@@ -184,4 +184,4 @@ def esrgan23(pretrained: bool = False, progress: bool = True) -> Generator:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return create("esrgan23", 23, pretrained, progress)
+    return _gan("esrgan23", 23, pretrained, progress)

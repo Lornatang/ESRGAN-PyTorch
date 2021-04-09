@@ -529,7 +529,6 @@ def train_gan(dataloader: torch.utils.data.DataLoader,
             # Count all discriminator losses.
             d_loss = (d_loss_real + d_loss_fake) / 2
 
-        print(d_loss)
         scaler.scale(d_loss).backward()
         scaler.step(discriminator_optimizer)
         scaler.update()

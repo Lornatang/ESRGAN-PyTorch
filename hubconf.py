@@ -22,8 +22,8 @@ from torch.hub import load_state_dict_from_url
 from esrgan_pytorch.models.generator import Generator
 
 model_urls = {
-    "esrgan16": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/ESRGAN16_DF2K-a03a643d.pth",
-    "esrgan23": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/0.1.0/ESRGAN23_DF2K-13a67ca9.pth"
+    "esrgan16": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/v0.2.0/ESRGAN16_DF2K-a03a643d.pth",
+    "esrgan23": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/v0.2.0/ESRGAN23_DF2K-13a67ca9.pth"
 }
 
 dependencies = ["torch"]
@@ -38,8 +38,7 @@ def create(arch, num_residual_block, pretrained, progress):
 
 
 def esrgan16(pretrained: bool = False, progress: bool = True) -> Generator:
-    r"""GAN model architecture from the
-    `"One weird trick..." <https://arxiv.org/abs/1809.00219>`_ paper.
+    r"""GAN model architecture from the `"One weird trick..." <https://arxiv.org/abs/1809.00219>` paper.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
@@ -49,8 +48,7 @@ def esrgan16(pretrained: bool = False, progress: bool = True) -> Generator:
 
 
 def esrgan23(pretrained: bool = False, progress: bool = True) -> Generator:
-    r"""GAN model architecture from the
-    `"One weird trick..." <https://arxiv.org/abs/1809.00219>`_ paper.
+    r"""GAN model architecture from the `"One weird trick..." <https://arxiv.org/abs/1809.00219>` paper.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet

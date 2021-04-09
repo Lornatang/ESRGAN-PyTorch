@@ -22,9 +22,9 @@ import torch
 import torch.backends.cudnn as cudnn
 from PIL import Image
 
-import srgan_pytorch.models as models
-from srgan_pytorch.utils.estimate import iqa
-from srgan_pytorch.utils.transform import process_image
+import esrgan_pytorch.models as models
+from esrgan_pytorch.utils.estimate import iqa
+from esrgan_pytorch.utils.transform import process_image
 
 model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("__")
@@ -33,17 +33,16 @@ model_names = sorted(name for name in models.__dict__
 logger = logging.getLogger(__name__)
 logging.basicConfig(format="[ %(levelname)s ] %(message)s", level=logging.INFO)
 
-parser = argparse.ArgumentParser("Photo-Realistic Single Image Super-Resolution Using "
-                                 "a Generative Adversarial Network.")
+parser = argparse.ArgumentParser(description="ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.")
 parser.add_argument("--lr", type=str, required=True,
                     help="Test low resolution image name.")
 parser.add_argument("--hr", type=str, required=True,
                     help="Raw high resolution image name.")
-parser.add_argument("-a", "--arch", metavar="ARCH", default="srgan",
+parser.add_argument("-a", "--arch", metavar="ARCH", default="esrgan16",
                     choices=model_names,
                     help="Model architecture: " +
                          " | ".join(model_names) +
-                         " (default: srgan)")
+                         " (default: esrgan16)")
 parser.add_argument("--model-dir", default="", type=str, metavar="PATH",
                     help="Path to latest checkpoint for model.")
 parser.add_argument("--pretrained", dest="pretrained", action="store_true",

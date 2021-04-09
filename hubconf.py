@@ -1,4 +1,4 @@
-# Copyright 2020 Dakewe Biotech Corporation. All Rights Reserved.
+# Copyright 2021 Dakewe Biotech Corporation. All Rights Reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
@@ -29,8 +29,8 @@ model_urls = {
 dependencies = ["torch"]
 
 
-def create(arch, num_residual_block, pretrained, progress):
-    model = Generator(num_residual_block)
+def _gan(arch: str, num_rrdb_blocks: int, pretrained: bool, progress: bool):
+    model = Generator(num_rrdb_blocks)
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls[arch], progress=progress, map_location=torch.device("cpu"))
         model.load_state_dict(state_dict)
@@ -44,7 +44,7 @@ def esrgan16(pretrained: bool = False, progress: bool = True) -> Generator:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return create("esrgan16", 16, pretrained, progress)
+    return _gan("esrgan16", 16, pretrained, progress)
 
 
 def esrgan23(pretrained: bool = False, progress: bool = True) -> Generator:
@@ -54,4 +54,4 @@ def esrgan23(pretrained: bool = False, progress: bool = True) -> Generator:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return create("esrgan23", 23, pretrained, progress)
+    return _gan("esrgan23", 23, pretrained, progress)

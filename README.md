@@ -63,9 +63,7 @@ $ bash download_dataset.sh
 #### Test benchmark
 
 ```text
-usage: test_benchmark.py [-h] [-a ARCH] [-j N] [-b N] [--sampler-frequency N] [--image-size IMAGE_SIZE] [--upscale-factor {4}] [--model-path PATH] [--pretrained] [--world-size WORLD_SIZE] [--rank RANK] [--dist-url DIST_URL]
-                         [--dist-backend DIST_BACKEND] [--seed SEED] [--gpu GPU] [--multiprocessing-distributed]
-                         DIR
+usage: test_benchmark.py [-h] [-a ARCH] [-j N] [-b N] [--image-size IMAGE_SIZE] [--upscale-factor {4}] [--model-path PATH] [--pretrained] [--seed SEED] [--gpu GPU] DIR
 
 ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.
 
@@ -74,26 +72,16 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -a ARCH, --arch ARCH  Model architecture: esrgan16 | esrgan23 (default: esrgan16)
-  -j N, --workers N     Number of data loading workers. (default: 4)
-  -b N, --batch-size N  mini-batch size (default: 16), this is the total batch size of all GPUs on the current node when using Data Parallel or Distributed Data Parallel
-  --sampler-frequency N
-                        If there are many datasets, this method can be used to increase the number of epochs. (default:1)
+  -a ARCH, --arch ARCH  Model architecture: esrgan16 | esrgan23 .(Default: esrgan16)
+  -j N, --workers N     Number of data loading workers. (Default: 8)
+  -b N, --batch-size N  mini-batch size (default: 32), this is the total batch size of all GPUs on the current node when using Data Parallel or Distributed Data Parallel
   --image-size IMAGE_SIZE
-                        Image size of high resolution image. (default: 128)
-  --upscale-factor {4}  Low to high resolution scaling factor. (default: 4)
-  --model-path PATH     Path to latest checkpoint for model.
+                        Image size of high resolution image. (Default: 128)
+  --upscale-factor {4}  Low to high resolution scaling factor. Optional: [4]. (Default: 4)
+  --model-path PATH     Path to latest checkpoint for model. (Default: `./weights/GAN.pth`)
   --pretrained          Use pre-trained model.
-  --world-size WORLD_SIZE
-                        Number of nodes for distributed training
-  --rank RANK           Node rank for distributed training
-  --dist-url DIST_URL   url used to set up distributed training. (default: tcp://59.110.31.55:12345)
-  --dist-backend DIST_BACKEND
-                        Distributed backend. (default: nccl)
-  --seed SEED           Seed for initializing training.
+  --seed SEED           Seed for initializing training. (Default: 666)
   --gpu GPU             GPU id to use.
-  --multiprocessing-distributed
-                        Use multi-processing distributed testing to launch N processes per node, which has N GPUs. This is the fastest way to use PyTorch for either single node or multi node data parallel testing.
 
 # Example
 $ python3 test_benchmark.py -a esrgan16 --pretrained --gpu 0 [image-folder with train and val folders]
@@ -110,11 +98,11 @@ optional arguments:
   -h, --help            show this help message and exit
   --lr LR               Test low resolution image name.
   --hr HR               Raw high resolution image name.
-  -a ARCH, --arch ARCH  Model architecture: esrgan16 | esrgan23 (default: esrgan16)
-  --upscale-factor {4}  Low to high resolution scaling factor. (default: 4)
-  --model-path PATH     Path to latest checkpoint for model.
+  -a ARCH, --arch ARCH  Model architecture: esrgan16 | esrgan23. (Default: esrgan16)
+  --upscale-factor {4}  Low to high resolution scaling factor. Optional: [4]. (Default: 4)
+  --model-path PATH     Path to latest checkpoint for model. (Default: `./weights/GAN.pth`)
   --pretrained          Use pre-trained model.
-  --seed SEED           Seed for initializing testing.
+  --seed SEED           Seed for initializing training. (Default: 666)
   --gpu GPU             GPU id to use.
   
 # Example
@@ -131,11 +119,11 @@ ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.
 optional arguments:
   -h, --help            show this help message and exit
   --file FILE           Test low resolution video name.
-  -a ARCH, --arch ARCH  Model architecture: esrgan16 | esrgan23 (default: esrgan16)
-  --upscale-factor {4}  Low to high resolution scaling factor. (default: 4)
-  --model-path PATH     Path to latest checkpoint for model.
+  -a ARCH, --arch ARCH  Model architecture: esrgan16 | esrgan23. (Default: esrgan16)
+  --upscale-factor {4}  Low to high resolution scaling factor. Optional: [4]. (Default: 4)
+  --model-path PATH     Path to latest checkpoint for model. (Default: `./weights/GAN.pth`)
   --pretrained          Use pre-trained model.
-  --seed SEED           Seed for initializing testing.
+  --seed SEED           Seed for initializing training. (Default: 666)
   --gpu GPU             GPU id to use.
   --view                Do you want to show SR video synchronously.
                         
@@ -159,24 +147,24 @@ usage: train.py [-h] [-a ARCH] [-j N] [--psnr-epochs N] [--start-psnr-epoch N] [
 ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.
 
 positional arguments:
-  DIR                   Path to dataset
+  DIR                   Path to dataset.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -a ARCH, --arch ARCH  Model architecture: esrgan16 | esrgan23 (default: esrgan16)
-  -j N, --workers N     Number of data loading workers. (default: 4)
-  --psnr-epochs N       Number of total psnr epochs to run. (default: 4630)
-  --start-psnr-epoch N  Manual psnr epoch number (useful on restarts). (default: 0)
-  --gan-epochs N        Number of total gan epochs to run. (default: 1852)
-  --start-gan-epoch N   Manual gan epoch number (useful on restarts). (default: 0)
-  -b N, --batch-size N  mini-batch size (default: 16), this is the total batch size of all GPUs on the current node when using Data Parallel or Distributed Data Parallel
+  -a ARCH, --arch ARCH  Model architecture: esrgan16 | esrgan23. (Default: esrgan16)
+  -j N, --workers N     Number of data loading workers. (Default: 4)
+  --psnr-epochs N       Number of total psnr epochs to run. (Default: 4630)
+  --start-psnr-epoch N  Manual psnr epoch number (useful on restarts). (Default: 0)
+  --gan-epochs N        Number of total gan epochs to run. (Default: 1852)
+  --start-gan-epoch N   Manual gan epoch number (useful on restarts). (Default: 0)
+  -b N, --batch-size N  Mini-batch size (default: 16), this is the total batch size of all GPUs on the current node when using Data Parallel or Distributed Data Parallel.
   --sampler-frequency N
-                        If there are many datasets, this method can be used to increase the number of epochs. (default:1)
-  --psnr-lr PSNR_LR     Learning rate for psnr-oral. (default: 0.0002)
-  --gan-lr GAN_LR       Learning rate for gan-oral. (default: 0.0001)
+                        If there are many datasets, this method can be used to increase the number of epochs. (Default:1)
+  --psnr-lr PSNR_LR     Learning rate for psnr-oral. (Default: 0.0002)
+  --gan-lr GAN_LR       Learning rate for gan-oral. (Default: 0.0001)
   --image-size IMAGE_SIZE
-                        Image size of high resolution image. (default: 128)
-  --upscale-factor {4}  Low to high resolution scaling factor. (default: 4)
+                        Image size of high resolution image. (Default: 128)
+  --upscale-factor {4}  Low to high resolution scaling factor. Optional: [4] (Default: 4)
   --model-path PATH     Path to latest checkpoint for model.
   --resume_psnr PATH    Path to latest psnr-oral checkpoint.
   --resume_d PATH       Path to latest -oral checkpoint.
@@ -184,17 +172,17 @@ optional arguments:
   --pretrained          Use pre-trained model.
   --world-size WORLD_SIZE
                         Number of nodes for distributed training.
-  --rank RANK           Node rank for distributed training
-  --dist-url DIST_URL   url used to set up distributed training. (default: tcp://59.110.31.55:12345)
+  --rank RANK           Node rank for distributed training. (Default: -1)
+  --dist-url DIST_URL   url used to set up distributed training. (Default: `tcp://59.110.31.55:12345`)
   --dist-backend DIST_BACKEND
-                        Distributed backend. (default: nccl)
+                        Distributed backend. (Default: `nccl`)
   --seed SEED           Seed for initializing training.
   --gpu GPU             GPU id to use.
   --multiprocessing-distributed
                         Use multi-processing distributed training to launch N processes per node, which has N GPUs. This is the fastest way to use PyTorch for either single node or multi node data parallel training.
                         
 # Example (e.g DIV2K)
-$ python train.py -a esrgan16 [image-folder with train and val folders]
+$ python train.py -a esrgan16 --gpu 0 [image-folder with train and val folders]
 # Multi-processing Distributed Data Parallel Training
 $ python3 train.py -a esrgan16 --dist-url 'tcp://127.0.0.1:12345' --dist-backend 'nccl' --multiprocessing-distributed --world-size 1 --rank 0 [image-folder with train and val folders]
 ```
@@ -202,7 +190,7 @@ $ python3 train.py -a esrgan16 --dist-url 'tcp://127.0.0.1:12345' --dist-backend
 If you want to load weights that you've trained before, run the following command.
 
 ```bash
-$ python3 train.py -a esrgan16 --start-psnr-epoch 10 --resume-psnr weights/PSNR_epoch10.pth [image-folder with train and val folders] 
+$ python3 train.py -a esrgan16 --start-psnr-epoch 10 --resume-psnr weights/PSNR_epoch10.pth --gpu 0 [image-folder with train and val folders] 
 ```
 
 ### Contributing
@@ -228,8 +216,9 @@ to let the discriminator predict relative realness instead of the absolute value
 perceptual loss by using the features before activation, which could provide stronger supervision for brightness 
 consistency and texture recovery. Benefiting from these improvements, the proposed ESRGAN achieves consistently 
 better visual quality with more realistic and natural textures than SRGAN and won the first place in 
-the PIRM2018-SR Challenge. The code is available at [this https URL](https://github.com/xinntao/ESRGAN) .
-[[Paper]](https://arxiv.org/pdf/1609.04802)
+the PIRM2018-SR Challenge. The code is available at [this https URL](https://github.com/xinntao/ESRGAN).
+
+[[Paper]](https://arxiv.org/pdf/1609.04802) [[Code]](https://github.com/xinntao/ESRGAN)
 
 ```
 @misc{wang2018esrgan,

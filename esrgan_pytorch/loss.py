@@ -82,7 +82,7 @@ class VGGLoss(torch.nn.Module):
         """ Constructing characteristic loss function of VGG network. For VGG19 35th layer.
 
         Args:
-            feature_layer (int): How many layers in VGG19. (Default:35).
+            feature_layer (int): How many layers in VGG19. (Default: 35).
 
         Notes:
             features(

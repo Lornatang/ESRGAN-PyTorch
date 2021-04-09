@@ -1,4 +1,4 @@
-# Copyright 2020 Dakewe Biotech Corporation. All Rights Reserved.
+# Copyright 2021 Dakewe Biotech Corporation. All Rights Reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
@@ -16,6 +16,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.hub import load_state_dict_from_url
 
+from .utils import ResidualInResidualDenseBlock
+
 model_urls = {
     "esrgan16": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/v0.2.0/ESRGAN16_DF2K-a03a643d.pth",
     "esrgan23": "https://github.com/Lornatang/ESRGAN-PyTorch/releases/download/v0.2.0/ESRGAN23_DF2K-13a67ca9.pth"
@@ -23,7 +25,7 @@ model_urls = {
 
 
 class Generator(nn.Module):
-    def __init__(self, num_rrdb_blocks: int):
+    def __init__(self, num_rrdb_blocks: int = 16):
         r""" This is an esrgan model defined by the author himself.
 
         We use two settings for our generator – one of them contains 8 residual blocks, with a capacity similar
@@ -39,124 +41,41 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
 
         # First layer
-        self.conv1 = nn.Conv2d(3, 64, 3, 1, 1)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1)
 
         # 16/23 ResidualInResidualDenseBlock layer.
         trunk = []
         for _ in range(num_rrdb_blocks):
-            trunk += [ResidualInResidualDenseBlock(64, 32, 0.2)]
+            trunk += [ResidualInResidualDenseBlock(channels=64, growth_channels=32, scale_ratio=0.2)]
         self.trunk = nn.Sequential(*trunk)
 
         # Second conv layer post residual blocks
-        self.conv2 = nn.Conv2d(64, 64, 3, 1, 1)
+        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
 
         # Upsampling layers
-        self.up1 = nn.Conv2d(64, 64, 3, 1, 1)
-        self.up2 = nn.Conv2d(64, 64, 3, 1, 1)
+        self.up1 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
+        self.up2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
 
         # Next layer after upper sampling
         self.conv3 = nn.Sequential(
-            nn.Conv2d(64, 64, 3, 1, 1),
-            nn.LeakyReLU(0.2, True)
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(negative_slope=0.2, inplace=True)
         )
 
         # Final output layer
-        self.conv4 = nn.Conv2d(64, 3, 3, 1, 1)
+        self.conv4 = nn.Conv2d(64, 3, kernel_size=3, stride=1, padding=1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out1 = self.conv1(x)
         trunk = self.trunk(out1)
         out2 = self.conv2(trunk)
         out = torch.add(out1, out2)
-        out = F.leaky_relu(self.up1(F.interpolate(out, scale_factor=2, mode="nearest")), 0.2, True)
-        out = F.leaky_relu(self.up2(F.interpolate(out, scale_factor=2, mode="nearest")), 0.2, True)
+        out = F.leaky_relu(self.up1(F.interpolate(out, scale_factor=2, mode="nearest")), negative_slope=0.2, inplace=True)
+        out = F.leaky_relu(self.up2(F.interpolate(out, scale_factor=2, mode="nearest")), negative_slope=0.2, inplace=True)
         out = self.conv3(out)
         out = self.conv4(out)
 
         return out
-
-
-class ResidualDenseBlock(nn.Module):
-    r"""The residual block structure of traditional SRGAN and Dense model is defined"""
-
-    def __init__(self, channels: int, growth_channels: int, scale_ratio: float):
-        """
-
-        Args:
-            channels (int): Number of channels in the input image.
-            growth_channels (int): how many filters to add each layer (`k` in paper).
-            scale_ratio (float): Residual channel scaling column.
-        """
-        super(ResidualDenseBlock, self).__init__()
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(channels + 0 * growth_channels, growth_channels, 3, 1, 1),
-            nn.LeakyReLU(0.2, True)
-        )
-        self.conv2 = nn.Sequential(
-            nn.Conv2d(channels + 1 * growth_channels, growth_channels, 3, 1, 1),
-            nn.LeakyReLU(0.2, True)
-        )
-        self.conv3 = nn.Sequential(
-            nn.Conv2d(channels + 2 * growth_channels, growth_channels, 3, 1, 1),
-            nn.LeakyReLU(0.2, True)
-        )
-        self.conv4 = nn.Sequential(
-            nn.Conv2d(channels + 3 * growth_channels, growth_channels, 3, 1, 1),
-            nn.LeakyReLU(0.2, True)
-        )
-        self.conv5 = nn.Conv2d(channels + 4 * growth_channels, channels, 3, 1, 1)
-
-        self.scale_ratio = scale_ratio
-
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight)
-                m.weight.data *= 0.1
-                if m.bias is not None:
-                    m.bias.data.zero_()
-            elif isinstance(m, nn.Linear):
-                nn.init.kaiming_normal_(m.weight)
-                m.weight.data *= 0.1
-                if m.bias is not None:
-                    m.bias.data.zero_()
-            elif isinstance(m, nn.BatchNorm2d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias.data, 0.0)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        conv1 = self.conv1(x)
-        conv2 = self.conv2(torch.cat((x, conv1), 1))
-        conv3 = self.conv3(torch.cat((x, conv1, conv2), 1))
-        conv4 = self.conv4(torch.cat((x, conv1, conv2, conv3), 1))
-        conv5 = self.conv5(torch.cat((x, conv1, conv2, conv3, conv4), 1))
-
-        return conv5.mul(self.scale_ratio) + x
-
-
-class ResidualInResidualDenseBlock(nn.Module):
-    r"""The residual block structure of traditional ESRGAN and Dense model is defined"""
-
-    def __init__(self, channels: int, growth_channels: int, scale_ratio: float):
-        """
-
-        Args:
-            channels (int): Number of channels in the input image.
-            growth_channels (int): how many filters to add each layer (`k` in paper).
-            scale_ratio (float): Residual channel scaling column.
-        """
-        super(ResidualInResidualDenseBlock, self).__init__()
-        self.RDB1 = ResidualDenseBlock(channels, growth_channels, scale_ratio)
-        self.RDB2 = ResidualDenseBlock(channels, growth_channels, scale_ratio)
-        self.RDB3 = ResidualDenseBlock(channels, growth_channels, scale_ratio)
-
-        self.scale_ratio = scale_ratio
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = self.RDB1(x)
-        out = self.RDB2(out)
-        out = self.RDB3(out)
-
-        return out.mul(self.scale_ratio) + x
 
 
 def _gan(arch, num_residual_block, pretrained, progress) -> Generator:

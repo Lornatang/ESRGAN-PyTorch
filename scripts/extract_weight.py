@@ -17,10 +17,9 @@ import logging
 import torch
 
 import esrgan_pytorch.models as models
+from esrgan_pytorch.utils.common import configure
 
-model_names = sorted(name for name in models.__dict__
-                     if name.islower() and not name.startswith("__")
-                     and callable(models.__dict__[name]))
+model_names = sorted(name for name in models.__dict__ if name.islower() and not name.startswith("__") and callable(models.__dict__[name]))
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(format="[ %(levelname)s ] %(message)s", level=logging.INFO)
@@ -30,13 +29,12 @@ parser.add_argument("-a", "--arch", metavar="ARCH", default="esrgan16",
                     choices=model_names,
                     help="Model architecture: " +
                          " | ".join(model_names) +
-                         " (default: esrgan16)")
+                         ". (Default: esrgan16)")
 parser.add_argument("--model-path", type=str, metavar="PATH", required=True,
                     help="Path to latest checkpoint for model.")
 args = parser.parse_args()
 
-# Configure model
-model = models.__dict__[args.arch]()
+model = configure(args)
 model.load_state_dict(torch.load(args.model_path)["state_dict"])
 torch.save(model.state_dict(), "Generator.pth")
 logger.info("Model convert done.")

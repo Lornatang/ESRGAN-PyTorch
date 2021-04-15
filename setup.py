@@ -26,7 +26,7 @@ DESCRIPTION = "ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks
 URL = "https://github.com/Lornatang/ESRGAN-PyTorch"
 EMAIL = "liu_changyu@dakewe.com"
 AUTHOR = "Liu Goodfellow"
-REQUIRES_PYTHON = ">=3.8.0"
+REQUIRES_PYTHON = ">=3.6.0"
 VERSION = "0.2.0"
 
 # Libraries that must be installed.

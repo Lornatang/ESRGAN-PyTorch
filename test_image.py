@@ -45,7 +45,7 @@ parser.add_argument("-a", "--arch", metavar="ARCH", default="esrgan16",
                     choices=model_names,
                     help="Model architecture: " +
                          " | ".join(model_names) +
-                         ". (Default: esrgan16)")
+                         ". (Default: `esrgan16`)")
 parser.add_argument("--upscale-factor", type=int, default=4, choices=[4],
                     help="Low to high resolution scaling factor. Optional: [4]. (Default: 4)")
 parser.add_argument("--model-path", default="./weights/GAN.pth", type=str, metavar="PATH",
@@ -131,7 +131,7 @@ if __name__ == "__main__":
 
     logger.info("TestingEngine:")
     print("\tAPI version .......... 0.2.0")
-    print("\tBuild ................ 2021.04.09")
+    print("\tBuild ................ 2021.04.15")
     print("##################################################\n")
     main()
 

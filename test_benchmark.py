@@ -40,7 +40,7 @@ parser.add_argument("-a", "--arch", metavar="ARCH", default="esrgan16",
                     choices=model_names,
                     help="Model architecture: " +
                          " | ".join(model_names) +
-                         " .(Default: esrgan16)")
+                         ". (Default: `esrgan16`)")
 parser.add_argument("-j", "--workers", default=8, type=int, metavar="N",
                     help="Number of data loading workers. (Default: 8)")
 parser.add_argument("-b", "--batch-size", default=32, type=int,
@@ -48,12 +48,15 @@ parser.add_argument("-b", "--batch-size", default=32, type=int,
                     help="mini-batch size (default: 32), this is the total "
                          "batch size of all GPUs on the current node when "
                          "using Data Parallel or Distributed Data Parallel")
+parser.add_argument("--sampler-frequency", default=1, type=int, metavar="N",
+                    help="If there are many datasets, this method can be used "
+                         "to increase the number of epochs. (Default:1)")
 parser.add_argument("--image-size", type=int, default=128,
                     help="Image size of high resolution image. (Default: 128)")
 parser.add_argument("--upscale-factor", type=int, default=4, choices=[4],
                     help="Low to high resolution scaling factor. Optional: [4]. (Default: 4)")
-parser.add_argument("--model-path", default="./weights/GAN.pth", type=str, metavar="PATH",
-                    help="Path to latest checkpoint for model. (Default: `./weights/GAN.pth`)")
+parser.add_argument("--model-path", default="", type=str, metavar="PATH",
+                    help="Path to latest checkpoint for model. (Default: ``)")
 parser.add_argument("--pretrained", dest="pretrained", action="store_true",
                     help="Use pre-trained model.")
 parser.add_argument("--seed", default=666, type=int,
@@ -159,7 +162,7 @@ if __name__ == "__main__":
 
     logger.info("TestingEngine:")
     print("\tAPI version .......... 0.2.0")
-    print("\tBuild ................ 2021.04.09")
+    print("\tBuild ................ 2021.04.15")
     print("##################################################\n")
     main()
 

@@ -57,7 +57,7 @@ parser.add_argument("-a", "--arch", metavar="ARCH", default="esrgan16",
                     choices=model_names,
                     help="Model architecture: " +
                          " | ".join(model_names) +
-                         ". (Default: esrgan16)")
+                         ". (Default: `esrgan16`)")
 parser.add_argument("-j", "--workers", default=4, type=int, metavar="N",
                     help="Number of data loading workers. (Default: 4)")
 parser.add_argument("--psnr-epochs", default=4630, type=int, metavar="N",

@@ -1,4 +1,4 @@
-# Copyright 2020 Dakewe Biotech Corporation. All Rights Reserved.
+# Copyright 2021 Dakewe Biotech Corporation. All Rights Reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
@@ -25,10 +25,8 @@ model_names = sorted(name for name in models.__dict__
                      and callable(models.__dict__[name]))
 
 parser = argparse.ArgumentParser(description="ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks.")
-parser.add_argument("-b", "--batch-size", type=int, default=16,
-                    help="When calculating full memory inference speed. (default: 16)")
 parser.add_argument("-i", "--image-size", type=int, default=32,
-                    help="Image size of low-resolution. (Default: 32).")
+                    help="Image size of low-resolution. (Default: 32)")
 parser.add_argument("--gpu", default=None, type=int,
                     help="GPU id to use.")
 
@@ -42,47 +40,42 @@ def inference(arch, cpu_data, cuda_data, args):
     flops = profile(model=cpu_model, inputs=(cpu_data,), verbose=False)[0] / 1E9 * 2
 
     with torch.no_grad():
-        if args.gpu is not None:
-            start_time = time.time()
+        start_time = time.time()
+        for _ in range(64):
             _ = cpu_model(cpu_data)
-            cpu_speed = int(1 / (time.time() - start_time) * args.batch_size)
+        cpu_speed = (time.time() - start_time) / 64 * 1E3
+        cuda_speed = 0.
 
+        if args.gpu is not None:
             cuda_model = cpu_model.cuda(args.gpu)
 
             start_time = time.time()
-            _ = cuda_model(cuda_data)
-            cuda_speed = int(1 / (time.time() - start_time) * args.batch_size)
+            for _ in range(64):
+                _ = cuda_model(cuda_data)
+            cuda_speed = (time.time() - start_time) / 64 * 1E3
 
-            return params, flops, cpu_speed, cuda_speed
-        else:
-            start_time = time.time()
-            _ = cpu_model(cpu_data)
-            cpu_speed = int(1 / (time.time() - start_time) * args.batch_size)
-
-            return params, flops, cpu_speed
+    return params, flops, cpu_speed, cuda_speed
 
 
 def main():
     args = parser.parse_args()
     tb = pt.PrettyTable()
 
-    cpu_data = torch.randn([args.batch_size, 3, args.image_size, args.image_size])
+    cpu_data = torch.randn([1, 3, args.image_size, args.image_size])
     if args.gpu is not None:
         cuda_data = cpu_data.cuda(args.gpu)
     else:
         cuda_data = None
 
-    print(f"|-------------------------------------------------------------|")
-    print(f"|                           Summary                           |")
     tb.field_names = ["Model", "Params", "FLOPs", "CPU Speed", "GPU Speed"]
 
     for i in range(len(model_names)):
         value = inference(model_names[i], cpu_data, cuda_data, args)
         tb.add_row([f"{model_names[i].center(15)}",
-                    f"{value[0]:4.2f} M",
-                    f"{value[1]:4.1f} G",
-                    f"{value[2]:4d} it/s",
-                    f"{value[3]:4d} it/s"])
+                    f"{value[0]:4.2f}M",
+                    f"{value[1]:4.1f}G",
+                    f"{int(value[2]):4d}ms",
+                    f"{int(value[3]):4d}ms"])
 
     print(tb)
 

@@ -130,7 +130,7 @@ if __name__ == "__main__":
     create_folder("tests")
 
     logger.info("TestingEngine:")
-    print("\tAPI version .......... 0.2.0")
+    print("\tAPI version .......... 0.2.2")
     print("\tBuild ................ 2021.04.15")
     print("##################################################\n")
     main()

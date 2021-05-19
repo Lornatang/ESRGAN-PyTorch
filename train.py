@@ -29,7 +29,9 @@ import torch.nn.parallel
 import torch.optim
 import torch.utils.data
 import torch.utils.data.distributed
+import torchvision.transforms as transforms
 import torchvision.utils as vutils
+from PIL import Image
 from tensorboardX import SummaryWriter
 
 import esrgan_pytorch.models as models
@@ -83,14 +85,14 @@ parser.add_argument("--gan-lr", type=float, default=0.0001,
 parser.add_argument("--image-size", type=int, default=128,
                     help="Image size of high resolution image. (Default: 128)")
 parser.add_argument("--upscale-factor", type=int, default=4, choices=[4],
-                    help="Low to high resolution scaling factor. Optional: [4] (Default: 4)")
+                    help="Low to high resolution scaling factor. Optional: [4]. (Default: 4)")
 parser.add_argument("--model-path", default="", type=str, metavar="PATH",
                     help="Path to latest checkpoint for model.")
-parser.add_argument("--resume_psnr", default="", type=str, metavar="PATH",
+parser.add_argument("--resume-psnr", default="", type=str, metavar="PATH",
                     help="Path to latest psnr-oral checkpoint.")
-parser.add_argument("--resume_d", default="", type=str, metavar="PATH",
+parser.add_argument("--resume-d", default="", type=str, metavar="PATH",
                     help="Path to latest -oral checkpoint.")
-parser.add_argument("--resume_g", default="", type=str, metavar="PATH",
+parser.add_argument("--resume-g", default="", type=str, metavar="PATH",
                     help="Path to latest psnr-oral checkpoint.")
 parser.add_argument("--pretrained", dest="pretrained", action="store_true",
                     help="Use pre-trained model.")
@@ -113,6 +115,10 @@ parser.add_argument("--multiprocessing-distributed", action="store_true",
                          "multi node data parallel training.")
 
 best_psnr = 0.0
+# Load base low-resolution image.
+base_image = transforms.ToTensor()(Image.open(os.path.join("assets", "butterfly.png")))
+base_image = base_image.unsqueeze(0)
+logger.info("Loaded `butterfly.png` successful.")
 
 
 def main():
@@ -150,7 +156,7 @@ def main():
 
 
 def main_worker(gpu, ngpus_per_node, args):
-    global best_psnr
+    global best_psnr, base_image
     args.gpu = gpu
 
     if args.gpu is not None:
@@ -216,16 +222,19 @@ def main_worker(gpu, ngpus_per_node, args):
                 f"\tContent:     VGG19_35th\n"
                 f"\tAdversarial: BCEWithLogitsLoss")
 
+    if args.gpu is not None:
+        base_image = base_image.cuda(args.gpu)
+
     # All optimizer function and scheduler function.
-    psnr_optimizer = torch.optim.Adam(generator.parameters(), args.psnr_lr, (0.9, 0.999))
+    psnr_optimizer = torch.optim.Adam(generator.parameters(), lr=args.psnr_lr, betas=(0.9, 0.999))
     psnr_epoch_indices = math.floor(args.psnr_epochs // 4)
-    psnr_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(psnr_optimizer, psnr_epoch_indices, 1, 1e-7)
-    discriminator_optimizer = torch.optim.Adam(discriminator.parameters(), args.gan_lr, (0.9, 0.999))
-    generator_optimizer = torch.optim.Adam(generator.parameters(), args.gan_lr, (0.9, 0.999))
+    psnr_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(psnr_optimizer, T_0=psnr_epoch_indices, T_mult=1, eta_min=1e-7)
+    discriminator_optimizer = torch.optim.Adam(discriminator.parameters(), lr=args.gan_lr, betas=(0.9, 0.999))
+    generator_optimizer = torch.optim.Adam(generator.parameters(), lr=args.gan_lr, betas=(0.9, 0.999))
     interval_epoch = math.ceil(args.gan_epochs // 8)
     epoch_indices = [interval_epoch, interval_epoch * 2, interval_epoch * 4, interval_epoch * 6]
-    discriminator_scheduler = torch.optim.lr_scheduler.MultiStepLR(discriminator_optimizer, epoch_indices, 0.5)
-    generator_scheduler = torch.optim.lr_scheduler.MultiStepLR(generator_optimizer, epoch_indices, 0.5)
+    discriminator_scheduler = torch.optim.lr_scheduler.MultiStepLR(discriminator_optimizer, milestones=epoch_indices, gamma=0.5)
+    generator_scheduler = torch.optim.lr_scheduler.MultiStepLR(generator_optimizer, milestones=epoch_indices, gamma=0.5)
     logger.info(f"Optimizer information:\n"
                 f"\tPSNR learning rate:          {args.psnr_lr}\n"
                 f"\tDiscriminator learning rate: {args.gan_lr}\n"
@@ -349,10 +358,10 @@ def main_worker(gpu, ngpus_per_node, args):
 
         # Test for every epoch.
         psnr, ssim, lpips, gmsd = test(dataloader=test_dataloader, model=generator, gpu=args.gpu)
-        gan_writer.add_scalar("Test/PSNR", psnr, epoch + 1)
-        gan_writer.add_scalar("Test/SSIM", ssim, epoch + 1)
-        gan_writer.add_scalar("Test/LPIPS", lpips, epoch + 1)
-        gan_writer.add_scalar("Test/GMSD", gmsd, epoch + 1)
+        psnr_writer.add_scalar("PSNR_Test/PSNR", psnr, epoch + 1)
+        psnr_writer.add_scalar("PSNR_Test/SSIM", ssim, epoch + 1)
+        psnr_writer.add_scalar("PSNR_Test/LPIPS", lpips, epoch + 1)
+        psnr_writer.add_scalar("PSNR_Test/GMSD", gmsd, epoch + 1)
 
         is_best = psnr > best_psnr
         best_psnr = max(psnr, best_psnr)
@@ -368,7 +377,6 @@ def main_worker(gpu, ngpus_per_node, args):
                 torch.save(generator.state_dict(), os.path.join("weights", f"PSNR.pth"))
 
     # Load best model weight.
-    best_psnr = 0.0
     generator.load_state_dict(torch.load(os.path.join("weights", f"PSNR.pth"), map_location=f"cuda:{args.gpu}"))
 
     for epoch in range(args.start_gan_epoch, args.gan_epochs):
@@ -394,13 +402,10 @@ def main_worker(gpu, ngpus_per_node, args):
 
         # Test for every epoch.
         psnr, ssim, lpips, gmsd = test(dataloader=test_dataloader, model=generator, gpu=args.gpu)
-        gan_writer.add_scalar("Test/PSNR", psnr, epoch + 1)
-        gan_writer.add_scalar("Test/SSIM", ssim, epoch + 1)
-        gan_writer.add_scalar("Test/LPIPS", lpips, epoch + 1)
-        gan_writer.add_scalar("Test/GMSD", gmsd, epoch + 1)
-
-        is_best = psnr > best_psnr
-        best_psnr = max(psnr, best_psnr)
+        gan_writer.add_scalar("GAN_Test/PSNR", psnr, epoch + 1)
+        gan_writer.add_scalar("GAN_Test/SSIM", ssim, epoch + 1)
+        gan_writer.add_scalar("GAN_Test/LPIPS", lpips, epoch + 1)
+        gan_writer.add_scalar("GAN_Test/GMSD", gmsd, epoch + 1)
 
         if not args.multiprocessing_distributed or (args.multiprocessing_distributed and args.rank % ngpus_per_node == 0):
             torch.save({"epoch": epoch + 1,
@@ -414,8 +419,6 @@ def main_worker(gpu, ngpus_per_node, args):
                         "state_dict": generator.state_dict(),
                         "optimizer": generator_optimizer.state_dict()
                         }, os.path.join("weights", f"Generator_epoch{epoch}.pth"))
-            if is_best:
-                torch.save(generator.state_dict(), os.path.join("weights", f"GAN.pth"))
 
 
 def train_psnr(dataloader: torch.utils.data.DataLoader,
@@ -460,16 +463,15 @@ def train_psnr(dataloader: torch.utils.data.DataLoader,
         losses.update(loss.item(), lr.size(0))
 
         iters = i + epoch * len(dataloader) + 1
-        writer.add_scalar("Train/Loss", loss.item(), iters)
+        writer.add_scalar("PSNR_Train/MSE_Loss", loss.item(), iters)
 
         # Output results every 100 batches.
         if i % 100 == 0:
             progress.display(i)
 
-        # Save image every 300 batches.
-        if iters % 300 == 0:
-            vutils.save_image(hr.detach(), os.path.join("runs", "hr", f"PSNR_{iters}.bmp"))
-            vutils.save_image(sr.detach(), os.path.join("runs", "sr", f"PSNR_{iters}.bmp"))
+    # Each Epoch validates the model once.
+    sr = model(base_image)
+    vutils.save_image(sr.detach(), os.path.join("runs", f"PSNR_epoch_{epoch}.png"))
 
 
 def train_gan(dataloader: torch.utils.data.DataLoader,
@@ -546,7 +548,7 @@ def train_gan(dataloader: torch.utils.data.DataLoader,
 
             # Calculate the absolute value of pixels with L1 loss.
             pixel_loss = pixel_criterion(sr, hr.detach())
-            # # The 35th layer in VGG19 is used as the feature extractor by default.
+            # The 35th layer in VGG19 is used as the feature extractor by default.
             content_loss = content_criterion(sr, hr.detach())
             # Adversarial loss for real and fake images (relativistic average GAN)
             adversarial_loss = adversarial_criterion(fake_output - torch.mean(real_output), real_label)
@@ -573,20 +575,19 @@ def train_gan(dataloader: torch.utils.data.DataLoader,
         adversarial_losses.update(adversarial_loss.item(), lr.size(0))
 
         iters = i + epoch * len(dataloader) + 1
-        writer.add_scalar("Train/D Loss", d_loss.item(), iters)
-        writer.add_scalar("Train/G Loss", g_loss.item(), iters)
-        writer.add_scalar("Train/Pixel Loss", pixel_loss.item(), iters)
-        writer.add_scalar("Train/Content Loss", content_loss.item(), iters)
-        writer.add_scalar("Train/Adversarial Loss", adversarial_loss.item(), iters)
+        writer.add_scalar("GAN_Train/D_Loss", d_loss.item(), iters)
+        writer.add_scalar("GAN_Train/G_Loss", g_loss.item(), iters)
+        writer.add_scalar("GAN_Train/Pixel_Loss", pixel_loss.item(), iters)
+        writer.add_scalar("GAN_Train/Content_Loss", content_loss.item(), iters)
+        writer.add_scalar("GAN_Train/Adversarial_Loss", adversarial_loss.item(), iters)
 
         # Output results every 100 batches.
         if i % 100 == 0:
             progress.display(i)
 
-        # Save image every 300 batches.
-        if iters % 300 == 0:
-            vutils.save_image(hr.detach(), os.path.join("runs", "hr", f"GAN_{iters}.bmp"))
-            vutils.save_image(sr.detach(), os.path.join("runs", "sr", f"GAN_{iters}.bmp"))
+    # Each Epoch validates the model once.
+    sr = generator(base_image)
+    vutils.save_image(sr.detach(), os.path.join("runs", f"GAN_epoch_{epoch}.png"))
 
 
 if __name__ == "__main__":
@@ -594,13 +595,11 @@ if __name__ == "__main__":
     print("Run Training Engine.\n")
 
     create_folder("runs")
-    create_folder("runs/hr")
-    create_folder("runs/sr")
     create_folder("weights")
 
     logger.info("TrainingEngine:")
     print("\tAPI version .......... 0.2.2")
-    print("\tBuild ................ 2021.04.15")
+    print("\tBuild ................ 2021.05.19")
     print("##################################################\n")
     main()
     logger.info("All training has been completed successfully.\n")

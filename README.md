@@ -102,7 +102,7 @@ optional arguments:
   --hr HR               Raw high resolution image name.
   -a ARCH, --arch ARCH  Model architecture: esrgan16 | esrgan23. (Default: `esrgan16`)
   --upscale-factor {4}  Low to high resolution scaling factor. Optional: [4]. (Default: 4)
-  --model-path PATH     Path to latest checkpoint for model. (Default: `./weights/GAN.pth`)
+  --model-path PATH     Path to latest checkpoint for model. (Default: ``)
   --pretrained          Use pre-trained model.
   --seed SEED           Seed for initializing training. (Default: 666)
   --gpu GPU             GPU id to use.
@@ -128,7 +128,7 @@ optional arguments:
   --seed SEED           Seed for initializing training. (Default: 666)
   --gpu GPU             GPU id to use.
   --view                Do you want to show SR video synchronously.
-                        
+                     
 # Example
 $ python3 test_video.py -a esrgan16 --file [path-to-video] --pretrained --gpu 0 --view 
 ```
@@ -187,11 +187,11 @@ optional arguments:
   --gan-lr GAN_LR       Learning rate for gan-oral. (Default: 0.0001)
   --image-size IMAGE_SIZE
                         Image size of high resolution image. (Default: 128)
-  --upscale-factor {4}  Low to high resolution scaling factor. Optional: [4] (Default: 4)
+  --upscale-factor {4}  Low to high resolution scaling factor. Optional: [4]. (Default: 4)
   --model-path PATH     Path to latest checkpoint for model.
-  --resume_psnr PATH    Path to latest psnr-oral checkpoint.
-  --resume_d PATH       Path to latest -oral checkpoint.
-  --resume_g PATH       Path to latest psnr-oral checkpoint.
+  --resume-psnr PATH    Path to latest psnr-oral checkpoint.
+  --resume-d PATH       Path to latest -oral checkpoint.
+  --resume-g PATH       Path to latest psnr-oral checkpoint.
   --pretrained          Use pre-trained model.
   --world-size WORLD_SIZE
                         Number of nodes for distributed training.
@@ -202,8 +202,8 @@ optional arguments:
   --seed SEED           Seed for initializing training.
   --gpu GPU             GPU id to use.
   --multiprocessing-distributed
-                        Use multi-processing distributed training to launch N processes per node, which has N GPUs. This is the fastest way to use PyTorch for either single node or multi node data parallel training.
-                              
+                        Use multi-processing distributed training to launch N processes per node, which has N GPUs. This is the fastest way to use PyTorch for either single node or multi node data parallel training.  
+                   
 # Example (e.g DIV2K)
 $ python3 train.py -a esrgan16 --gpu 0 [image-folder with train and val folders]
 # Multi-processing Distributed Data Parallel Training

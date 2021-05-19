@@ -23,7 +23,6 @@ import torch.backends.cudnn as cudnn
 from PIL import Image
 
 import esrgan_pytorch.models as models
-from esrgan_pytorch.utils.common import configure
 from esrgan_pytorch.utils.estimate import iqa
 from esrgan_pytorch.utils.transform import process_image
 
@@ -77,11 +76,11 @@ def main_worker(gpu, args):
     args.gpu = gpu
 
     if args.gpu is not None:
-        logger.info(f"Use GPU: {args.gpu} for training.")
+        logger.info(f"Use GPU: {args.gpu} for testing.")
 
     cudnn.benchmark = True
 
-    model = configure(args)
+    model = models.__dict__[args.arch]()
 
     if not torch.cuda.is_available():
         logger.warning("Using CPU, this will be slow.")
@@ -112,8 +111,8 @@ def main_worker(gpu, args):
     print(f"Best model: `{best_model}`.")
     print(f"indicator Score")
     print(f"--------- -----")
-    print(f"MSE       {best_mse_value:6.4f}"
-          f"RMSE      {best_rmse_value:6.2f}"
+    print(f"MSE       {best_mse_value:6.4f}\n"
+          f"RMSE      {best_rmse_value:6.2f}\n"
           f"PSNR      {best_psnr_value:6.2f}\n"
           f"SSIM      {best_ssim_value:6.4f}\n"
           f"LPIPS     {best_lpips_value:6.4f}\n"

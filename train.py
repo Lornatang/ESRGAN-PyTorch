@@ -62,12 +62,12 @@ parser.add_argument("-a", "--arch", metavar="ARCH", default="esrgan16",
                          ". (Default: `esrgan16`)")
 parser.add_argument("-j", "--workers", default=4, type=int, metavar="N",
                     help="Number of data loading workers. (Default: 4)")
-parser.add_argument("--psnr-epochs", default=4630, type=int, metavar="N",
-                    help="Number of total psnr epochs to run. (Default: 4630)")
+parser.add_argument("--psnr-epochs", default=1435, type=int, metavar="N",
+                    help="Number of total psnr epochs to run. (Default: 1435)")
 parser.add_argument("--start-psnr-epoch", default=0, type=int, metavar='N',
                     help="Manual psnr epoch number (useful on restarts). (Default: 0)")
-parser.add_argument("--gan-epochs", default=1852, type=int, metavar="N",
-                    help="Number of total gan epochs to run. (Default: 1852)")
+parser.add_argument("--gan-epochs", default=574, type=int, metavar="N",
+                    help="Number of total gan epochs to run. (Default: 574)")
 parser.add_argument("--start-gan-epoch", default=0, type=int, metavar="N",
                     help="Manual gan epoch number (useful on restarts). (Default: 0)")
 parser.add_argument("-b", "--batch-size", default=16, type=int,

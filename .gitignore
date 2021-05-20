@@ -133,6 +133,7 @@ dmypy.json
 data/Camelyon16
 data/DF2K
 data/DIV2K
+data/DF2K+OST
 data/ImageNet2012
 
 # Program run create directory.

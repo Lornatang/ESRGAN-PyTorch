@@ -45,9 +45,7 @@ from esrgan_pytorch.utils.common import configure
 from esrgan_pytorch.utils.common import create_folder
 from esrgan_pytorch.utils.estimate import test
 
-model_names = sorted(name for name in models.__dict__
-                     if name.islower() and not name.startswith("__")
-                     and callable(models.__dict__[name]))
+model_names = sorted(name for name in models.__dict__ if name.islower() and not name.startswith("__") and callable(models.__dict__[name]))
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(format="[ %(levelname)s ] %(message)s", level=logging.DEBUG)

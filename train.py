@@ -113,6 +113,7 @@ parser.add_argument("--multiprocessing-distributed", action="store_true",
                          "multi node data parallel training.")
 
 best_psnr = 0.0
+best_ssim = 0.0
 # Load base low-resolution image.
 base_image = transforms.ToTensor()(Image.open(os.path.join("assets", "butterfly.png")))
 base_image = base_image.unsqueeze(0)
@@ -154,7 +155,7 @@ def main():
 
 
 def main_worker(gpu, ngpus_per_node, args):
-    global best_psnr, base_image
+    global best_psnr, best_ssim, base_image
     args.gpu = gpu
 
     if args.gpu is not None:
@@ -405,6 +406,9 @@ def main_worker(gpu, ngpus_per_node, args):
         gan_writer.add_scalar("GAN_Test/LPIPS", lpips, epoch + 1)
         gan_writer.add_scalar("GAN_Test/GMSD", gmsd, epoch + 1)
 
+        is_best = ssim > best_ssim
+        best_ssim = max(ssim, best_ssim)
+
         if not args.multiprocessing_distributed or (args.multiprocessing_distributed and args.rank % ngpus_per_node == 0):
             torch.save({"epoch": epoch + 1,
                         "arch": "vgg",
@@ -417,6 +421,8 @@ def main_worker(gpu, ngpus_per_node, args):
                         "state_dict": generator.state_dict(),
                         "optimizer": generator_optimizer.state_dict()
                         }, os.path.join("weights", f"Generator_epoch{epoch}.pth"))
+            if is_best:
+                torch.save(generator.state_dict(), os.path.join("weights", f"GAN.pth"))
 
 
 def train_psnr(dataloader: torch.utils.data.DataLoader,

@@ -51,6 +51,13 @@ $ cd ESRGAN-PyTorch/
 $ pip3 install -r requirements.txt
 ```
 
+#### Download pretrained weights (e.g esrgan16)
+
+```bash
+$ cd weights/
+$ python3 download_weights.py
+```
+
 #### Download dataset
 
 ```bash

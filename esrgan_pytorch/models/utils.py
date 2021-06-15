@@ -86,9 +86,11 @@ class ResidualInResidualDenseBlock(nn.Module):
         self.RDB2 = ResidualDenseBlock(channels, growth_channels, scale_ratio)
         self.RDB3 = ResidualDenseBlock(channels, growth_channels, scale_ratio)
 
+        self.scale_ratio = scale_ratio
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = self.RDB1(x)
         out = self.RDB2(out)
         out = self.RDB3(out)
 
-        return out * 0.2 + x
+        return out * self.scale_ratio + x

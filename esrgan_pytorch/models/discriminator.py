@@ -15,7 +15,6 @@ import torch
 import torch.nn as nn
 
 
-# Source code reference from `https://github.com/xinntao/BasicSR/blob/master/basicsr/models/archs/discriminator_arch.py`.
 class DiscriminatorForVGG(nn.Module):
     def __init__(self, image_size: int = 128) -> None:
         super(DiscriminatorForVGG, self).__init__()
@@ -78,7 +77,6 @@ class DiscriminatorForVGG(nn.Module):
 
 
 def discriminator_for_vgg(image_size: int = 128) -> DiscriminatorForVGG:
-    r"""GAN model architecture from the `"One weird trick..." <https://arxiv.org/abs/1809.00219>` paper.
-    """
+    r"""GAN model architecture from `<https://arxiv.org/pdf/1809.00219.pdf>` paper."""
     model = DiscriminatorForVGG(image_size)
     return model

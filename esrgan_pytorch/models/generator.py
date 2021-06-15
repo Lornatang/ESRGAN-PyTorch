@@ -87,7 +87,7 @@ def _gan(arch, num_residual_block, pretrained, progress) -> Generator:
 
 
 def esrgan16(pretrained: bool = False, progress: bool = True) -> Generator:
-    r"""GAN model architecture from the `"One weird trick..." <https://arxiv.org/abs/1809.00219>` paper.
+    r"""GAN model architecture from `<https://arxiv.org/pdf/1809.00219.pdf>` paper.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
@@ -97,7 +97,7 @@ def esrgan16(pretrained: bool = False, progress: bool = True) -> Generator:
 
 
 def esrgan23(pretrained: bool = False, progress: bool = True) -> Generator:
-    r"""GAN model architecture from the `"One weird trick..." <https://arxiv.org/abs/1809.00219>` paper.
+    r"""GAN model architecture from `<https://arxiv.org/pdf/1809.00219.pdf>` paper.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet

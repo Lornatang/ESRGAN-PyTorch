@@ -11,22 +11,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import random
+from typing import Any
 
-import PIL.BmpImagePlugin
 import cv2
 import numpy as np
 import torch
 import torchvision.transforms as transforms
-import torchvision.transforms.functional as F
 from PIL import Image
 
 __all__ = [
-    "opencv2pil", "opencv2tensor", "pil2opencv", "process_image", "train_transform"
+    "opencv2pil", "opencv2tensor", "pil2opencv", "process_image"
 ]
 
 
-def opencv2pil(image: np.ndarray) -> PIL.BmpImagePlugin.BmpImageFile:
+def opencv2pil(image) -> Any:
     """ OpenCV Convert to PIL.Image format.
 
     Returns:
@@ -34,10 +32,11 @@ def opencv2pil(image: np.ndarray) -> PIL.BmpImagePlugin.BmpImageFile:
     """
 
     image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+
     return image
 
 
-def opencv2tensor(image: np.ndarray, gpu: int) -> torch.Tensor:
+def opencv2tensor(image, gpu: int) -> torch.Tensor:
     """ OpenCV Convert to torch.Tensor format.
 
     Returns:
@@ -45,13 +44,14 @@ def opencv2tensor(image: np.ndarray, gpu: int) -> torch.Tensor:
     """
     rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     nhwc_image = torch.from_numpy(rgb_image).div(255.0).unsqueeze(0)
-    input_tensor = nhwc_image.permute(0, 3, 1, 2)
+    tensor = nhwc_image.permute(0, 3, 1, 2)
     if gpu is not None:
-        input_tensor = input_tensor.cuda(gpu, non_blocking=True)
-    return input_tensor
+        tensor = tensor.cuda(gpu, non_blocking=True)
+
+    return tensor
 
 
-def pil2opencv(image: PIL.BmpImagePlugin.BmpImageFile) -> np.ndarray:
+def pil2opencv(image) -> np.ndarray:
     """ PIL.Image Convert to OpenCV format.
 
     Returns:
@@ -59,51 +59,38 @@ def pil2opencv(image: PIL.BmpImagePlugin.BmpImageFile) -> np.ndarray:
     """
 
     image = cv2.cvtColor(np.asarray(image), cv2.COLOR_RGB2BGR)
+
     return image
 
 
-def process_image(image: PIL.BmpImagePlugin.BmpImageFile, gpu: int = None) -> torch.Tensor:
-    """ PIL.Image Convert to PyTorch format.
+def process_image(image, norm: bool = False, gpu: int = None) -> torch.Tensor:
+    """ RGB data convert to tensor data(PyTorch format).
 
     Args:
-        image (PIL.BmpImagePlugin.BmpImageFile): File read by PIL.Image.
-        gpu (int): Graphics card model.
+        image (image): File read by PIL.Image.
+        norm (bool): Is it necessary to normalize the input to [-1, 1]. (Default: `False`)
+        gpu (int): Graphics card index.
+
+    Examples:
+        >>> tensor_image = process_image(Image.open("lena.png"), norm=True, gpu=1)
 
     Returns:
         torch.Tensor.
     """
-    tensor = transforms.ToTensor()(image)
-    input_tensor = tensor.unsqueeze(0)
+    # If set to `True`, the input scaling is normalized to between [-1, 1].
+    if norm:
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], inplace=True)
+        ])
+    else:
+        transform = transforms.ToTensor()
+
+    # Convert C*H*W data to N*C*H*W data. Example: (3, 64, 64) -> (1, 3, 64, 64).
+    tensor = transform(image).unsqueeze(0)
+
+    # If the GPU model is specified, the data will be transferred to the GPU, otherwise it will be processed on the CPU.
     if gpu is not None:
-        input_tensor = input_tensor.cuda(gpu, non_blocking=True)
-    return input_tensor
+        tensor = tensor.cuda(gpu, non_blocking=True)
 
-
-def train_transform(lr: PIL.BmpImagePlugin.BmpImageFile, hr: PIL.BmpImagePlugin.BmpImageFile):
-    r"""Unified transformation of training dataset."""
-    # Rotate the image by angle.
-    angle = transforms.RandomRotation.get_params([-180, 180])
-    lr = lr.rotate(angle)
-    hr = hr.rotate(angle)
-
-    # Horizontally flip the given image randomly with a given probability.
-    p = random.random()
-    if p > 0.5:
-        lr = F.hflip(lr)
-        lr = F.vflip(lr)
-        hr = F.hflip(hr)
-        hr = F.vflip(hr)
-
-    # Randomly change the brightness, contrast, saturation and hue of an image.
-    lr = F.adjust_brightness(lr, brightness_factor=p)
-    lr = F.adjust_contrast(lr, contrast_factor=p)
-    lr = F.adjust_saturation(lr, saturation_factor=p)
-    hr = F.adjust_brightness(hr, brightness_factor=p)
-    hr = F.adjust_contrast(hr, contrast_factor=p)
-    hr = F.adjust_saturation(hr, saturation_factor=p)
-
-    # PIL to tensor.
-    lr = F.to_tensor(lr)
-    hr = F.to_tensor(hr)
-
-    return lr, hr
+    return tensor

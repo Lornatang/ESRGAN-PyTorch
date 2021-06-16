@@ -20,14 +20,17 @@ __all__ = [
 
 
 class ResidualDenseBlock(nn.Module):
-    r"""The residual block structure of traditional SRGAN and Dense model is defined"""
+    r"""
+
+    Args:
+        channels (int): Number of channels in the input image. (Default: 64)
+        growth_channels (int): how many filters to add each layer (`k` in paper). (Default: 32)
+        scale_ratio (float): Residual channel scaling column. (Default: 0.2)
+    """
 
     def __init__(self, channels: int = 64, growth_channels: int = 32, scale_ratio: float = 0.2):
         r"""
-        Args:
-            channels (int): Number of channels in the input image. (Default: 64)
-            growth_channels (int): how many filters to add each layer (`k` in paper). (Default: 32)
-            scale_ratio (float): Residual channel scaling column. (Default: 0.2)
+
         """
         super(ResidualDenseBlock, self).__init__()
         self.conv1 = nn.Sequential(
@@ -68,19 +71,21 @@ class ResidualDenseBlock(nn.Module):
         conv4 = self.conv4(torch.cat((x, conv1, conv2, conv3), dim=1))
         conv5 = self.conv5(torch.cat((x, conv1, conv2, conv3, conv4), dim=1))
 
-        return conv5 * self.scale_ratio + x
+        out = torch.add(conv5 * self.scale_ratio, x)
+
+        return out
 
 
 class ResidualInResidualDenseBlock(nn.Module):
-    r"""The residual block structure of traditional ESRGAN and Dense model is defined"""
+    r"""The residual block structure of traditional ESRGAN and Dense model is defined
+
+    Args:
+        channels (int): Number of channels in the input image. (Default: 64)
+        growth_channels (int): how many filters to add each layer (`k` in paper). (Default: 32)
+        scale_ratio (float): Residual channel scaling column. (Default: 0.2)
+    """
 
     def __init__(self, channels: int = 64, growth_channels: int = 32, scale_ratio: float = 0.2):
-        r"""
-        Args:
-            channels (int): Number of channels in the input image. (Default: 64)
-            growth_channels (int): how many filters to add each layer (`k` in paper). (Default: 32)
-            scale_ratio (float): Residual channel scaling column. (Default: 0.2)
-        """
         super(ResidualInResidualDenseBlock, self).__init__()
         self.RDB1 = ResidualDenseBlock(channels, growth_channels, scale_ratio)
         self.RDB2 = ResidualDenseBlock(channels, growth_channels, scale_ratio)
@@ -93,4 +98,6 @@ class ResidualInResidualDenseBlock(nn.Module):
         out = self.RDB2(out)
         out = self.RDB3(out)
 
-        return out * self.scale_ratio + x
+        out = torch.add(out * self.scale_ratio, x)
+
+        return out

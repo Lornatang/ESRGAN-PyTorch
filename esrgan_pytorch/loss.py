@@ -132,7 +132,7 @@ class ContentLoss(torch.nn.Module):
     def forward(self, source: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         # Use VGG19_35th loss as the euclidean distance between the feature representations of a reconstructed image
         # and the reference image.
-        loss = torch.nn.functional.mse_loss(self.feature_extract(source), self.feature_extract(target))
+        loss = torch.nn.functional.l1_loss(self.feature_extract(source), self.feature_extract(target))
 
         return loss
 

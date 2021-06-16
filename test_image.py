@@ -45,9 +45,9 @@ def main(args):
         # convolution algorithm.
         random.seed(args.seed)
         torch.manual_seed(args.seed)
-        logger.warning("You have chosen to seed training. "
+        logger.warning("You have chosen to seed testing. "
                        "This will turn on the CUDNN deterministic setting, "
-                       "which can slow down your training considerably! "
+                       "which can slow down your testing considerably! "
                        "You may see unexpected behavior when restarting "
                        "from checkpoints.")
         # for the current configuration, so as to optimize the operation efficiency.
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     parser.add_argument("--pretrained", dest="pretrained", action="store_true",
                         help="Use pre-trained model.")
     parser.add_argument("--seed", default=None, type=int,
-                        help="Seed for initializing training.")
+                        help="Seed for initializing testing.")
     parser.add_argument("--gpu", default=None, type=int,
                         help="GPU id to use.")
     args = parser.parse_args()

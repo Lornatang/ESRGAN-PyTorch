@@ -27,18 +27,11 @@ URL = "https://github.com/Lornatang/ESRGAN-PyTorch"
 EMAIL = "liu_changyu@dakewe.com"
 AUTHOR = "Liu Goodfellow"
 REQUIRES_PYTHON = ">=3.6.0"
-VERSION = "0.3.0"
+VERSION = "1.0.0"
 
 # Libraries that must be installed.
 REQUIRED = [
-    "torch",
-    "torchvision",
-    "pillow",
-    "numpy",
-    "opencv-python",
-    "tqdm",
-    "scipy",
-    "lpips"
+    "torch"
 ]
 
 # The following libraries directory need to be installed if you need to run all scripts.

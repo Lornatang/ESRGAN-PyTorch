@@ -88,8 +88,8 @@ if mode == "train":
     writer                = SummaryWriter(os.path.join("samples",  "logs", exp_name))
 
     # Additional variables.
-    exp_dir1 = os.path.join("samples", exp_name)
-    exp_dir2 = os.path.join("results", exp_name)
+    exp_dir1              = os.path.join("samples", exp_name)
+    exp_dir2              = os.path.join("results", exp_name)
 
 # ==============================================================================
 #                              Validate configure

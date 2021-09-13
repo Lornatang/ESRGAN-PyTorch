@@ -65,6 +65,7 @@ if mode == "train":
     epochs                = 465                                   # The total number of cycles in the training phase of the adversarial network.
 
     # Loss function.
+    psnr_criterion        = nn.MSELoss().to(device)               # PSNR metrics.
     pixel_criterion       = nn.L1Loss().to(device)                # Pixel loss.
     content_criterion     = ContentLoss().to(device)              # Content loss.
     adversarial_criterion = nn.BCELoss().to(device)               # Adversarial loss.

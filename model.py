@@ -13,13 +13,12 @@
 # ==============================================================================
 
 # ==============================================================================
-# 文件说明: 实现模型定义功能.
+# File description: Realize the model definition function.
 # ==============================================================================
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
-import torchvision.transforms as transforms
 from torch import Tensor
 
 __all__ = [
@@ -92,38 +91,38 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
         self.features = nn.Sequential(
             # input size. (3) x 128 x 128
-            nn.Conv2d(3, 64, 3, 1, 1, bias=True),
+            nn.Conv2d(3, 64, (3, 3), (1, 1), (1, 1), bias=True),
             nn.LeakyReLU(0.2, True),
             # state size. (64) x 64 x 64
-            nn.Conv2d(64, 64, 4, 2, 1, bias=False),
+            nn.Conv2d(64, 64, (4, 4), (2, 2), (1, 1), bias=False),
             nn.BatchNorm2d(64),
             nn.LeakyReLU(0.2, True),
-            nn.Conv2d(64, 128, 3, 1, 1, bias=False),
+            nn.Conv2d(64, 128, (3, 3), (1, 1), (1, 1), bias=False),
             nn.BatchNorm2d(128),
             nn.LeakyReLU(0.2, True),
             # state size. (128) x 32 x 32
-            nn.Conv2d(128, 128, 4, 2, 1, bias=False),
+            nn.Conv2d(128, 128, (4, 4), (2, 2), (1, 1), bias=False),
             nn.BatchNorm2d(128),
             nn.LeakyReLU(0.2, True),
-            nn.Conv2d(128, 256, 3, 1, 1, bias=False),
+            nn.Conv2d(128, 256, (3, 3), (1, 1), (1, 1), bias=False),
             nn.BatchNorm2d(256),
             nn.LeakyReLU(0.2, True),
             # state size. (256) x 16 x 16
-            nn.Conv2d(256, 256, 4, 2, 1, bias=False),
+            nn.Conv2d(256, 256, (4, 4), (2, 2), (1, 1), bias=False),
             nn.BatchNorm2d(256),
             nn.LeakyReLU(0.2, True),
-            nn.Conv2d(256, 512, 3, 1, 1, bias=False),
+            nn.Conv2d(256, 512, (3, 3), (1, 1), (1, 1), bias=False),
             nn.BatchNorm2d(512),
             nn.LeakyReLU(0.2, True),
             # state size. (512) x 8 x 8
-            nn.Conv2d(512, 512, 4, 2, 1, bias=False),
+            nn.Conv2d(512, 512, (4, 4), (2, 2), (1, 1), bias=False),
             nn.BatchNorm2d(512),
             nn.LeakyReLU(0.2, True),
-            nn.Conv2d(512, 512, 3, 1, 1, bias=False),
+            nn.Conv2d(512, 512, (3, 3), (1, 1), (1, 1), bias=False),
             nn.BatchNorm2d(512),
             nn.LeakyReLU(0.2, True),
             # state size. (512) x 4 x 4
-            nn.Conv2d(512, 512, 4, 2, 1, bias=False),
+            nn.Conv2d(512, 512, (4, 4), (2, 2), (1, 1), bias=False),
             nn.BatchNorm2d(512),
             nn.LeakyReLU(0.2, True)
         )
@@ -223,12 +222,8 @@ class ContentLoss(nn.Module):
         # The preprocessing method of the input data. This is the preprocessing method of the VGG model on the ImageNet dataset.
         self.register_buffer("mean", torch.Tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1))
         self.register_buffer("std", torch.Tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1))
-        self.resize = transforms.Resize([224, 224])
 
     def forward(self, sr: Tensor, hr: Tensor) -> Tensor:
-        # Scale the image to the input size of the VGG19 model.
-        sr = self.resize(sr)
-        hr = self.resize(hr)
         # Standardized operations.
         sr = (sr - self.mean) / self.std
         hr = (hr - self.mean) / self.std

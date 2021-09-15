@@ -75,7 +75,7 @@ if mode == "train":
     adversarial_weight    = 0.005
 
     # Optimizer.
-    p_optimizer           = optim.Adam(generator.parameters(),     0.0002, (0.9, 0.999))  # Generate model learning rate during generator training.
+    p_optimizer           = optim.Adam(generator.parameters(),     0.0002, (0.9, 0.999))  # Generator model learning rate during generator training.
     d_optimizer           = optim.Adam(discriminator.parameters(), 0.0001, (0.9, 0.999))  # Discriminator learning rate during adversarial network training.
     g_optimizer           = optim.Adam(generator.parameters(),     0.0001, (0.9, 0.999))  # Generator learning rate during adversarial network training.
 

@@ -128,7 +128,7 @@ def build_model() -> nn.Module:
     """Building discriminator and generators model
 
     Returns:
-        SRGAN model
+        ESRGAN model
 
     """
     discriminator = Discriminator().to(config.device)
@@ -160,7 +160,7 @@ def define_optimizer(discriminator: nn.Module, generator: nn.Module) -> [optim.A
         generator (nn.Module): Generator model
 
     Returns:
-        SRGAN optimizer
+        Discriminator optimizer, Generator optimizer
 
     """
     d_optimizer = optim.Adam(discriminator.parameters(), config.d_model_lr, config.d_model_betas)
@@ -177,7 +177,7 @@ def define_scheduler(d_optimizer: optim.Adam, g_optimizer: optim.Adam) -> [lr_sc
         g_optimizer (optim.Adam): Generator optimizer
 
     Returns:
-        SRGAN model scheduler
+        Discriminator scheduler, Generator scheduler
 
     """
     d_scheduler = lr_scheduler.StepLR(d_optimizer, config.d_optimizer_step_size, config.d_optimizer_gamma)

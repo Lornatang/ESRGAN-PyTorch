@@ -39,7 +39,7 @@ if mode == "train_rrdbnet":
     train_image_dir = "data/DFO2K/ESRGAN/train"
     valid_image_dir = "data/DFO2K/ESRGAN/valid"
 
-    image_size = 128
+    image_size = 192
     batch_size = 16
     num_workers = 4
 
@@ -50,7 +50,7 @@ if mode == "train_rrdbnet":
     resume_weight = ""
 
     # Total num epochs
-    epochs = 180
+    epochs = 120
 
     # Adam optimizer parameter for RRDBNet(p)
     model_lr = 2e-4
@@ -83,7 +83,7 @@ if mode == "train_esrgan":
     resume_g_weight = "results/Train_RRDBNet_baseline/g-last.pth"
 
     # Total num epochs
-    epochs = 72
+    epochs = 48
 
     # Loss function weight
     pixel_weight = 1.0

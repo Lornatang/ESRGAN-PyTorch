@@ -146,10 +146,10 @@ def define_optimizer(model) -> optim.Adam:
     """Define all optimizer functions
 
     Args:
-        model (nn.Module): SRResNet model
+        model (nn.Module): RRDBNet model
 
     Returns:
-        SRResNet optimizer
+        RRDBNet optimizer
 
     """
     optimizer = optim.Adam(model.parameters(), config.model_lr, config.model_betas)
@@ -167,7 +167,7 @@ def resume_checkpoint(model) -> None:
     """Transfer training or recovery training
 
     Args:
-        model (nn.Module): SRResNet model
+        model (nn.Module): RRDBNet model
 
     """
     if config.resume:

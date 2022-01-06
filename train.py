@@ -17,7 +17,7 @@
 # ============================================================================
 from torch.utils.data import DataLoader
 
-from config import *
+from old_config import *
 from dataset import BaseDataset
 
 

@@ -16,7 +16,6 @@ import io
 import os
 
 import lmdb
-import numpy as np
 from PIL import Image
 from torch import Tensor
 from torch.utils.data import Dataset
@@ -50,8 +49,10 @@ class ImageDataset(Dataset):
                 transforms.RandomRotation(90),
                 transforms.RandomHorizontalFlip(0.5),
             ])
-        else:
+        elif mode == "valid":
             self.hr_transforms = transforms.CenterCrop(image_size)
+        else:
+            raise "Unsupported data processing model, please use `train` or `valid`."
 
         self.lr_transforms = transforms.Resize(image_size // upscale_factor, interpolation=IMode.BICUBIC, antialias=True)
 
@@ -81,10 +82,21 @@ class LMDBDataset(Dataset):
         lr_datasets (list): Low-resolution image data in the dataset
         hr_datasets (list): High-resolution image data in the dataset
 
+    Args:
+        lr_lmdb_path (str): LMDB file address of low-resolution image
+        hr_lmdb_path (int): LMDB file address of high-resolution image
+        image_size (int): High resolution image size
+        upscale_factor (int): Image magnification
+        mode (str): Data set loading method, the training data set is for data enhancement,
+            and the verification data set is not for data enhancement
     """
 
-    def __init__(self, lr_lmdb_path, hr_lmdb_path) -> None:
+    def __init__(self, lr_lmdb_path: str, hr_lmdb_path: str, image_size: int, upscale_factor: int, mode: str) -> None:
         super(LMDBDataset, self).__init__()
+        self.image_size = image_size
+        self.upscale_factor = upscale_factor
+        self.mode = mode
+
         # Create low/high resolution image array
         self.lr_datasets = []
         self.hr_datasets = []
@@ -102,8 +114,14 @@ class LMDBDataset(Dataset):
         hr_image = self.hr_datasets[batch_index]
 
         # Data augment
-        lr_image, hr_image = imgproc.random_rotate(lr_image, hr_image, angle=90)
-        lr_image, hr_image = imgproc.random_horizontally_flip(lr_image, hr_image, p=0.5)
+        if self.mode == "train:":
+            lr_image, hr_image = imgproc.random_crop(lr_image, hr_image, image_size=self.image_size, upscale_factor=self.upscale_factor)
+            lr_image, hr_image = imgproc.random_rotate(lr_image, hr_image, angle=90)
+            lr_image, hr_image = imgproc.random_horizontally_flip(lr_image, hr_image, p=0.5)
+        elif self.mode == "valid:":
+            lr_image, hr_image = imgproc.center_crop(lr_image, hr_image, image_size=self.image_size, upscale_factor=self.upscale_factor)
+        else:
+            raise "Unsupported data processing model, please use `train` or `valid`."
 
         # Convert image data into Tensor stream format (PyTorch).
         # Note: The range of input and output is between [0, 1]

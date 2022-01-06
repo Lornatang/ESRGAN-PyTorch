@@ -1,8 +1,8 @@
 import os
 
 # Prepare dataset
-os.system("python ./prepare_dataset.py --inputs_dir ../data/DFO2K/original/train --output_dir ../data/DFO2K/ESRGAN --image_size 128 --mode train")
-os.system("python ./prepare_dataset.py --inputs_dir ../data/DFO2K/original/valid --output_dir ../data/DFO2K/ESRGAN --image_size 128 --mode valid")
+os.system("python ./prepare_dataset.py --inputs_dir ../data/DFO2K/original/train --output_dir ../data/DFO2K/ESRGAN --image_size 204 --mode train")
+os.system("python ./prepare_dataset.py --inputs_dir ../data/DFO2K/original/valid --output_dir ../data/DFO2K/ESRGAN --image_size 204 --mode valid")
 
 # Create LMDB database file
 os.system("python ./create_lmdb_dataset.py --inputs_dir ../data/DFO2K/ESRGAN/train --lmdb_path ../data/train_lmdb/ESRGAN/DFO2K_HR_lmdb --upscale_factor 1")

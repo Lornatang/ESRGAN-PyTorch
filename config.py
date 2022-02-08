@@ -98,11 +98,11 @@ if mode == "train_esrgan":
     g_model_lr = 1e-4
     g_model_betas = (0.9, 0.999)
 
-    # MultiStepLR scheduler parameter for SRGAN
-    d_optimizer_step_size = epochs // 2
-    g_optimizer_step_size = epochs // 2
-    d_optimizer_gamma = 0.1
-    g_optimizer_gamma = 0.1
+    # MultiStepLR scheduler parameter for ESRGAN
+    d_optimizer_milestones = [int(epochs * 0.125), int(epochs * 0.250), int(epochs * 0.500), int(epochs * 0.750)]
+    g_optimizer_milestones = [int(epochs * 0.125), int(epochs * 0.250), int(epochs * 0.500), int(epochs * 0.750)]
+    d_optimizer_gamma = 0.5
+    g_optimizer_gamma = 0.5
 
     # Print the training log every one hundred iterations
     print_frequency = 1000

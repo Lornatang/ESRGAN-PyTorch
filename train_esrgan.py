@@ -177,7 +177,7 @@ def define_optimizer(discriminator: nn.Module, generator: nn.Module) -> [optim.A
     return d_optimizer, g_optimizer
 
 
-def define_scheduler(d_optimizer: optim.Adam, g_optimizer: optim.Adam) -> [lr_scheduler.StepLR, lr_scheduler.StepLR]:
+def define_scheduler(d_optimizer: optim.Adam, g_optimizer: optim.Adam) -> [lr_scheduler.MultiStepLR, lr_scheduler.MultiStepLR]:
     """Define learning rate scheduler
 
     Args:
@@ -188,8 +188,8 @@ def define_scheduler(d_optimizer: optim.Adam, g_optimizer: optim.Adam) -> [lr_sc
         Discriminator scheduler, Generator scheduler
 
     """
-    d_scheduler = lr_scheduler.StepLR(d_optimizer, config.d_optimizer_step_size, config.d_optimizer_gamma)
-    g_scheduler = lr_scheduler.StepLR(g_optimizer, config.g_optimizer_step_size, config.g_optimizer_gamma)
+    d_scheduler = lr_scheduler.MultiStepLR(d_optimizer, config.d_optimizer_milestones, config.d_optimizer_gamma)
+    g_scheduler = lr_scheduler.MultiStepLR(g_optimizer, config.g_optimizer_milestones, config.g_optimizer_gamma)
 
     return d_scheduler, g_scheduler
 

@@ -56,6 +56,10 @@ def main():
     d_optimizer, g_optimizer = define_optimizer(discriminator, generator)
     print("Define all optimizer functions successfully.")
 
+    print("Define all optimizer scheduler...")
+    d_scheduler, g_scheduler = define_scheduler(d_optimizer, g_optimizer)
+    print("Define all optimizer scheduler functions successfully.")
+
     print("Check whether the training weight is restored...")
     resume_checkpoint(discriminator, generator)
     print("Check whether the training weight is restored successfully.")
@@ -90,6 +94,10 @@ def main():
         if is_best:
             torch.save(discriminator.state_dict(), os.path.join(results_dir, "d-best.pth"))
             torch.save(generator.state_dict(), os.path.join(results_dir, f"g-best.pth"))
+
+        # Update LR
+        d_scheduler.step()
+        g_scheduler.step()
 
     # Save the generator weight under the last Epoch in this stage
     torch.save(discriminator.state_dict(), os.path.join(results_dir, "d-last.pth"))

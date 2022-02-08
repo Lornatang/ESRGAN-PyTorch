@@ -66,7 +66,7 @@ def main():
     # Initialize training to generate network evaluation indicators
     best_psnr = 0.0
 
-    print("Start train SRGAN model.")
+    print("Start train ESRGAN model.")
     for epoch in range(config.start_epoch, config.epochs):
         train(discriminator,
               generator,
@@ -94,7 +94,7 @@ def main():
     # Save the generator weight under the last Epoch in this stage
     torch.save(discriminator.state_dict(), os.path.join(results_dir, "d-last.pth"))
     torch.save(generator.state_dict(), os.path.join(results_dir, "g-last.pth"))
-    print("End train SRGAN model.")
+    print("End train ESRGAN model.")
 
 
 def load_dataset() -> [DataLoader, DataLoader]:

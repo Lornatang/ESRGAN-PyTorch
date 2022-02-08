@@ -71,7 +71,9 @@ def main() -> None:
             sr_tensor = model(lr_tensor).clamp_(0, 1)
 
         # Cal PSNR
-        total_psnr += 10. * torch.log10(1. / torch.mean((sr_tensor - hr_tensor) ** 2))
+        sr_y_tensor = imgproc.convert_rgb_to_y(sr_tensor)
+        hr_y_tensor = imgproc.convert_rgb_to_y(hr_tensor)
+        total_psnr += 10. * torch.log10(1. / torch.mean((sr_y_tensor - hr_y_tensor) ** 2))
 
         sr_image = imgproc.tensor2image(sr_tensor, range_norm=False, half=True)
         sr_image = Image.fromarray(sr_image)

@@ -41,10 +41,10 @@ def main() -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Prepare database scripts.")
-    parser.add_argument("--inputs_dir", type=str, default="DFO2K/original", help="Path to input image directory. (Default: `DFO2K/original`)")
-    parser.add_argument("--output_dir", type=str, default="DFO2K/ESRGAN", help="Path to generator image directory. (Default: `DFO2K/ESRGAN`)")
-    parser.add_argument("--image_size", type=int, default=204, help="Low-resolution image size from raw image. (Default: 204)")
-    parser.add_argument("--mode", type=str, default="train", help="Dataset information status. (Default: `train`)")
+    parser.add_argument("--inputs_dir", type=str, help="Path to input image directory.")
+    parser.add_argument("--output_dir", type=str, help="Path to generator image directory.")
+    parser.add_argument("--image_size", type=int, help="Low-resolution image size from raw image.")
+    parser.add_argument("--mode", type=str, help="Dataset information status.")
     args = parser.parse_args()
 
     main()

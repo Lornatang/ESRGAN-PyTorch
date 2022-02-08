@@ -75,9 +75,9 @@ def main():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Create LMDB database scripts.")
-    parser.add_argument("--inputs_dir", type=str, default="DFO2K/ESRGAN/train", help="Path to image directory. (Default: ``DFO2K/ESRGAN/train``)")
-    parser.add_argument("--lmdb_path", type=str, default="train_lmdb/ESRGAN/DFO2K_HR_lmdb", help="Path to lmdb database. (Default: ``train_lmdb/ESRGAN/DFO2K_HR_lmdb``)")
-    parser.add_argument("--upscale_factor", type=int, default=1, help="Image zoom factor. (Default: 1)")
+    parser.add_argument("--inputs_dir", type=str, help="Path to image directory.")
+    parser.add_argument("--lmdb_path", type=str, help="Path to lmdb database.")
+    parser.add_argument("--upscale_factor", type=int, help="Image zoom factor.")
     args = parser.parse_args()
 
     main()

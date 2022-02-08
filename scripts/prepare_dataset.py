@@ -14,37 +14,50 @@
 import argparse
 import os
 import shutil
+from multiprocessing import Pool
 
 from PIL import Image
-from torchvision.transforms import RandomCrop
 from tqdm import tqdm
 
 
-def main() -> None:
-    image_dir = f"{args.output_dir}/{args.mode}"
+def main(args) -> None:
+    if os.path.exists(args.output_dir):
+        shutil.rmtree(args.output_dir)
+    os.makedirs(args.output_dir)
 
-    if os.path.exists(image_dir):
-        shutil.rmtree(image_dir)
-    os.makedirs(image_dir)
+    # Get all image paths
+    image_file_names = os.listdir(args.images_dir)
 
-    file_names = os.listdir(args.inputs_dir)
-    for file_name in tqdm(file_names, total=len(file_names)):
-        # Use PIL to read high-resolution image
-        image = Image.open(f"{args.inputs_dir}/{file_name}").convert("RGB")
+    # Splitting images with multiple threads
+    progress_bar = tqdm(total=len(image_file_names), unit="image", desc="Split")
+    workers_pool = Pool(args.num_workers)
+    for image_file_name in image_file_names:
+        workers_pool.apply_async(worker, args=(image_file_name, args), callback=lambda arg: progress_bar.update(1))
+    workers_pool.close()
+    workers_pool.join()
+    progress_bar.close()
 
-        if image.width >= args.image_size and image.height >= args.image_size:
-            for i in range(10):
-                new_image = RandomCrop([args.image_size, args.image_size])(image)
-                new_image.save(f"{image_dir}/{file_name.split('.')[-2]}_{i:03d}.{file_name.split('.')[-1]}")
-    print("Data split successful.")
+
+def worker(image_file_name, args) -> None:
+    image = Image.open(f"{args.images_dir}/{image_file_name}").convert("RGB")
+
+    index = 1
+    if image.width >= args.image_size and image.height >= args.image_size:
+        for pos_x in range(0, image.width - args.image_size + 1, args.step):
+            for pos_y in range(0, image.height - args.image_size + 1, args.step):
+                index += 1
+                crop_image = image.crop([pos_x, pos_y, pos_x + args.image_size, pos_y + args.image_size])
+                # Save all images
+                crop_image.save(f"{args.output_dir}/{image_file_name.split('.')[-2]}_{index:04d}.{image_file_name.split('.')[-1]}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Prepare database scripts.")
-    parser.add_argument("--inputs_dir", type=str, help="Path to input image directory.")
+    parser.add_argument("--images_dir", type=str, help="Path to input image directory.")
     parser.add_argument("--output_dir", type=str, help="Path to generator image directory.")
     parser.add_argument("--image_size", type=int, help="Low-resolution image size from raw image.")
-    parser.add_argument("--mode", type=str, help="Dataset information status.")
+    parser.add_argument("--step", type=int, help="Crop image similar to sliding window.")
+    parser.add_argument("--num_workers", type=int, help="How many threads to open at the same time.")
     args = parser.parse_args()
 
-    main()
+    main(args)

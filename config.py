@@ -15,9 +15,6 @@
 import torch
 from torch.backends import cudnn
 
-# ==============================================================================
-# General configuration
-# ==============================================================================
 # Random seed to maintain reproducible results
 torch.manual_seed(0)
 # Use GPU for training by default
@@ -29,11 +26,8 @@ upscale_factor = 4
 # Current configuration parameter method
 mode = "train_rrdbnet"
 # Experiment name, easy to save weights and log files
-exp_name = "Train_RRDBNet_baseline"
+exp_name = "RRDBNet_baseline"
 
-# ==============================================================================
-# Training RRDBNet model configuration
-# ==============================================================================
 if mode == "train_rrdbnet":
     # Dataset address
     train_image_dir = "data/DFO2K/ESRGAN/train"
@@ -63,9 +57,6 @@ if mode == "train_rrdbnet":
     # Print the training log every one hundred iterations
     print_frequency = 1000
 
-# ==============================================================================
-# Training ESRGAN model configuration
-# ==============================================================================
 if mode == "train_esrgan":
     # Dataset address
     train_image_dir = "data/DFO2K/ESRGAN/train"
@@ -80,7 +71,7 @@ if mode == "train_esrgan":
     strict = False
     start_epoch = 0
     resume_d_weight = ""
-    resume_g_weight = "results/Train_RRDBNet_baseline/g-last.pth"
+    resume_g_weight = "results/RRDBNet_baseline/g-last.pth"
 
     # Total num epochs
     epochs = 48
@@ -107,9 +98,6 @@ if mode == "train_esrgan":
     # Print the training log every one hundred iterations
     print_frequency = 1000
 
-# ==============================================================================
-# Verify configuration
-# ==============================================================================
 if mode == "valid":
     # Test data address
     lr_dir = f"data/Set14/LRbicx{upscale_factor}"

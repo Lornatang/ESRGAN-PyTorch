@@ -46,7 +46,7 @@ class ImageDataset(Dataset):
         if mode == "train":
             self.hr_transforms = transforms.Compose([
                 transforms.RandomCrop(image_size),
-                transforms.RandomRotation(90),
+                transforms.RandomRotation([0, 90]),
                 transforms.RandomHorizontalFlip(0.5),
             ])
         elif mode == "valid":
@@ -54,7 +54,7 @@ class ImageDataset(Dataset):
         else:
             raise "Unsupported data processing model, please use `train` or `valid`."
 
-        self.lr_transforms = transforms.Resize(image_size // upscale_factor, interpolation=IMode.BICUBIC, antialias=True)
+        self.lr_transforms = transforms.Resize(image_size // upscale_factor, interpolation=IMode.BICUBIC)
 
     def __getitem__(self, batch_index: int) -> [Tensor, Tensor]:
         # Read a batch of image data
@@ -116,7 +116,7 @@ class LMDBDataset(Dataset):
         # Data augment
         if self.mode == "train:":
             lr_image, hr_image = imgproc.random_crop(lr_image, hr_image, image_size=self.image_size, upscale_factor=self.upscale_factor)
-            lr_image, hr_image = imgproc.random_rotate(lr_image, hr_image, angle=90)
+            lr_image, hr_image = imgproc.random_rotate(lr_image, hr_image, degrees=[0, 90])
             lr_image, hr_image = imgproc.random_horizontally_flip(lr_image, hr_image, p=0.5)
         elif self.mode == "valid:":
             lr_image, hr_image = imgproc.center_crop(lr_image, hr_image, image_size=self.image_size, upscale_factor=self.upscale_factor)

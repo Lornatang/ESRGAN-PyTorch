@@ -52,7 +52,7 @@ def main():
     print("Check whether the training weight is restored...")
     resume_checkpoint(model)
     print("Check whether the training weight is restored successfully.")
-    
+
     # Create a folder of super-resolution experiment results
     samples_dir = os.path.join("samples", config.exp_name)
     results_dir = os.path.join("results", config.exp_name)
@@ -91,13 +91,6 @@ def main():
 
 
 def load_dataset() -> [DataLoader, DataLoader]:
-    """Load super-resolution data set
-
-     Returns:
-         training data set iterator, validation data set iterator
-
-    """
-    # Initialize the LMDB data set class and write the contents of the LMDB database file into memory
     train_datasets = ImageDataset(config.train_image_dir, config.image_size, config.upscale_factor, "train")
     valid_datasets = ImageDataset(config.valid_image_dir, config.image_size, config.upscale_factor, "valid")
     # Make it into a data set type supported by PyTorch
@@ -118,24 +111,12 @@ def load_dataset() -> [DataLoader, DataLoader]:
 
 
 def build_model() -> nn.Module:
-    """Building generators model
-
-    Returns:
-        RRDBNet model
-
-    """
     model = Generator().to(config.device)
 
     return model
 
 
 def define_loss() -> [nn.MSELoss, nn.L1Loss]:
-    """Defines all loss functions
-
-    Returns:
-        PSNR criterion, pixel criterion
-
-    """
     psnr_criterion = nn.MSELoss().to(config.device)
     pixel_criterion = nn.L1Loss().to(config.device)
 
@@ -143,15 +124,6 @@ def define_loss() -> [nn.MSELoss, nn.L1Loss]:
 
 
 def define_optimizer(model) -> optim.Adam:
-    """Define all optimizer functions
-
-    Args:
-        model (nn.Module): RRDBNet model
-
-    Returns:
-        RRDBNet optimizer
-
-    """
     optimizer = optim.Adam(model.parameters(), config.model_lr, config.model_betas)
 
     return optimizer
@@ -164,15 +136,16 @@ def define_scheduler(optimizer) -> optim.lr_scheduler:
 
 
 def resume_checkpoint(model) -> None:
-    """Transfer training or recovery training
-
-    Args:
-        model (nn.Module): RRDBNet model
-
-    """
     if config.resume:
         if config.resume_weight != "":
-            model.load_state_dict(torch.load(config.resume_weight), strict=config.strict)
+            # Get pretrained model state dict
+            pretrained_state_dict = torch.load(config.resume_weight)
+            model_state_dict = model.state_dict()
+            # Extract the fitted model weights
+            new_state_dict = {k: v for k, v in pretrained_state_dict.items() if k in model_state_dict.items()}
+            # Overwrite the pretrained model weights to the current model
+            model_state_dict.update(new_state_dict)
+            model.load_state_dict(model_state_dict, strict=config.strict)
 
 
 def train(model, train_dataloader, psnr_criterion, pixel_criterion, optimizer, epoch, scaler, writer) -> None:

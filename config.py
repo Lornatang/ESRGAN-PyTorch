@@ -40,7 +40,7 @@ if mode == "train_rrdbnet":
     test_image_dir = "data/Set5/GTmod12"
 
     image_size = 192
-    batch_size = 64
+    batch_size = 16
     num_workers = 4
 
     # Incremental training and migration training

@@ -31,7 +31,7 @@ upscale_factor = 4
 # Current configuration parameter method
 mode = "train_rrdbnet"
 # Experiment name, easy to save weights and log files
-exp_name = "ESRGAN_baseline"
+exp_name = "RRDBNet_baseline"
 
 if mode == "train_rrdbnet":
     # Dataset address

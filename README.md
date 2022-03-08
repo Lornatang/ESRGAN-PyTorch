@@ -69,8 +69,8 @@ In the following table, the value in `()` indicates the result of the project, a
 
 | Dataset | Scale |  RRDBNet (PSNR)  | ESRGAN (PSNR) |
 |:-------:|:-----:|:----------------:|:-------------:|
-|  Set5   |   4   | 32.73(**32.56**) |   -(**-**)    |
-|  Set14  |   4   | 28.99(**28.48**) |   -(**-**)    |
+|  Set5   |   4   | 32.73(**32.56**) | -(**29.97**)  |
+|  Set14  |   4   | 28.99(**28.48**) | -(**25.61**)  |
 
 Low resolution / Recovered High Resolution / Ground Truth
 <span align="center"><img src="assets/result.png"/></span>
@@ -98,7 +98,7 @@ and texture recovery. Benefiting from these improvements, the proposed ESRGAN ac
 natural textures than SRGAN and won the first place in the PIRM2018-SR Challenge. The code is available
 at [this https URL](https://github.com/xinntao/ESRGAN).
 
-[[Paper]](https://arxiv.org/pdf/1609.04802) [[Code]](https://github.com/xinntao/ESRGAN)
+[[Paper]](https://arxiv.org/pdf/1609.04802) [[Code(PyTorch)]](https://github.com/xinntao/ESRGAN)
 
 ```bibtex
 @misc{wang2018esrgan,

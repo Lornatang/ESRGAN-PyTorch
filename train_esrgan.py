@@ -126,7 +126,7 @@ def main():
               epoch,
               scaler,
               writer)
-        # _ = validate(generator, valid_prefetcher, psnr_criterion, epoch, writer, "Valid")
+        _ = validate(generator, valid_prefetcher, psnr_criterion, epoch, writer, "Valid")
         psnr = validate(generator, test_prefetcher, psnr_criterion, epoch, writer, "Test")  # Automatically save the model with the highest index
         print("\n")
 

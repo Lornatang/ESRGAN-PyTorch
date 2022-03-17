@@ -36,16 +36,16 @@ Contains DIV2K, DIV8K, Flickr2K, OST, T91, Set5, Set14, BSDS100 and BSDS200, etc
 
 Modify the contents of the file as follows.
 
-- line 30: `upscale_factor` change to the magnification you need to enlarge.
-- line 32: `mode` change Set to valid mode.
-- line 103: `model_path` change weight address after training.
+- line 29: `upscale_factor` change to the magnification you need to enlarge.
+- line 31: `mode` change Set to valid mode.
+- line 104: `model_path` change weight address after training.
 
 ## Train
 
 Modify the contents of the file as follows.
 
-- line 30: `upscale_factor` change to the magnification you need to enlarge.
-- line 32: `mode` change Set to train mode.
+- line 29: `upscale_factor` change to the magnification you need to enlarge.
+- line 31: `mode` change Set to train mode.
 
 If you want to load weights that you've trained before, modify the contents of the file as follows.
 
@@ -56,10 +56,10 @@ If you want to load weights that you've trained before, modify the contents of t
 
 ### Train ESRGAN model
 
-- line 74: `start_epoch` change number of SRGAN training iterations in the previous round.
-- line 75: `resume` change to RRDBNet weight address that needs to be loaded.
-- line 76: `resume_d` change to Discriminator weight address that needs to be loaded.
-- line 77: `resume_g` change to Generator weight address that needs to be loaded.
+- line 75: `start_epoch` change number of SRGAN training iterations in the previous round.
+- line 76: `resume` change to RRDBNet weight address that needs to be loaded.
+- line 77: `resume_d` change to Discriminator weight address that needs to be loaded.
+- line 78: `resume_g` change to Generator weight address that needs to be loaded.
 
 ### Result
 

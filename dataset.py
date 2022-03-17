@@ -94,7 +94,7 @@ class TestImageDataset(Dataset):
         super(TestImageDataset, self).__init__()
         # Get all image file names in folder
         self.lr_image_file_names = [os.path.join(test_lr_image_dir, x) for x in os.listdir(test_lr_image_dir)]
-        self.hr_image_file_names = [os.path.join(test_hr_image_dir, x) for x in os.listdir(test_lr_image_dir)]
+        self.hr_image_file_names = [os.path.join(test_hr_image_dir, x) for x in os.listdir(test_hr_image_dir)]
         # How many times the high-resolution image is the low-resolution image
         self.upscale_factor = upscale_factor
 
@@ -115,7 +115,7 @@ class TestImageDataset(Dataset):
         return {"lr": lr_tensor, "hr": hr_tensor}
 
     def __len__(self) -> int:
-        return len(self.image_file_names)
+        return len(self.lr_image_file_names)
 
 
 class PrefetchGenerator(threading.Thread):

@@ -27,12 +27,12 @@ from model import Generator
 def main() -> None:
     # Initialize the super-resolution model
     model = Generator().to(config.device)
-    print("Build ESRGAN model successfully.")
+    print("Build SRGAN model successfully.")
 
     # Load the super-resolution model weights
     checkpoint = torch.load(config.model_path, map_location=lambda storage, loc: storage)
     model.load_state_dict(checkpoint["state_dict"])
-    print(f"Load ESRGAN model weights `{os.path.abspath(config.model_path)}` successfully.")
+    print(f"Load SRGAN model weights `{os.path.abspath(config.model_path)}` successfully.")
 
     # Create a folder of super-resolution experiment results
     results_dir = os.path.join("results", "test", config.exp_name)
@@ -74,7 +74,7 @@ def main() -> None:
 
         # Only reconstruct the Y channel image data.
         with torch.no_grad():
-            sr_tensor = model(lr_tensor).clamp_(0, 1.0)
+            sr_tensor = model(lr_tensor)
 
         # Save image
         sr_image = imgproc.tensor2image(sr_tensor, range_norm=False, half=True)

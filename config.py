@@ -1,4 +1,4 @@
-# Copyright 2021 Dakewe Biotech Corporation. All Rights Reserved.
+# Copyright 2022 Dakewe Biotech Corporation. All Rights Reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
@@ -28,18 +28,18 @@ cudnn.benchmark = True
 # Image magnification factor
 upscale_factor = 4
 # Current configuration parameter method
-mode = "train_rrdbnet"
+mode = "train_srresnet"
 # Experiment name, easy to save weights and log files
-exp_name = "RRDBNet_baseline"
+exp_name = "SRResNet_baseline"
 
-if mode == "train_rrdbnet":
+if mode == "train_srresnet":
     # Dataset address
-    train_image_dir = "data/DFO2K/ESRGAN/train"
-    valid_image_dir = "data/DFO2K/ESRGAN/valid"
+    train_image_dir = "data/ImageNet/SRGAN/train"
+    valid_image_dir = "data/ImageNet/SRGAN/valid"
     test_lr_image_dir = f"data/Set5/LRbicx{upscale_factor}"
     test_hr_image_dir = f"data/Set5/GTmod12"
 
-    image_size = 192
+    image_size = 96
     batch_size = 16
     num_workers = 4
 
@@ -48,50 +48,50 @@ if mode == "train_rrdbnet":
     resume = ""
 
     # Total num epochs
-    epochs = 20
+    epochs = 44
 
-    # Adam optimizer parameter for RRDBNet(p)
-    model_lr = 2e-4
+    # Optimizer parameter
+    model_lr = 1e-4
     model_betas = (0.9, 0.999)
-
-    # StepLR scheduler
-    lr_scheduler_step_size = epochs // 5
-    lr_scheduler_gamma = 0.5
 
     print_frequency = 100
 
-if mode == "train_esrgan":
+if mode == "train_srgan":
     # Dataset address
-    train_image_dir = "data/DFO2K/ESRGAN/train"
-    valid_image_dir = "data/DFO2K/ESRGAN/valid"
+    train_image_dir = "data/ImageNet/SRGAN/train"
+    valid_image_dir = "data/ImageNet/SRGAN/valid"
     test_lr_image_dir = f"data/Set5/LRbicx{upscale_factor}"
     test_hr_image_dir = f"data/Set5/GTmod12"
 
-    image_size = 128
+    image_size = 96
     batch_size = 16
     num_workers = 4
 
     # Incremental training and migration training
     start_epoch = 0
-    resume = "results/RRDBNet_baseline/g_best.pth.tar"
+    resume = "results/SRResNet_baseline/g_last.pth.tar"
     resume_d = ""
     resume_g = ""
 
     # Total num epochs
-    epochs = 8
+    epochs = 9
+
+    # Feature extraction layer parameter configuration
+    feature_extractor_node = "features.35"
+    normalize_mean = [0.485, 0.456, 0.406]
+    normalize_std = [0.229, 0.224, 0.225]
 
     # Loss function weight
-    pixel_weight = 1.0
     content_weight = 1.0
     adversarial_weight = 0.001
 
-    # Adam optimizer parameter
+    # Optimizer parameter
     model_lr = 1e-4
     model_betas = (0.9, 0.999)
 
-    # MultiStepLR scheduler parameter
-    lr_scheduler_milestones = [int(epochs * 0.125), int(epochs * 0.250), int(epochs * 0.500), int(epochs * 0.750)]
-    lr_scheduler_gamma = 0.5
+    # LR scheduler parameter
+    lr_scheduler_step_size = epochs // 2
+    lr_scheduler_gamma = 0.1
 
     print_frequency = 100
 
@@ -101,4 +101,4 @@ if mode == "valid":
     sr_dir = f"results/test/{exp_name}"
     hr_dir = f"data/Set5/GTmod12"
 
-    model_path = f"results/{exp_name}/g_best.pth.tar"
+    model_path = f"results/{exp_name}/g_last.pth.tar"

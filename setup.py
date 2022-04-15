@@ -21,23 +21,19 @@ from setuptools import find_packages
 from setuptools import setup
 
 # Configure library params.
-NAME = "esrgan_pytorch"
-DESCRIPTION = "ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks."
-URL = "https://github.com/Lornatang/ESRGAN-PyTorch"
+NAME = "srgan_pytorch"
+DESCRIPTION = "Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network."
+URL = "https://github.com/Lornatang/SRGAN-PyTorch"
 EMAIL = "liu_changyu@dakewe.com"
 AUTHOR = "Liu Goodfellow"
-REQUIRES_PYTHON = ">=3.6.0"
-VERSION = "1.0.2"
+REQUIRES_PYTHON = ">=3.8.0"
+VERSION = "1.0.4"
 
 # Libraries that must be installed.
-REQUIRED = [
-    "torch"
-]
+REQUIRED = ["torch"]
 
 # The following libraries directory need to be installed if you need to run all scripts.
-EXTRAS = {
-
-}
+EXTRAS = {}
 
 # Find the current running location.
 here = os.path.abspath(os.path.dirname(__file__))

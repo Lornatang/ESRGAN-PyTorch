@@ -1,4 +1,4 @@
-# Copyright 2021 Dakewe Biotech Corporation. All Rights Reserved.
+# Copyright 2022 Dakewe Biotech Corporation. All Rights Reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Realize the function of dataset preparation."""
 import os
 import queue
 import threading
@@ -57,8 +56,6 @@ class TrainValidImageDataset(Dataset):
         # Image processing operations
         if self.mode == "Train":
             hr_image = imgproc.random_crop(image, self.image_size)
-            hr_image = imgproc.random_rotate(hr_image, angles=[0, 90])
-            hr_image = imgproc.random_horizontally_flip(hr_image, p=0.5)
         elif self.mode == "Valid":
             hr_image = imgproc.center_crop(image, self.image_size)
         else:
@@ -93,7 +90,7 @@ class TestImageDataset(Dataset):
         super(TestImageDataset, self).__init__()
         # Get all image file names in folder
         self.lr_image_file_names = [os.path.join(test_lr_image_dir, x) for x in os.listdir(test_lr_image_dir)]
-        self.hr_image_file_names = [os.path.join(test_hr_image_dir, x) for x in os.listdir(test_hr_image_dir)]
+        self.hr_image_file_names = [os.path.join(test_hr_image_dir, x) for x in os.listdir(test_lr_image_dir)]
 
     def __getitem__(self, batch_index: int) -> [torch.Tensor, torch.Tensor]:
         # Read a batch of image data

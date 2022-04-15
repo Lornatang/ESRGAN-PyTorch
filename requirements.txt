@@ -4,5 +4,4 @@ tqdm
 torch
 torchvision
 setuptools
-Pillow
 natsort

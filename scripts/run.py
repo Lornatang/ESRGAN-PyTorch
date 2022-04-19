@@ -14,7 +14,5 @@
 import os
 
 # Prepare dataset
-os.system("python ./prepare_dataset.py --images_dir ../data/ImageNet/original --output_dir ../data/ImageNet/SRGAN/train --image_size 96 --step 48 --num_workers 16")
-
-# Split train and valid
-os.system("python ./split_train_valid_dataset.py --train_images_dir ../data/ImageNet/SRGAN/train --valid_images_dir ../data/ImageNet/SRGAN/valid --valid_samples_ratio 0.05")
+os.system("python ./prepare_dataset.py --images_dir ../data/DIV2K/original/DIV2K_train_HR --output_dir ../data/DIV2K/ESRGAN/train --image_size 224 --step 112 --num_workers 16")
+os.system("python ./prepare_dataset.py --images_dir ../data/DIV2K/original/DIV2K_valid_HR --output_dir ../data/DIV2K/ESRGAN/valid --image_size 224 --step 224 --num_workers 16")

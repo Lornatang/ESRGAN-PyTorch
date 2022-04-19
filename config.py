@@ -28,70 +28,75 @@ cudnn.benchmark = True
 # Image magnification factor
 upscale_factor = 4
 # Current configuration parameter method
-mode = "train_srresnet"
+mode = "train_rrdbnet"
 # Experiment name, easy to save weights and log files
-exp_name = "SRResNet_baseline"
+exp_name = "RRDBNet_baseline"
 
-if mode == "train_srresnet":
+if mode == "train_rrdbnet":
     # Dataset address
-    train_image_dir = "data/ImageNet/SRGAN/train"
-    valid_image_dir = "data/ImageNet/SRGAN/valid"
+    train_image_dir = "data/DIV2K/ESRGAN/train"
+    valid_image_dir = "data/DIV2K/ESRGAN/valid"
     test_lr_image_dir = f"data/Set5/LRbicx{upscale_factor}"
     test_hr_image_dir = f"data/Set5/GTmod12"
 
-    image_size = 96
+    image_size = 128
     batch_size = 16
     num_workers = 4
 
     # Incremental training and migration training
     start_epoch = 0
-    resume = ""
+    resume = "results/pretrained_models/RRDBNet_x4-DFO2K-17871722.pth.tar"
 
     # Total num epochs
-    epochs = 44
+    epochs = 108
 
     # Optimizer parameter
-    model_lr = 1e-4
-    model_betas = (0.9, 0.999)
+    model_lr = 2e-4
+    model_betas = (0.9, 0.99)
+
+    # LR scheduler
+    lr_scheduler_step_size = epochs // 5
+    lr_scheduler_gamma = 0.5
 
     print_frequency = 100
 
-if mode == "train_srgan":
+if mode == "train_esrgan":
     # Dataset address
-    train_image_dir = "data/ImageNet/SRGAN/train"
-    valid_image_dir = "data/ImageNet/SRGAN/valid"
+    train_image_dir = "data/DIV2K/ESRGAN/train"
+    valid_image_dir = "data/DIV2K/ESRGAN/valid"
     test_lr_image_dir = f"data/Set5/LRbicx{upscale_factor}"
     test_hr_image_dir = f"data/Set5/GTmod12"
 
-    image_size = 96
+    image_size = 128
     batch_size = 16
     num_workers = 4
 
     # Incremental training and migration training
     start_epoch = 0
-    resume = "results/SRResNet_baseline/g_last.pth.tar"
+    resume = "results/RRDBNet_baseline/g_last.pth.tar"
     resume_d = ""
     resume_g = ""
 
     # Total num epochs
-    epochs = 9
+    epochs = 44
 
     # Feature extraction layer parameter configuration
-    feature_extractor_node = "features.35"
+    feature_extractor_node = "features.34"
     normalize_mean = [0.485, 0.456, 0.406]
     normalize_std = [0.229, 0.224, 0.225]
 
     # Loss function weight
+    pixel_weight = 0.01
     content_weight = 1.0
-    adversarial_weight = 0.001
+    adversarial_weight = 0.005
 
-    # Optimizer parameter
+    # Adam optimizer parameter
     model_lr = 1e-4
-    model_betas = (0.9, 0.999)
+    model_betas = (0.9, 0.99)
 
-    # LR scheduler parameter
-    lr_scheduler_step_size = epochs // 2
-    lr_scheduler_gamma = 0.1
+    # MultiStepLR scheduler parameter
+    lr_scheduler_milestones = [int(epochs * 0.125), int(epochs * 0.250), int(epochs * 0.500), int(epochs * 0.750)]
+    lr_scheduler_gamma = 0.5
 
     print_frequency = 100
 

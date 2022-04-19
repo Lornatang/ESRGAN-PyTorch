@@ -129,19 +129,18 @@ dmypy.json
 # Mac configure file.
 .DS_Store
 
-# Dataset
-data/DIV2K
-
 # Program run create directory.
-benchmarks
-tests
-videos
-runs
-weights
+data
+results
+samples
 
 # Program run create file.
+*.JPEG
+*.jpeg
 *.bmp
 *.png
 *.mp4
 *.zip
 *.csv
+*.pth.tar
+*.mdb

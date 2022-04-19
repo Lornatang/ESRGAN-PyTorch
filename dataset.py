@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""Realize the function of dataset preparation."""
 import os
 import queue
 import threading
@@ -35,7 +36,8 @@ class TrainValidImageDataset(Dataset):
         image_dir (str): Train/Valid dataset address.
         image_size (int): High resolution image size.
         upscale_factor (int): Image up scale factor.
-        mode (str): Data set loading method, the training data set is for data enhancement, and the verification data set is not for data enhancement.
+        mode (str): Data set loading method, the training data set is for data enhancement, and the
+            verification dataset is not for data enhancement.
     """
 
     def __init__(self, image_dir: str, image_size: int, upscale_factor: int, mode: str) -> None:
@@ -56,6 +58,9 @@ class TrainValidImageDataset(Dataset):
         # Image processing operations
         if self.mode == "Train":
             hr_image = imgproc.random_crop(image, self.image_size)
+            hr_image = imgproc.random_rotate(hr_image, angles=[0, 90, 180, 270])
+            hr_image = imgproc.random_horizontally_flip(hr_image, p=0.5)
+            hr_image = imgproc.random_vertically_flip(hr_image, p=0.5)
         elif self.mode == "Valid":
             hr_image = imgproc.center_crop(image, self.image_size)
         else:
@@ -90,7 +95,7 @@ class TestImageDataset(Dataset):
         super(TestImageDataset, self).__init__()
         # Get all image file names in folder
         self.lr_image_file_names = [os.path.join(test_lr_image_dir, x) for x in os.listdir(test_lr_image_dir)]
-        self.hr_image_file_names = [os.path.join(test_hr_image_dir, x) for x in os.listdir(test_lr_image_dir)]
+        self.hr_image_file_names = [os.path.join(test_hr_image_dir, x) for x in os.listdir(test_hr_image_dir)]
 
     def __getitem__(self, batch_index: int) -> [torch.Tensor, torch.Tensor]:
         # Read a batch of image data

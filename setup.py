@@ -1,4 +1,4 @@
-# Copyright 2021 Dakewe Biotech Corporation. All Rights Reserved.
+# Copyright 2022 Dakewe Biotech Corporation. All Rights Reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
@@ -21,19 +21,23 @@ from setuptools import find_packages
 from setuptools import setup
 
 # Configure library params.
-NAME = "srgan_pytorch"
-DESCRIPTION = "Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network."
-URL = "https://github.com/Lornatang/SRGAN-PyTorch"
+NAME = "esrgan_pytorch"
+DESCRIPTION = "ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks."
+URL = "https://github.com/Lornatang/ESRGAN-PyTorch"
 EMAIL = "liu_changyu@dakewe.com"
 AUTHOR = "Liu Goodfellow"
-REQUIRES_PYTHON = ">=3.8.0"
-VERSION = "1.0.4"
+REQUIRES_PYTHON = ">=3.6.0"
+VERSION = "1.0.2"
 
 # Libraries that must be installed.
-REQUIRED = ["torch"]
+REQUIRED = [
+    "torch"
+]
 
 # The following libraries directory need to be installed if you need to run all scripts.
-EXTRAS = {}
+EXTRAS = {
+
+}
 
 # Find the current running location.
 here = os.path.abspath(os.path.dirname(__file__))

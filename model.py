@@ -1,4 +1,4 @@
-# Copyright 2022 Dakewe Biotech Corporation. All Rights Reserved.
+# Copyright 2021 Dakewe Biotech Corporation. All Rights Reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
@@ -12,55 +12,75 @@
 # limitations under the License.
 # ==============================================================================
 import torch
-from torch import nn
-from torch.nn import functional as F
-from torchvision import models
-from torchvision import transforms
+import torch.nn as nn
+import torch.nn.functional as F
+import torchvision.models as models
 from torchvision.models.feature_extraction import create_feature_extractor
+from torchvision import transforms
 
 __all__ = [
-    "ResidualConvBlock",
+    "ResidualDenseBlock", "ResidualResidualDenseBlock",
     "Discriminator", "Generator",
     "ContentLoss"
 ]
 
 
-class ResidualConvBlock(nn.Module):
-    """Implements residual conv function.
+class ResidualDenseBlock(nn.Module):
+    """Achieves densely connected convolutional layers.
+    `Densely Connected Convolutional Networks <https://arxiv.org/pdf/1608.06993v5.pdf>` paper.
 
     Args:
-        channels (int): Number of channels in the input image.
+        channels (int): The number of channels in the input image.
+        growth_channels (int): The number of channels that increase in each layer of convolution.
     """
 
-    def __init__(self, channels: int) -> None:
-        super(ResidualConvBlock, self).__init__()
-        self.rcb = nn.Sequential(
-            nn.Conv2d(channels, channels, (3, 3), (1, 1), (1, 1), bias=False),
-            nn.BatchNorm2d(channels),
-            nn.PReLU(),
-            nn.Conv2d(channels, channels, (3, 3), (1, 1), (1, 1), bias=False),
-            nn.BatchNorm2d(channels),
-        )
+    def __init__(self, channels: int, growth_channels: int) -> None:
+        super(ResidualDenseBlock, self).__init__()
+        self.conv1 = nn.Conv2d(channels + growth_channels * 0, growth_channels, (3, 3), (1, 1), (1, 1))
+        self.conv2 = nn.Conv2d(channels + growth_channels * 1, growth_channels, (3, 3), (1, 1), (1, 1))
+        self.conv3 = nn.Conv2d(channels + growth_channels * 2, growth_channels, (3, 3), (1, 1), (1, 1))
+        self.conv4 = nn.Conv2d(channels + growth_channels * 3, growth_channels, (3, 3), (1, 1), (1, 1))
+        self.conv5 = nn.Conv2d(channels + growth_channels * 4, channels, (3, 3), (1, 1), (1, 1))
+
+        self.leaky_relu = nn.LeakyReLU(0.2, True)
+        self.identity = nn.Identity()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         identity = x
-        out = self.rcb(x)
+
+        out1 = self.leaky_relu(self.conv1(x))
+        out2 = self.leaky_relu(self.conv2(torch.cat([x, out1], 1)))
+        out3 = self.leaky_relu(self.conv3(torch.cat([x, out1, out2], 1)))
+        out4 = self.leaky_relu(self.conv4(torch.cat([x, out1, out2, out3], 1)))
+        out5 = self.identity(self.conv5(torch.cat([x, out1, out2, out3, out4], 1)))
+        out = torch.mul(out5, 0.2)
         out = torch.add(out, identity)
 
         return out
 
 
-class UpsampleBlock(nn.Module):
-    def __init__(self, channels: int) -> None:
-        super(UpsampleBlock, self).__init__()
-        self.upsample_block = nn.Sequential(
-            nn.Conv2d(channels, channels * 4, (3, 3), (1, 1), (1, 1)),
-            nn.PixelShuffle(2),
-            nn.PReLU(),
-        )
+class ResidualResidualDenseBlock(nn.Module):
+    """Multi-layer residual dense convolution block.
+
+    Args:
+        channels (int): The number of channels in the input image.
+        growth_channels (int): The number of channels that increase in each layer of convolution.
+    """
+
+    def __init__(self, channels: int, growth_channels: int) -> None:
+        super(ResidualResidualDenseBlock, self).__init__()
+        self.rdb1 = ResidualDenseBlock(channels, growth_channels)
+        self.rdb2 = ResidualDenseBlock(channels, growth_channels)
+        self.rdb3 = ResidualDenseBlock(channels, growth_channels)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = self.upsample_block(x)
+        identity = x
+
+        out = self.rdb1(x)
+        out = self.rdb2(out)
+        out = self.rdb3(out)
+        out = torch.mul(out, 0.2)
+        out = torch.add(out, identity)
 
         return out
 
@@ -69,40 +89,47 @@ class Discriminator(nn.Module):
     def __init__(self) -> None:
         super(Discriminator, self).__init__()
         self.features = nn.Sequential(
-            # input size. (3) x 96 x 96
+            # input size. (3) x 128 x 128
             nn.Conv2d(3, 64, (3, 3), (1, 1), (1, 1), bias=True),
             nn.LeakyReLU(0.2, True),
-            # state size. (64) x 48 x 48
-            nn.Conv2d(64, 64, (3, 3), (2, 2), (1, 1), bias=False),
+            # state size. (64) x 64 x 64
+            nn.Conv2d(64, 64, (4, 4), (2, 2), (1, 1), bias=False),
             nn.BatchNorm2d(64),
             nn.LeakyReLU(0.2, True),
             nn.Conv2d(64, 128, (3, 3), (1, 1), (1, 1), bias=False),
             nn.BatchNorm2d(128),
             nn.LeakyReLU(0.2, True),
-            # state size. (128) x 24 x 24
-            nn.Conv2d(128, 128, (3, 3), (2, 2), (1, 1), bias=False),
+            # state size. (128) x 32 x 32
+            nn.Conv2d(128, 128, (4, 4), (2, 2), (1, 1), bias=False),
             nn.BatchNorm2d(128),
             nn.LeakyReLU(0.2, True),
             nn.Conv2d(128, 256, (3, 3), (1, 1), (1, 1), bias=False),
             nn.BatchNorm2d(256),
             nn.LeakyReLU(0.2, True),
-            # state size. (256) x 12 x 12
-            nn.Conv2d(256, 256, (3, 3), (2, 2), (1, 1), bias=False),
+            # state size. (256) x 16 x 16
+            nn.Conv2d(256, 256, (4, 4), (2, 2), (1, 1), bias=False),
             nn.BatchNorm2d(256),
             nn.LeakyReLU(0.2, True),
             nn.Conv2d(256, 512, (3, 3), (1, 1), (1, 1), bias=False),
             nn.BatchNorm2d(512),
             nn.LeakyReLU(0.2, True),
-            # state size. (512) x 6 x 6
-            nn.Conv2d(512, 512, (3, 3), (2, 2), (1, 1), bias=False),
+            # state size. (512) x 8 x 8
+            nn.Conv2d(512, 512, (4, 4), (2, 2), (1, 1), bias=False),
             nn.BatchNorm2d(512),
             nn.LeakyReLU(0.2, True),
+            nn.Conv2d(512, 512, (3, 3), (1, 1), (1, 1), bias=False),
+            nn.BatchNorm2d(512),
+            nn.LeakyReLU(0.2, True),
+            # state size. (512) x 4 x 4
+            nn.Conv2d(512, 512, (4, 4), (2, 2), (1, 1), bias=False),
+            nn.BatchNorm2d(512),
+            nn.LeakyReLU(0.2, True)
         )
 
         self.classifier = nn.Sequential(
-            nn.Linear(512 * 6 * 6, 1024),
+            nn.Linear(512 * 4 * 4, 100),
             nn.LeakyReLU(0.2, True),
-            nn.Linear(1024, 1),
+            nn.Linear(100, 1)
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -116,60 +143,58 @@ class Discriminator(nn.Module):
 class Generator(nn.Module):
     def __init__(self) -> None:
         super(Generator, self).__init__()
-        # First conv layer.
-        self.conv_block1 = nn.Sequential(
-            nn.Conv2d(3, 64, (9, 9), (1, 1), (4, 4)),
-            nn.PReLU(),
-        )
+        # The first layer of convolutional layer.
+        self.conv1 = nn.Conv2d(3, 64, (3, 3), (1, 1), (1, 1))
 
-        # Features trunk blocks.
+        # Feature extraction backbone network.
         trunk = []
-        for _ in range(16):
-            trunk.append(ResidualConvBlock(64))
+        for _ in range(23):
+            trunk.append(ResidualResidualDenseBlock(64, 32))
         self.trunk = nn.Sequential(*trunk)
 
-        # Second conv layer.
-        self.conv_block2 = nn.Sequential(
-            nn.Conv2d(64, 64, (3, 3), (1, 1), (1, 1), bias=False),
-            nn.BatchNorm2d(64),
+        # After the feature extraction network, reconnect a layer of convolutional blocks.
+        self.conv2 = nn.Conv2d(64, 64, (3, 3), (1, 1), (1, 1))
+
+        # Upsampling convolutional layer.
+        self.upsampling = nn.Sequential(
+            nn.Conv2d(64, 64, (3, 3), (1, 1), (1, 1)),
+            nn.LeakyReLU(0.2, True)
         )
 
-        # Upscale block
-        upsampling = []
-        for _ in range(2):
-            upsampling.append(UpsampleBlock(64))
-        self.upsampling = nn.Sequential(*upsampling)
+        # Reconnect a layer of convolution block after upsampling.
+        self.conv3 = nn.Sequential(
+            nn.Conv2d(64, 64, (3, 3), (1, 1), (1, 1)),
+            nn.LeakyReLU(0.2, True)
+        )
 
         # Output layer.
-        self.conv_block3 = nn.Conv2d(64, 3, (9, 9), (1, 1), (4, 4))
+        self.conv4 = nn.Conv2d(64, 3, (3, 3), (1, 1), (1, 1))
 
-        # Initialize neural network weights
-        self._initialize_weights()
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self._forward_impl(x)
-
-    # Support torch.script function
+    # The model should be defined in the Torch.script method.
     def _forward_impl(self, x: torch.Tensor) -> torch.Tensor:
-        out1 = self.conv_block1(x)
+        out1 = self.conv1(x)
         out = self.trunk(out1)
-        out2 = self.conv_block2(out)
+        out2 = self.conv2(out)
         out = torch.add(out1, out2)
-        out = self.upsampling(out)
-        out = self.conv_block3(out)
+        out = self.upsampling(F.interpolate(out, scale_factor=2, mode="nearest"))
+        out = self.upsampling(F.interpolate(out, scale_factor=2, mode="nearest"))
+        out = self.conv3(out)
+        out = self.conv4(out)
 
         out = torch.clamp_(out, 0.0, 1.0)
 
         return out
 
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self._forward_impl(x)
+
     def _initialize_weights(self) -> None:
         for module in self.modules():
             if isinstance(module, nn.Conv2d):
                 nn.init.kaiming_normal_(module.weight)
+                module.weight.data *= 0.1
                 if module.bias is not None:
                     nn.init.constant_(module.bias, 0)
-            elif isinstance(module, nn.BatchNorm2d):
-                nn.init.constant_(module.weight, 1)
 
 
 class ContentLoss(nn.Module):
@@ -189,12 +214,13 @@ class ContentLoss(nn.Module):
         self.feature_extractor_node = feature_extractor_node
         # Load the VGG19 model trained on the ImageNet dataset.
         model = models.vgg19(True)
-        # Extract the thirty-sixth layer output in the VGG19 model as the content loss.
+        # Extract the thirty-fifth layer output in the VGG19 model as the content loss.
         self.feature_extractor = create_feature_extractor(model, [feature_extractor_node])
         # set to validation mode
         self.feature_extractor.eval()
 
-        # The preprocessing method of the input data. This is the VGG model preprocessing method of the ImageNet dataset.
+        # The preprocessing method of the input data.
+        # This is the VGG model preprocessing method of the ImageNet dataset
         self.normalize = transforms.Normalize(normalize_mean, normalize_std, True)
 
         # Freeze model parameters.
@@ -210,6 +236,6 @@ class ContentLoss(nn.Module):
         hr_feature = self.feature_extractor(hr_tensor)
 
         # Find the feature map difference between the two images
-        feature_loss = F.mse_loss(sr_feature[self.feature_extractor_node], hr_feature[self.feature_extractor_node])
+        feature_loss = F.l1_loss(sr_feature[self.feature_extractor_node], hr_feature[self.feature_extractor_node])
 
         return feature_loss

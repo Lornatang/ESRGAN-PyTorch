@@ -1,4 +1,4 @@
-# Copyright 2021 Dakewe Biotech Corporation. All Rights Reserved.
+# Copyright 2022 Dakewe Biotech Corporation. All Rights Reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
@@ -28,8 +28,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 import config
 import imgproc
-from dataset import CUDAPrefetcher
-from dataset import TrainValidImageDataset, TestImageDataset
+from dataset import CUDAPrefetcher, TrainValidImageDataset, TestImageDataset
 from model import Discriminator, Generator, ContentLoss
 
 
@@ -68,15 +67,14 @@ def main():
         best_psnr = checkpoint["best_psnr"]
         # Load checkpoint state dict. Extract the fitted model weights
         model_state_dict = discriminator.state_dict()
-        new_state_dict = {k: v for k, v in checkpoint["state_dict"].items() if k in model_state_dict}
+        new_state_dict = {k: v for k, v in checkpoint["state_dict"].items() if k in model_state_dict.keys()}
         # Overwrite the pretrained model weights to the current model
         model_state_dict.update(new_state_dict)
         discriminator.load_state_dict(model_state_dict)
         # Load the optimizer model
         d_optimizer.load_state_dict(checkpoint["optimizer"])
         # Load the scheduler model
-        if checkpoint["scheduler"]:
-            d_scheduler.load_state_dict(checkpoint["scheduler"])
+        d_scheduler.load_state_dict(checkpoint["scheduler"])
         print("Loaded pretrained discriminator model weights.")
 
     print("Check whether the pretrained generator model is restored...")
@@ -88,15 +86,14 @@ def main():
         best_psnr = checkpoint["best_psnr"]
         # Load checkpoint state dict. Extract the fitted model weights
         model_state_dict = generator.state_dict()
-        new_state_dict = {k: v for k, v in checkpoint["state_dict"].items() if k in model_state_dict}
+        new_state_dict = {k: v for k, v in checkpoint["state_dict"].items() if k in model_state_dict.keys()}
         # Overwrite the pretrained model weights to the current model
         model_state_dict.update(new_state_dict)
         generator.load_state_dict(model_state_dict)
         # Load the optimizer model
         g_optimizer.load_state_dict(checkpoint["optimizer"])
         # Load the scheduler model
-        if checkpoint["scheduler"]:
-            g_scheduler.load_state_dict(checkpoint["scheduler"])
+        g_scheduler.load_state_dict(checkpoint["scheduler"])
         print("Loaded pretrained generator model weights.")
 
     # Create a folder of super-resolution experiment results
@@ -127,7 +124,7 @@ def main():
               scaler,
               writer)
         _ = validate(generator, valid_prefetcher, psnr_criterion, epoch, writer, "Valid")
-        psnr = validate(generator, test_prefetcher, psnr_criterion, epoch, writer, "Test")  # Automatically save the model with the highest index
+        psnr = validate(generator, test_prefetcher, psnr_criterion, epoch, writer, "Test")
         print("\n")
 
         # Update LR
@@ -150,11 +147,15 @@ def main():
                     "scheduler": g_scheduler.state_dict()},
                    os.path.join(samples_dir, f"g_epoch_{epoch + 1}.pth.tar"))
         if is_best:
-            shutil.copyfile(os.path.join(samples_dir, f"d_epoch_{epoch + 1}.pth.tar"), os.path.join(results_dir, "d_best.pth.tar"))
-            shutil.copyfile(os.path.join(samples_dir, f"g_epoch_{epoch + 1}.pth.tar"), os.path.join(results_dir, "g_best.pth.tar"))
+            shutil.copyfile(os.path.join(samples_dir, f"d_epoch_{epoch + 1}.pth.tar"),
+                            os.path.join(results_dir, "d_best.pth.tar"))
+            shutil.copyfile(os.path.join(samples_dir, f"g_epoch_{epoch + 1}.pth.tar"),
+                            os.path.join(results_dir, "g_best.pth.tar"))
         if (epoch + 1) == config.epochs:
-            shutil.copyfile(os.path.join(samples_dir, f"d_epoch_{epoch + 1}.pth.tar"), os.path.join(results_dir, "d_last.pth.tar"))
-            shutil.copyfile(os.path.join(samples_dir, f"g_epoch_{epoch + 1}.pth.tar"), os.path.join(results_dir, "g_last.pth.tar"))
+            shutil.copyfile(os.path.join(samples_dir, f"d_epoch_{epoch + 1}.pth.tar"),
+                            os.path.join(results_dir, "d_last.pth.tar"))
+            shutil.copyfile(os.path.join(samples_dir, f"g_epoch_{epoch + 1}.pth.tar"),
+                            os.path.join(results_dir, "g_last.pth.tar"))
 
 
 def load_dataset() -> [CUDAPrefetcher, CUDAPrefetcher, CUDAPrefetcher]:
@@ -184,7 +185,7 @@ def load_dataset() -> [CUDAPrefetcher, CUDAPrefetcher, CUDAPrefetcher]:
                                  num_workers=1,
                                  pin_memory=True,
                                  drop_last=False,
-                                 persistent_workers=False)
+                                 persistent_workers=True)
 
     # Place all data on the preprocessing data loader
     train_prefetcher = CUDAPrefetcher(train_dataloader, config.device)
@@ -194,7 +195,7 @@ def load_dataset() -> [CUDAPrefetcher, CUDAPrefetcher, CUDAPrefetcher]:
     return train_prefetcher, valid_prefetcher, test_prefetcher
 
 
-def build_model() -> nn.Module:
+def build_model() -> [nn.Module, nn.Module]:
     discriminator = Discriminator().to(config.device)
     generator = Generator().to(config.device)
 
@@ -204,7 +205,9 @@ def build_model() -> nn.Module:
 def define_loss() -> [nn.MSELoss, nn.L1Loss, ContentLoss, nn.BCEWithLogitsLoss]:
     psnr_criterion = nn.MSELoss().to(config.device)
     pixel_criterion = nn.L1Loss().to(config.device)
-    content_criterion = ContentLoss().to(config.device)
+    content_criterion = ContentLoss(config.feature_extractor_node,
+                                    config.normalize_mean,
+                                    config.normalize_std).to(config.device)
     adversarial_criterion = nn.BCEWithLogitsLoss().to(config.device)
 
     return psnr_criterion, pixel_criterion, content_criterion, adversarial_criterion
@@ -217,7 +220,8 @@ def define_optimizer(discriminator: nn.Module, generator: nn.Module) -> [optim.A
     return d_optimizer, g_optimizer
 
 
-def define_scheduler(d_optimizer: optim.Adam, g_optimizer: optim.Adam) -> [lr_scheduler.MultiStepLR, lr_scheduler.MultiStepLR]:
+def define_scheduler(d_optimizer: optim.Adam, g_optimizer: optim.Adam) -> [lr_scheduler.MultiStepLR,
+                                                                           lr_scheduler.MultiStepLR]:
     d_scheduler = lr_scheduler.MultiStepLR(d_optimizer, config.lr_scheduler_milestones, config.lr_scheduler_gamma)
     g_scheduler = lr_scheduler.MultiStepLR(g_optimizer, config.lr_scheduler_milestones, config.lr_scheduler_gamma)
 
@@ -370,7 +374,7 @@ def train(discriminator,
 def validate(model, valid_prefetcher, psnr_criterion, epoch, writer, mode) -> float:
     batch_time = AverageMeter("Time", ":6.3f")
     psnres = AverageMeter("PSNR", ":4.2f")
-    progress = ProgressMeter(len(valid_prefetcher), [batch_time, psnres], prefix="Valid: ")
+    progress = ProgressMeter(len(valid_prefetcher), [batch_time, psnres], prefix=f"{mode}: ")
 
     # Put the model in verification mode
     model.eval()
@@ -425,10 +429,8 @@ def validate(model, valid_prefetcher, psnr_criterion, epoch, writer, mode) -> fl
     # Print average PSNR metrics
     progress.display_summary()
 
-    if mode == "Valid":
-        writer.add_scalar("Valid/PSNR", psnres.avg, epoch + 1)
-    elif mode == "Test":
-        writer.add_scalar("Test/PSNR", psnres.avg, epoch + 1)
+    if mode == "Valid" or model == "Test":
+        writer.add_scalar(f"{mode}/PSNR", psnres.avg, epoch + 1)
     else:
         raise ValueError("Unsupported mode, please use `Valid` or `Test`.")
 

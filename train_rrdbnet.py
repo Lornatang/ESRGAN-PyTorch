@@ -1,4 +1,4 @@
-# Copyright 2021 Dakewe Biotech Corporation. All Rights Reserved.
+# Copyright 2022 Dakewe Biotech Corporation. All Rights Reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""File description: Initialize the SRResNet model."""
 import os
 import shutil
 import time
@@ -28,8 +27,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 import config
 import imgproc
-from dataset import CUDAPrefetcher
-from dataset import TrainValidImageDataset, TestImageDataset
+from dataset import CUDAPrefetcher, TrainValidImageDataset, TestImageDataset
 from model import Generator
 
 
@@ -38,7 +36,7 @@ def main():
     best_psnr = 0.0
 
     train_prefetcher, valid_prefetcher, test_prefetcher = load_dataset()
-    print("Load train dataset and valid dataset successfully.")
+    print("Load all datasets successfully.")
 
     model = build_model()
     print("Build RRDBNet model successfully.")
@@ -61,15 +59,14 @@ def main():
         best_psnr = checkpoint["best_psnr"]
         # Load checkpoint state dict. Extract the fitted model weights
         model_state_dict = model.state_dict()
-        new_state_dict = {k: v for k, v in checkpoint["state_dict"].items() if k in model_state_dict}
+        new_state_dict = {k: v for k, v in checkpoint["state_dict"].items() if k in model_state_dict.keys()}
         # Overwrite the pretrained model weights to the current model
         model_state_dict.update(new_state_dict)
         model.load_state_dict(model_state_dict)
         # Load the optimizer model
         optimizer.load_state_dict(checkpoint["optimizer"])
-        # Load the scheduler model
-        if checkpoint["scheduler"]:
-            scheduler.load_state_dict(checkpoint["scheduler"])
+        # Load the optimizer scheduler
+        scheduler.load_state_dict(checkpoint["scheduler"])
         print("Loaded pretrained model weights.")
 
     # Create a folder of super-resolution experiment results
@@ -92,6 +89,9 @@ def main():
         psnr = validate(model, test_prefetcher, psnr_criterion, epoch, writer, "Test")
         print("\n")
 
+        # Update LR
+        scheduler.step()
+
         # Automatically save the model with the highest index
         is_best = psnr > best_psnr
         best_psnr = max(psnr, best_psnr)
@@ -102,9 +102,11 @@ def main():
                     "scheduler": scheduler.state_dict()},
                    os.path.join(samples_dir, f"g_epoch_{epoch + 1}.pth.tar"))
         if is_best:
-            shutil.copyfile(os.path.join(samples_dir, f"g_epoch_{epoch + 1}.pth.tar"), os.path.join(results_dir, "g_best.pth.tar"))
+            shutil.copyfile(os.path.join(samples_dir, f"g_epoch_{epoch + 1}.pth.tar"),
+                            os.path.join(results_dir, "g_best.pth.tar"))
         if (epoch + 1) == config.epochs:
-            shutil.copyfile(os.path.join(samples_dir, f"g_epoch_{epoch + 1}.pth.tar"), os.path.join(results_dir, "g_last.pth.tar"))
+            shutil.copyfile(os.path.join(samples_dir, f"g_epoch_{epoch + 1}.pth.tar"),
+                            os.path.join(results_dir, "g_last.pth.tar"))
 
 
 def load_dataset() -> [CUDAPrefetcher, CUDAPrefetcher, CUDAPrefetcher]:
@@ -134,7 +136,7 @@ def load_dataset() -> [CUDAPrefetcher, CUDAPrefetcher, CUDAPrefetcher]:
                                  num_workers=1,
                                  pin_memory=True,
                                  drop_last=False,
-                                 persistent_workers=False)
+                                 persistent_workers=True)
 
     # Place all data on the preprocessing data loader
     train_prefetcher = CUDAPrefetcher(train_dataloader, config.device)
@@ -163,8 +165,8 @@ def define_optimizer(model) -> optim.Adam:
     return optimizer
 
 
-def define_scheduler(optimizer) -> lr_scheduler.MultiStepLR:
-    scheduler = lr_scheduler.StepLR(optimizer, step_size=config.lr_scheduler_step_size, gamma=config.lr_scheduler_gamma)
+def define_scheduler(optimizer) -> lr_scheduler.StepLR:
+    scheduler = lr_scheduler.StepLR(optimizer, config.lr_scheduler_step_size, config.lr_scheduler_gamma)
 
     return scheduler
 
@@ -206,7 +208,6 @@ def train(model, train_prefetcher, psnr_criterion, pixel_criterion, optimizer, e
 
         # Gradient zoom
         scaler.scale(loss).backward()
-        scaler.unscale_(optimizer)
         # Update generator weight
         scaler.step(optimizer)
         scaler.update()
@@ -236,7 +237,7 @@ def train(model, train_prefetcher, psnr_criterion, pixel_criterion, optimizer, e
 def validate(model, valid_prefetcher, psnr_criterion, epoch, writer, mode) -> float:
     batch_time = AverageMeter("Time", ":6.3f")
     psnres = AverageMeter("PSNR", ":4.2f")
-    progress = ProgressMeter(len(valid_prefetcher), [batch_time, psnres], prefix="Valid: ")
+    progress = ProgressMeter(len(valid_prefetcher), [batch_time, psnres], prefix=f"{mode}: ")
 
     # Put the model in verification mode
     model.eval()
@@ -291,10 +292,8 @@ def validate(model, valid_prefetcher, psnr_criterion, epoch, writer, mode) -> fl
     # Print average PSNR metrics
     progress.display_summary()
 
-    if mode == "Valid":
-        writer.add_scalar("Valid/PSNR", psnres.avg, epoch + 1)
-    elif mode == "Test":
-        writer.add_scalar("Test/PSNR", psnres.avg, epoch + 1)
+    if mode == "Valid" or mode == "Test":
+        writer.add_scalar(f"{mode}/PSNR", psnres.avg, epoch + 1)
     else:
         raise ValueError("Unsupported mode, please use `Valid` or `Test`.")
 

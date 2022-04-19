@@ -1,4 +1,4 @@
-# Copyright 2021 Dakewe Biotech Corporation. All Rights Reserved.
+# Copyright 2022 Dakewe Biotech Corporation. All Rights Reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
@@ -27,12 +27,12 @@ from model import Generator
 def main() -> None:
     # Initialize the super-resolution model
     model = Generator().to(config.device)
-    print("Build SRGAN model successfully.")
+    print("Build ESRGAN model successfully.")
 
     # Load the super-resolution model weights
     checkpoint = torch.load(config.model_path, map_location=lambda storage, loc: storage)
     model.load_state_dict(checkpoint["state_dict"])
-    print(f"Load SRGAN model weights `{os.path.abspath(config.model_path)}` successfully.")
+    print(f"Load ESRGAN model weights `{os.path.abspath(config.model_path)}` successfully.")
 
     # Create a folder of super-resolution experiment results
     results_dir = os.path.join("results", "test", config.exp_name)

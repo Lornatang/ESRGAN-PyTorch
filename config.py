@@ -81,9 +81,9 @@ if mode == "train_esrgan":
     epochs = 44
 
     # Feature extraction layer parameter configuration
-    feature_extractor_node = "features.34"
-    normalize_mean = [0.485, 0.456, 0.406]
-    normalize_std = [0.229, 0.224, 0.225]
+    feature_model_extractor_node = "features.34"
+    feature_model_normalize_mean = [0.485, 0.456, 0.406]
+    feature_model_normalize_std = [0.229, 0.224, 0.225]
 
     # Loss function weight
     pixel_weight = 0.01

@@ -205,9 +205,9 @@ def build_model() -> [nn.Module, nn.Module]:
 def define_loss() -> [nn.MSELoss, nn.L1Loss, ContentLoss, nn.BCEWithLogitsLoss]:
     psnr_criterion = nn.MSELoss().to(config.device)
     pixel_criterion = nn.L1Loss().to(config.device)
-    content_criterion = ContentLoss(config.feature_extractor_node,
-                                    config.normalize_mean,
-                                    config.normalize_std).to(config.device)
+    content_criterion = ContentLoss(config.feature_model_extractor_node,
+                                    config.feature_model_normalize_mean,
+                                    config.feature_model_normalize_std).to(config.device)
     adversarial_criterion = nn.BCEWithLogitsLoss().to(config.device)
 
     return psnr_criterion, pixel_criterion, content_criterion, adversarial_criterion

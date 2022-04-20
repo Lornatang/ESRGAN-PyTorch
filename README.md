@@ -69,8 +69,8 @@ In the following table, the value in `()` indicates the result of the project, a
 
 | Dataset | Scale |  RRDBNet (PSNR)  | ESRGAN (PSNR) |
 |:-------:|:-----:|:----------------:|:-------------:|
-|  Set5   |   4   | 32.73(**32.56**) | -(**29.97**)  |
-|  Set14  |   4   | 28.99(**28.48**) | -(**25.61**)  |
+|  Set5   |   4   | 32.73(**32.62**) | -(**30.33**)  |
+|  Set14  |   4   | 28.99(**28.66**) | -(**26.08**)  |
 
 Low resolution / Recovered High Resolution / Ground Truth
 <span align="center"><img src="assets/result.png"/></span>

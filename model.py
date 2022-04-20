@@ -156,7 +156,11 @@ class Generator(nn.Module):
         self.conv2 = nn.Conv2d(64, 64, (3, 3), (1, 1), (1, 1))
 
         # Upsampling convolutional layer.
-        self.upsampling = nn.Sequential(
+        self.upsampling1 = nn.Sequential(
+            nn.Conv2d(64, 64, (3, 3), (1, 1), (1, 1)),
+            nn.LeakyReLU(0.2, True)
+        )
+        self.upsampling2 = nn.Sequential(
             nn.Conv2d(64, 64, (3, 3), (1, 1), (1, 1)),
             nn.LeakyReLU(0.2, True)
         )
@@ -176,8 +180,8 @@ class Generator(nn.Module):
         out = self.trunk(out1)
         out2 = self.conv2(out)
         out = torch.add(out1, out2)
-        out = self.upsampling(F.interpolate(out, scale_factor=2, mode="nearest"))
-        out = self.upsampling(F.interpolate(out, scale_factor=2, mode="nearest"))
+        out = self.upsampling1(F.interpolate(out, scale_factor=2, mode="nearest"))
+        out = self.upsampling2(F.interpolate(out, scale_factor=2, mode="nearest"))
         out = self.conv3(out)
         out = self.conv4(out)
 

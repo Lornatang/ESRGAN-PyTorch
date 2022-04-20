@@ -37,7 +37,7 @@ def main():
     best_psnr = 0.0
 
     train_prefetcher, valid_prefetcher, test_prefetcher = load_dataset()
-    print("Load dataset successfully.")
+    print("Load all datasets successfully.")
 
     discriminator, generator = build_model()
     print("Build ESRGAN model successfully.")
@@ -280,25 +280,25 @@ def train(discriminator,
         real_label = torch.full([lr.size(0), 1], 1.0, dtype=lr.dtype, device=config.device)
         fake_label = torch.full([lr.size(0), 1], 0.0, dtype=lr.dtype, device=config.device)
 
-        # Use generators to create super-resolution images
-        sr = generator(lr)
-
         # Start training discriminator
-        # At this stage, the discriminator needs to require a derivative gradient
-        for p in discriminator.parameters():
-            p.requires_grad = True
-
         # Initialize the discriminator optimizer gradient
-        d_optimizer.zero_grad()
+        discriminator.zero_grad()
 
         # Calculate the loss of the discriminator on the high-resolution image
         with amp.autocast():
+            # Use generators to create super-resolution images
+            sr = generator(lr)
             hr_output = discriminator(hr)
             sr_output = discriminator(sr.detach())
-            d_loss_hr = adversarial_criterion(hr_output - torch.mean(sr_output), real_label)
-            d_loss_sr = adversarial_criterion(sr_output - torch.mean(hr_output), fake_label)
+            d_loss_hr = adversarial_criterion(hr_output - torch.mean(sr_output), real_label) * 0.5
         # Gradient zoom
         scaler.scale(d_loss_hr).backward(retain_graph=True)
+
+        # Calculate the loss of the discriminator on the super-resolution image
+        with amp.autocast():
+            sr_output = discriminator(sr.detach())
+            d_loss_sr = adversarial_criterion(sr_output - torch.mean(hr_output), fake_label) * 0.5
+        # Gradient zoom
         scaler.scale(d_loss_sr).backward()
 
         # Update gradient
@@ -310,22 +310,22 @@ def train(discriminator,
         # End training discriminator
 
         # Start training generator
-        # At this stage, the discriminator no needs to require a derivative gradient
-        for p in discriminator.parameters():
-            p.requires_grad = False
-
         # Initialize the generator optimizer gradient
-        g_optimizer.zero_grad()
+        generator.zero_grad()
 
         # Calculate the loss of the generator on the super-resolution image
         with amp.autocast():
+            # Output discriminator to discriminate object probability
             hr_output = discriminator(hr.detach())
             sr_output = discriminator(sr)
             pixel_loss = config.pixel_weight * pixel_criterion(sr, hr.detach())
             content_loss = config.content_weight * content_criterion(sr, hr.detach())
-            adversarial_loss = config.adversarial_weight * adversarial_criterion(sr_output - torch.mean(hr_output), real_label)
-        # Count discriminator total loss
-        g_loss = pixel_loss + content_loss + adversarial_loss
+            # Computational adversarial network loss
+            d_loss_hr = adversarial_criterion(hr_output - torch.mean(sr_output), real_label) * 0.5
+            d_loss_sr = adversarial_criterion(sr_output - torch.mean(hr_output), fake_label) * 0.5
+            adversarial_loss = config.adversarial_weight * (d_loss_hr + d_loss_sr)
+            # Count discriminator total loss
+            g_loss = pixel_loss + content_loss + adversarial_loss
         # Gradient zoom
         scaler.scale(g_loss).backward()
         # Update generator parameters
@@ -371,10 +371,10 @@ def train(discriminator,
         batch_index += 1
 
 
-def validate(model, valid_prefetcher, psnr_criterion, epoch, writer, mode) -> float:
+def validate(model, data_prefetcher, psnr_criterion, epoch, writer, mode) -> float:
     batch_time = AverageMeter("Time", ":6.3f")
     psnres = AverageMeter("PSNR", ":4.2f")
-    progress = ProgressMeter(len(valid_prefetcher), [batch_time, psnres], prefix=f"{mode}: ")
+    progress = ProgressMeter(len(data_prefetcher), [batch_time, psnres], prefix=f"{mode}: ")
 
     # Put the model in verification mode
     model.eval()
@@ -385,8 +385,8 @@ def validate(model, valid_prefetcher, psnr_criterion, epoch, writer, mode) -> fl
     end = time.time()
     with torch.no_grad():
         # enable preload
-        valid_prefetcher.reset()
-        batch_data = valid_prefetcher.next()
+        data_prefetcher.reset()
+        batch_data = data_prefetcher.next()
 
         while batch_data is not None:
             # measure data loading time
@@ -421,7 +421,7 @@ def validate(model, valid_prefetcher, psnr_criterion, epoch, writer, mode) -> fl
                 progress.display(batch_index)
 
             # Preload the next batch of data
-            batch_data = valid_prefetcher.next()
+            batch_data = data_prefetcher.next()
 
             # After a batch of data is calculated, add 1 to the number of batches
             batch_index += 1

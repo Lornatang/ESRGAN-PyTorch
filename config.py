@@ -45,7 +45,7 @@ if mode == "train_rrdbnet":
 
     # Incremental training and migration training
     start_epoch = 0
-    resume = "results/RRDBNet_baseline/g_last.pth.tar"
+    resume = ""
 
     # Total num epochs
     epochs = 108

@@ -196,19 +196,19 @@ def load_dataset() -> [CUDAPrefetcher, CUDAPrefetcher, CUDAPrefetcher]:
 
 
 def build_model() -> [nn.Module, nn.Module]:
-    discriminator = Discriminator().to(config.device)
-    generator = Generator().to(config.device)
+    discriminator = Discriminator().to(device=config.device, memory_format=torch.channels_last)
+    generator = Generator().to(device=config.device, memory_format=torch.channels_last)
 
     return discriminator, generator
 
 
 def define_loss() -> [nn.MSELoss, nn.L1Loss, ContentLoss, nn.BCEWithLogitsLoss]:
-    psnr_criterion = nn.MSELoss().to(config.device)
-    pixel_criterion = nn.L1Loss().to(config.device)
+    psnr_criterion = nn.MSELoss().to(device=config.device)
+    pixel_criterion = nn.L1Loss().to(device=config.device)
     content_criterion = ContentLoss(config.feature_model_extractor_node,
                                     config.feature_model_normalize_mean,
-                                    config.feature_model_normalize_std).to(config.device)
-    adversarial_criterion = nn.BCEWithLogitsLoss().to(config.device)
+                                    config.feature_model_normalize_std).to(device=config.device)
+    adversarial_criterion = nn.BCEWithLogitsLoss().to(device=config.device)
 
     return psnr_criterion, pixel_criterion, content_criterion, adversarial_criterion
 
@@ -273,14 +273,18 @@ def train(discriminator,
         data_time.update(time.time() - end)
 
         # Send data to designated device
-        lr = batch_data["lr"].to(config.device, non_blocking=True)
-        hr = batch_data["hr"].to(config.device, non_blocking=True)
+        lr = batch_data["lr"].to(device=config.device, memory_format=torch.channels_last, non_blocking=True)
+        hr = batch_data["hr"].to(device=config.device, memory_format=torch.channels_last, non_blocking=True)
 
         # Set the real sample label to 1, and the false sample label to 0
         real_label = torch.full([lr.size(0), 1], 1.0, dtype=lr.dtype, device=config.device)
         fake_label = torch.full([lr.size(0), 1], 0.0, dtype=lr.dtype, device=config.device)
 
         # Start training discriminator
+        # Make the gradient flow into the discriminator
+        for d_parameters in discriminator.parameters():
+            d_parameters.requires_grad = True
+
         # Initialize the discriminator optimizer gradient
         discriminator.zero_grad()
 
@@ -289,14 +293,14 @@ def train(discriminator,
             # Use generators to create super-resolution images
             sr = generator(lr)
             hr_output = discriminator(hr)
-            sr_output = discriminator(sr.detach())
+            sr_output = discriminator(sr.detach().clone())
             d_loss_hr = adversarial_criterion(hr_output - torch.mean(sr_output), real_label) * 0.5
         # Gradient zoom
         scaler.scale(d_loss_hr).backward(retain_graph=True)
 
         # Calculate the loss of the discriminator on the super-resolution image
         with amp.autocast():
-            sr_output = discriminator(sr.detach())
+            sr_output = discriminator(sr.detach().clone())
             d_loss_sr = adversarial_criterion(sr_output - torch.mean(hr_output), fake_label) * 0.5
         # Gradient zoom
         scaler.scale(d_loss_sr).backward()
@@ -310,16 +314,20 @@ def train(discriminator,
         # End training discriminator
 
         # Start training generator
+        # Prevent gradients from flowing into the discriminator
+        for d_parameters in discriminator.parameters():
+            d_parameters.requires_grad = False
+
         # Initialize the generator optimizer gradient
         generator.zero_grad()
 
         # Calculate the loss of the generator on the super-resolution image
         with amp.autocast():
             # Output discriminator to discriminate object probability
-            hr_output = discriminator(hr.detach())
+            hr_output = discriminator(hr.detach().clone())
             sr_output = discriminator(sr)
-            pixel_loss = config.pixel_weight * pixel_criterion(sr, hr.detach())
-            content_loss = config.content_weight * content_criterion(sr, hr.detach())
+            pixel_loss = config.pixel_weight * pixel_criterion(sr, hr)
+            content_loss = config.content_weight * content_criterion(sr, hr)
             # Computational adversarial network loss
             d_loss_hr = adversarial_criterion(hr_output - torch.mean(sr_output), real_label) * 0.5
             d_loss_sr = adversarial_criterion(sr_output - torch.mean(hr_output), fake_label) * 0.5
@@ -335,11 +343,11 @@ def train(discriminator,
         # End training generator
 
         # Calculate the scores of the two images on the discriminator
-        d_hr_probability = torch.sigmoid(torch.mean(hr_output))
-        d_sr_probability = torch.sigmoid(torch.mean(sr_output))
+        d_hr_probability = torch.sigmoid_(torch.mean(hr_output.detach()))
+        d_sr_probability = torch.sigmoid_(torch.mean(sr_output.detach()))
 
         # measure accuracy and record loss
-        psnr = 10. * torch.log10(1. / psnr_criterion(sr, hr))
+        psnr = 10. * torch.log10_(1. / psnr_criterion(sr, hr))
         pixel_losses.update(pixel_loss.item(), lr.size(0))
         content_losses.update(content_loss.item(), lr.size(0))
         adversarial_losses.update(adversarial_loss.item(), lr.size(0))
@@ -390,26 +398,35 @@ def validate(model, data_prefetcher, psnr_criterion, epoch, writer, mode) -> flo
 
         while batch_data is not None:
             # measure data loading time
-            lr = batch_data["lr"].to(config.device, non_blocking=True)
-            hr = batch_data["hr"].to(config.device, non_blocking=True)
+            lr = batch_data["lr"].to(device=config.device, memory_format=torch.channels_last, non_blocking=True)
+            hr = batch_data["hr"].to(device=config.device, memory_format=torch.channels_last, non_blocking=True)
 
             # Mixed precision
             with amp.autocast():
                 sr = model(lr)
 
-            # Convert RGB tensor to Y tensor
-            sr_image = imgproc.tensor2image(sr, range_norm=False, half=True)
-            sr_image = sr_image.astype(np.float32) / 255.
-            sr_y_image = imgproc.rgb2ycbcr(sr_image, use_y_channel=True)
-            sr_y_tensor = imgproc.image2tensor(sr_y_image, range_norm=False, half=True).to(config.device).unsqueeze_(0)
+            # Convert RGB tensor to RGB image
+            sr_image = imgproc.tensor2image(sr, range_norm=False, half=False)
+            hr_image = imgproc.tensor2image(hr, range_norm=False, half=False)
 
-            hr_image = imgproc.tensor2image(hr, range_norm=False, half=True)
+            # Data range 0~255 to 0~1
+            sr_image = sr_image.astype(np.float32) / 255.
             hr_image = hr_image.astype(np.float32) / 255.
+
+            # RGB convert Y
+            sr_y_image = imgproc.rgb2ycbcr(sr_image, use_y_channel=True)
             hr_y_image = imgproc.rgb2ycbcr(hr_image, use_y_channel=True)
-            hr_y_tensor = imgproc.image2tensor(hr_y_image, range_norm=False, half=True).to(config.device).unsqueeze_(0)
+
+            # Convert Y image to Y tensor
+            sr_y_tensor = imgproc.image2tensor(sr_y_image, range_norm=False, half=False).unsqueeze_(0)
+            hr_y_tensor = imgproc.image2tensor(hr_y_image, range_norm=False, half=False).unsqueeze_(0)
+
+            # Convert CPU tensor to CUDA tensor
+            sr_y_tensor = sr_y_tensor.to(device=config.device, memory_format=torch.channels_last, non_blocking=True)
+            hr_y_tensor = hr_y_tensor.to(device=config.device, memory_format=torch.channels_last, non_blocking=True)
 
             # measure accuracy and record loss
-            psnr = 10. * torch.log10(1. / psnr_criterion(sr_y_tensor, hr_y_tensor))
+            psnr = 10. * torch.log10_(1. / psnr_criterion(sr_y_tensor, hr_y_tensor))
             psnres.update(psnr.item(), lr.size(0))
 
             # measure elapsed time
@@ -429,7 +446,7 @@ def validate(model, data_prefetcher, psnr_criterion, epoch, writer, mode) -> flo
     # Print average PSNR metrics
     progress.display_summary()
 
-    if mode == "Valid" or model == "Test":
+    if mode == "Valid" or mode == "Test":
         writer.add_scalar(f"{mode}/PSNR", psnres.avg, epoch + 1)
     else:
         raise ValueError("Unsupported mode, please use `Valid` or `Test`.")

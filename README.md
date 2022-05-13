@@ -73,7 +73,7 @@ In the following table, the value in `()` indicates the result of the project, a
 |  Set14  |   4   | 28.99(**28.66**) | -(**26.08**)  |
 
 Low resolution / Recovered High Resolution / Ground Truth
-<span align="center"><img src="assets/result.png"/></span>
+<span align="center"><img src="figure/result.png"/></span>
 
 ### Contributing
 

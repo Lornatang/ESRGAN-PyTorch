@@ -57,6 +57,7 @@ def main():
         # Restore the parameters in the training node to this point
         config.start_epoch = checkpoint["epoch"]
         best_psnr = checkpoint["best_psnr"]
+        best_ssim = checkpoint["best_ssim"]
         # Load checkpoint state dict. Extract the fitted model weights
         model_state_dict = model.state_dict()
         new_state_dict = {k: v for k, v in checkpoint["state_dict"].items() if k in model_state_dict.keys()}

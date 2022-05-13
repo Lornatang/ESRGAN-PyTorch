@@ -34,32 +34,36 @@ Contains DIV2K, DIV8K, Flickr2K, OST, T91, Set5, Set14, BSDS100 and BSDS200, etc
 
 ## Test
 
-Modify the contents of the file as follows.
+Modify the contents of the `config.py` file as follows.
 
-- line 29: `upscale_factor` change to the magnification you need to enlarge.
-- line 31: `mode` change Set to valid mode.
-- line 104: `model_path` change weight address after training.
+- line 31: `upscale_factor` change to the magnification you need to enlarge.
+- line 33: `mode` change Set to valid mode.
+- line 113: `model_path` change weight address after training.
 
 ## Train
 
-Modify the contents of the file as follows.
+Modify the contents of the `config.py` file as follows.
 
-- line 29: `upscale_factor` change to the magnification you need to enlarge.
-- line 31: `mode` change Set to train mode.
+- line 31: `upscale_factor` change to the magnification you need to enlarge.
+- line 33: `mode` change Set to train mode.
 
 If you want to load weights that you've trained before, modify the contents of the file as follows.
 
 ### Train RRDBNet model
 
-- line 47: `start_epoch` change number of SRResNet training iterations in the previous round.
-- line 48: `resume` change to SRResNet weight address that needs to be loaded.
+Modify the contents of the `config.py` file as follows.
+
+- line 49: `start_epoch` change number of SRResNet training iterations in the previous round.
+- line 50: `resume` change to SRResNet weight address that needs to be loaded.
 
 ### Train ESRGAN model
 
-- line 75: `start_epoch` change number of SRGAN training iterations in the previous round.
-- line 76: `resume` change to RRDBNet weight address that needs to be loaded.
-- line 77: `resume_d` change to Discriminator weight address that needs to be loaded.
-- line 78: `resume_g` change to Generator weight address that needs to be loaded.
+Modify the contents of the `config.py` file as follows.
+
+- line 78: `start_epoch` change number of SRGAN training iterations in the previous round.
+- line 79: `resume` change to RRDBNet weight address that needs to be loaded.
+- line 80: `resume_d` change to Discriminator weight address that needs to be loaded.
+- line 81: `resume_g` change to Generator weight address that needs to be loaded.
 
 ### Result
 
@@ -67,10 +71,30 @@ Source of original paper results: [https://arxiv.org/pdf/1809.00219v2.pdf](https
 
 In the following table, the value in `()` indicates the result of the project, and `-` indicates no test.
 
-| Dataset | Scale |  RRDBNet (PSNR)  | ESRGAN (PSNR) |
-|:-------:|:-----:|:----------------:|:-------------:|
-|  Set5   |   4   | 32.73(**32.62**) | -(**30.33**)  |
-|  Set14  |   4   | 28.99(**28.66**) | -(**26.08**)  |
+| Set5 | Scale |        RRDB        |    ESRGAN     |
+|:----:|:-----:|:------------------:|:-------------:|
+| PSNR |   4   |  32.73(**32.71**)  | -(**30.44**)  |
+| SSIM |   4   | 0.9011(**0.9018**) | -(**0.8525**) |
+
+| Set14 | Scale |        RRDB        |    ESRGAN     |
+|:-----:|:-----:|:------------------:|:-------------:|
+| PSNR  |   4   |  28.99(**28.96**)  | -(**26.28**)  |
+| SSIM  |   4   | 0.7917(**0.7917**) | -(**0.6994**) |
+
+| BSD100 | Scale |        RRDB        |    ESRGAN     |
+|:------:|:-----:|:------------------:|:-------------:|
+|  PSNR  |   4   |  27.85(**27.85**)  | -(**25.33**)  |
+|  SSIM  |   4   | 0.7455(**0.7473**) | -(**0.6534**) |
+
+| Urban100 | Scale |        RRDB        |    ESRGAN     |
+|:--------:|:-----:|:------------------:|:-------------:|
+|   PSNR   |   4   |  28.03(**27.03**)  | -(**24.36**)  |
+|   SSIM   |   4   | 0.8153(**0.8156**) | -(**0.7341**) |
+
+| Manga109 | Scale |        RRDB        |    ESRGAN     |
+|:--------:|:-----:|:------------------:|:-------------:|
+|   PSNR   |   4   |  31.66(**31.60**)  | -(**29.42**)  |
+|   SSIM   |   4   | 0.9196(**0.9195**) | -(**0.8597**) |
 
 Low resolution / Recovered High Resolution / Ground Truth
 <span align="center"><img src="figure/result.png"/></span>

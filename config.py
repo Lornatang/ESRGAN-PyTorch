@@ -46,7 +46,6 @@ if mode == "train_rrdbnet":
     num_workers = 4
 
     # Incremental training and migration training
-    start_epoch = 0
     resume = ""
 
     # Total num epochs
@@ -75,7 +74,6 @@ if mode == "train_esrgan":
     num_workers = 4
 
     # Incremental training and migration training
-    start_epoch = 0
     resume = "results/RRDBNet_baseline/g_last.pth.tar"
     resume_d = ""
     resume_g = ""
@@ -110,4 +108,4 @@ if mode == "valid":
     sr_dir = f"results/test/{exp_name}"
     hr_dir = f"data/Set5/GTmod12"
 
-    model_path = f"results/{exp_name}/g_last.pth.tar"
+    model_path = "results/pretrained_models/RRDBNet_x4-DFO2K-2e2a91f4.pth.tar"

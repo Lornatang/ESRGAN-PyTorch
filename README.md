@@ -11,10 +11,12 @@ This repository contains an op-for-op PyTorch reimplementation of [ESRGAN: Enhan
     - [Table of contents](#table-of-contents)
     - [Download weights](#download-weights)
     - [Download datasets](#download-datasets)
-    - [Test](#test)
-    - [Train](#train)
+    - [How Test and Train](#how-test-and-train)
+        - [Test](#test)
         - [Train RRDBNet model](#train-rrdbnet-model)
+        - [Resume train RRDBNet model](#resume-train-rrdbnet-model)
         - [Train ESRGAN model](#train-esrgan-model)
+        - [Resume train ESRGAN model](#resume-train-esrgan-model)
     - [Result](#result)
     - [Contributing](#contributing)
     - [Credit](#credit)
@@ -32,38 +34,44 @@ Contains DIV2K, DIV8K, Flickr2K, OST, T91, Set5, Set14, BSDS100 and BSDS200, etc
 - [Google Driver](https://drive.google.com/drive/folders/1A6lzGeQrFMxPqJehK9s37ce-tPDj20mD?usp=sharing)
 - [Baidu Driver](https://pan.baidu.com/s/1o-8Ty_7q6DiS3ykLU09IVg?pwd=llot)
 
-## Test
+## How Test and Train
 
-Modify the contents of the `config.py` file as follows.
+Both training and testing only need to modify the `config.py` file. 
 
-- line 31: `upscale_factor` change to the magnification you need to enlarge.
-- line 33: `mode` change Set to valid mode.
-- line 113: `model_path` change weight address after training.
+### Test
 
-## Train
-
-Modify the contents of the `config.py` file as follows.
-
-- line 31: `upscale_factor` change to the magnification you need to enlarge.
-- line 33: `mode` change Set to train mode.
-
-If you want to load weights that you've trained before, modify the contents of the file as follows.
+- line 31: `upscale_factor` change to `4`.
+- line 33: `mode` change to `valid`.
+- line 111: `model_path` change to `results/pretrained_models/RRDBNet_x4-DFO2K-2e2a91f4.pth.tar`.
 
 ### Train RRDBNet model
 
-Modify the contents of the `config.py` file as follows.
+- line 31: `upscale_factor` change to `4`.
+- line 33: `mode` change to `train_rrdbnet`.
+- line 35: `exp_name` change to `RRDBNet_baseline`.
 
-- line 49: `start_epoch` change number of SRResNet training iterations in the previous round.
-- line 50: `resume` change to SRResNet weight address that needs to be loaded.
+### Resume train RRDBNet model
+
+- line 31: `upscale_factor` change to `4`.
+- line 33: `mode` change to `train_rrdbnet`.
+- line 35: `exp_name` change to `RRDBNet_baseline`.
+- line 49: `resume` change to `samples/RRDBNet_baseline/g_epoch_xxx.pth.tar`.
 
 ### Train ESRGAN model
 
-Modify the contents of the `config.py` file as follows.
+- line 31: `upscale_factor` change to `4`.
+- line 33: `mode` change to `train_esrgan`.
+- line 35: `exp_name` change to `ESRGAN_baseline`.
+- line 77: `resume` change to `results/RRDBNet_baseline/g_last.pth.tar`.
 
-- line 78: `start_epoch` change number of SRGAN training iterations in the previous round.
-- line 79: `resume` change to RRDBNet weight address that needs to be loaded.
-- line 80: `resume_d` change to Discriminator weight address that needs to be loaded.
-- line 81: `resume_g` change to Generator weight address that needs to be loaded.
+### Resume train ESRGAN model
+
+- line 31: `upscale_factor` change to `4`.
+- line 33: `mode` change to `train_esrgan`.
+- line 35: `exp_name` change to `ESRGAN_baseline`.
+- line 77: `resume` change to `results/RRDBNet_baseline/g_last.pth.tar`.
+- line 78: `resume_d` change to `samples/ESRGAN_baseline/g_epoch_xxx.pth.tar`.
+- line 79: `resume_g` change to `samples/ESRGAN_baseline/g_epoch_xxx.pth.tar`.
 
 ### Result
 

@@ -45,6 +45,9 @@ class ResidualDenseBlock(nn.Module):
         self.leaky_relu = nn.LeakyReLU(0.2, True)
         self.identity = nn.Identity()
 
+        # Initialize model weights
+        self._initialize_weights()
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         identity = x
 
@@ -57,6 +60,14 @@ class ResidualDenseBlock(nn.Module):
         out = torch.add(out, identity)
 
         return out
+
+    def _initialize_weights(self) -> None:
+        for module in self.modules():
+            if isinstance(module, nn.Conv2d):
+                nn.init.kaiming_normal_(module.weight)
+                module.weight.data *= 0.1
+                if module.bias is not None:
+                    nn.init.constant_(module.bias, 0)
 
 
 class ResidualResidualDenseBlock(nn.Module):
@@ -180,8 +191,10 @@ class Generator(nn.Module):
         out = self.trunk(out1)
         out2 = self.conv2(out)
         out = torch.add(out1, out2)
+
         out = self.upsampling1(F.interpolate(out, scale_factor=2, mode="nearest"))
         out = self.upsampling2(F.interpolate(out, scale_factor=2, mode="nearest"))
+
         out = self.conv3(out)
         out = self.conv4(out)
 
@@ -191,14 +204,6 @@ class Generator(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self._forward_impl(x)
-
-    def _initialize_weights(self) -> None:
-        for module in self.modules():
-            if isinstance(module, nn.Conv2d):
-                nn.init.kaiming_normal_(module.weight)
-                module.weight.data *= 0.1
-                if module.bias is not None:
-                    nn.init.constant_(module.bias, 0)
 
 
 class ContentLoss(nn.Module):

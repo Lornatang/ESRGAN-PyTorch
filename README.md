@@ -41,7 +41,7 @@ Both training and testing only need to modify the `config.py` file.
 ### Test
 
 - line 31: `upscale_factor` change to `4`.
-- line 33: `mode` change to `valid`.
+- line 33: `mode` change to `test`.
 - line 111: `model_path` change to `results/pretrained_models/RRDBNet_x4-DFO2K-2e2a91f4.pth.tar`.
 
 ### Train RRDBNet model

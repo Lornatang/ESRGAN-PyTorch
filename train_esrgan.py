@@ -321,6 +321,36 @@ def train(discriminator: nn.Module,
         real_label = torch.full([lr.size(0), 1], 1.0, dtype=lr.dtype, device=config.device)
         fake_label = torch.full([lr.size(0), 1], 0.0, dtype=lr.dtype, device=config.device)
 
+        # Start training the generator model
+        # During generator training, turn off discriminator backpropagation
+        for d_parameters in discriminator.parameters():
+            d_parameters.requires_grad = False
+
+        # Initialize generator model gradients
+        generator.zero_grad(set_to_none=True)
+
+        # Calculate the perceptual loss of the generator, mainly including pixel loss, feature loss and adversarial loss
+        with amp.autocast():
+            # Use the generator model to generate fake samples
+            sr = generator(lr)
+            # Output discriminator to discriminate object probability
+            hr_output = discriminator(hr.detach().clone())
+            sr_output = discriminator(sr)
+            pixel_loss = config.pixel_weight * pixel_criterion(sr, hr)
+            content_loss = config.content_weight * content_criterion(sr, hr)
+            # Computational adversarial network loss
+            d_loss_hr = adversarial_criterion(hr_output - torch.mean(sr_output), real_label) * 0.5
+            d_loss_sr = adversarial_criterion(sr_output - torch.mean(hr_output), fake_label) * 0.5
+            adversarial_loss = config.adversarial_weight * (d_loss_hr + d_loss_sr)
+            # Calculate the generator total loss value
+            g_loss = pixel_loss + content_loss + adversarial_loss
+        # Call the gradient scaling function in the mixed precision API to backpropagate the gradient information of the fake samples
+        scaler.scale(g_loss).backward()
+        # Encourage the generator to generate higher quality fake samples, making it easier to fool the discriminator
+        scaler.step(g_optimizer)
+        scaler.update()
+        # Finish training the generator model
+
         # Start training the discriminator model
         # During discriminator model training, enable discriminator model backpropagation
         for d_parameters in discriminator.parameters():
@@ -331,8 +361,6 @@ def train(discriminator: nn.Module,
 
         # Calculate the classification score of the discriminator model for real samples
         with amp.autocast():
-            # Use the generator model to generate fake samples
-            sr = generator(lr)
             hr_output = discriminator(hr)
             sr_output = discriminator(sr.detach().clone())
             d_loss_hr = adversarial_criterion(hr_output - torch.mean(sr_output), real_label) * 0.5
@@ -353,34 +381,6 @@ def train(discriminator: nn.Module,
         scaler.step(d_optimizer)
         scaler.update()
         # Finish training the discriminator model
-
-        # Start training the generator model
-        # During generator training, turn off discriminator backpropagation
-        for d_parameters in discriminator.parameters():
-            d_parameters.requires_grad = False
-
-        # Initialize generator model gradients
-        generator.zero_grad(set_to_none=True)
-
-        # Calculate the perceptual loss of the generator, mainly including pixel loss, feature loss and adversarial loss
-        with amp.autocast():
-            # Output discriminator to discriminate object probability
-            hr_output = discriminator(hr.detach().clone())
-            sr_output = discriminator(sr)
-            pixel_loss = config.pixel_weight * pixel_criterion(sr, hr)
-            content_loss = config.content_weight * content_criterion(sr, hr)
-            # Computational adversarial network loss
-            d_loss_hr = adversarial_criterion(hr_output - torch.mean(sr_output), real_label) * 0.5
-            d_loss_sr = adversarial_criterion(sr_output - torch.mean(hr_output), fake_label) * 0.5
-            adversarial_loss = config.adversarial_weight * (d_loss_hr + d_loss_sr)
-            # Calculate the generator total loss value
-            g_loss = pixel_loss + content_loss + adversarial_loss
-        # Call the gradient scaling function in the mixed precision API to backpropagate the gradient information of the fake samples
-        scaler.scale(g_loss).backward()
-        # Encourage the generator to generate higher quality fake samples, making it easier to fool the discriminator
-        scaler.step(g_optimizer)
-        scaler.update()
-        # Finish training the generator model
 
         # Calculate the score of the discriminator on real samples and fake samples, the score of real samples is close to 1, and the score of fake samples is close to 0
         d_hr_probability = torch.sigmoid_(torch.mean(hr_output.detach()))
@@ -412,7 +412,8 @@ def train(discriminator: nn.Module,
         # Preload the next batch of data
         batch_data = train_prefetcher.next()
 
-        # After training a batch of data, add 1 to the number of data batches to ensure that the terminal prints data normally
+        # After training a batch of data, add 1 to the number of data batches to ensure that the
+        # terminal print data normally
         batch_index += 1
 
 
@@ -483,7 +484,7 @@ def validate(model: nn.Module,
             batch_data = data_prefetcher.next()
 
             # After training a batch of data, add 1 to the number of data batches to ensure that the
-            # terminal prints data normally
+            # terminal print data normally
             batch_index += 1
 
     # print metrics
@@ -498,7 +499,6 @@ def validate(model: nn.Module,
     return psnres.avg, ssimes.avg
 
 
-# Copy form "https://github.com/pytorch/examples/blob/master/imagenet/main.py"
 class Summary(Enum):
     NONE = 0
     AVERAGE = 1
@@ -507,8 +507,6 @@ class Summary(Enum):
 
 
 class AverageMeter(object):
-    """Computes and stores the average and current value"""
-
     def __init__(self, name, fmt=":f", summary_type=Summary.AVERAGE):
         self.name = name
         self.fmt = fmt

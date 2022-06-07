@@ -335,7 +335,7 @@ def validate(model: nn.Module,
             batch_data = data_prefetcher.next()
 
             # After training a batch of data, add 1 to the number of data batches to ensure that the
-            # terminal prints data normally
+            # terminal print data normally
             batch_index += 1
 
     # print metrics
@@ -350,7 +350,6 @@ def validate(model: nn.Module,
     return psnres.avg, ssimes.avg
 
 
-# Copy form "https://github.com/pytorch/examples/blob/master/imagenet/main.py"
 class Summary(Enum):
     NONE = 0
     AVERAGE = 1
@@ -359,8 +358,6 @@ class Summary(Enum):
 
 
 class AverageMeter(object):
-    """Computes and stores the average and current value"""
-
     def __init__(self, name, fmt=":f", summary_type=Summary.AVERAGE):
         self.name = name
         self.fmt = fmt

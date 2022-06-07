@@ -79,33 +79,26 @@ Source of original paper results: [https://arxiv.org/pdf/1809.00219v2.pdf](https
 
 In the following table, the value in `()` indicates the result of the project, and `-` indicates no test.
 
-| Set5 | Scale |        RRDB        |    ESRGAN     |
-|:----:|:-----:|:------------------:|:-------------:|
-| PSNR |   4   |  32.73(**32.71**)  | -(**30.44**)  |
-| SSIM |   4   | 0.9011(**0.9018**) | -(**0.8525**) |
+| Method | Scale |          Set5 (PSNR/SSIM)           |          Set14 (PSNR/SSIM)          |         BSD100 (PSNR/SSIM)          |        Urban100 (PSNR/SSIM)         |        Manga109 (PSNR/SSIM)         |
+|:------:|:-----:|:-----------------------------------:|:-----------------------------------:|:-----------------------------------:|:-----------------------------------:|:-----------------------------------:|
+|  RRDB  |   4   | 32.73(**32.71**)/0.9011(**0.9018**) | 28.99(**28.96**)/0.7917(**0.7917**) | 27.85(**27.85**)/0.7455(**0.7473**) | 28.03(**27.03**)/0.8153(**0.8156**) | 31.66(**31.60**)/0.9196(**0.9195**) |
+| ESRGAN |   4   |     -(**30.44**)/-(**0.8525**)      |     -(**26.28**)/-(**0.6994**)      |     -(**25.33**)/-(**0.6534**)      |     -(**24.36**)/-(**0.7341**)      |     -(**29.42**)/-(**0.8597**)      |
 
-| Set14 | Scale |        RRDB        |    ESRGAN     |
-|:-----:|:-----:|:------------------:|:-------------:|
-| PSNR  |   4   |  28.99(**28.96**)  | -(**26.28**)  |
-| SSIM  |   4   | 0.7917(**0.7917**) | -(**0.6994**) |
+```bash
+# Download `ESRGAN_x4-DFO2K-25393df7.pth.tar` weights to `./results/pretrained_models`
+# More detail see `README.md<Download weights>`
+python ./inference.py --inputs_path ./figure/baboon_lr.png --output_path ./figure/baboon_sr.png --weights_path ./results/pretrained_models/ESRGAN_x4-DFO2K-25393df7.pth.tar
+```
 
-| BSD100 | Scale |        RRDB        |    ESRGAN     |
-|:------:|:-----:|:------------------:|:-------------:|
-|  PSNR  |   4   |  27.85(**27.85**)  | -(**25.33**)  |
-|  SSIM  |   4   | 0.7455(**0.7473**) | -(**0.6534**) |
+Input: <span align="center"><img width="492" height="480" src="figure/baboon_lr.png"/></span>
 
-| Urban100 | Scale |        RRDB        |    ESRGAN     |
-|:--------:|:-----:|:------------------:|:-------------:|
-|   PSNR   |   4   |  28.03(**27.03**)  | -(**24.36**)  |
-|   SSIM   |   4   | 0.8153(**0.8156**) | -(**0.7341**) |
+Output: <span align="center"><img width="492" height="480" src="figure/baboon_sr.png"/></span>
 
-| Manga109 | Scale |        RRDB        |    ESRGAN     |
-|:--------:|:-----:|:------------------:|:-------------:|
-|   PSNR   |   4   |  31.66(**31.60**)  | -(**29.42**)  |
-|   SSIM   |   4   | 0.9196(**0.9195**) | -(**0.8597**) |
-
-Low resolution / Recovered High Resolution / Ground Truth
-<span align="center"><img src="figure/result.png"/></span>
+```text
+Build ESRGAN model successfully.
+Load ESRGAN model weights `./results/pretrained_models/ESRGAN_x4-DFO2K-25393df7.pth.tar` successfully.
+SR image save to `./figure/baboon_sr.png`
+```
 
 ### Contributing
 
@@ -130,7 +123,7 @@ and texture recovery. Benefiting from these improvements, the proposed ESRGAN ac
 natural textures than SRGAN and won the first place in the PIRM2018-SR Challenge. The code is available
 at [this https URL](https://github.com/xinntao/ESRGAN).
 
-[[Paper]](https://arxiv.org/pdf/1609.04802) [[Code(PyTorch)]](https://github.com/xinntao/ESRGAN)
+[[Paper]](https://arxiv.org/pdf/1809.00219v2.pdf) [[Author's implements(PyTorch)]](https://github.com/xinntao/ESRGAN)
 
 ```bibtex
 @misc{wang2018esrgan,

@@ -102,7 +102,7 @@ if mode == "train_esrgan":
     # How many iterations to print the training result
     print_frequency = 200
 
-if mode == "valid":
+if mode == "test":
     # Test data address
     lr_dir = f"./data/Set5/LRbicx{upscale_factor}"
     sr_dir = f"./results/test/{exp_name}"

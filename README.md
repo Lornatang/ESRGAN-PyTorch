@@ -90,9 +90,13 @@ In the following table, the value in `()` indicates the result of the project, a
 python ./inference.py --inputs_path ./figure/baboon_lr.png --output_path ./figure/baboon_sr.png --weights_path ./results/pretrained_models/ESRGAN_x4-DFO2K-25393df7.pth.tar
 ```
 
-Input: <span align="center"><img width="492" height="480" src="figure/baboon_lr.png"/></span>
+Input: 
 
-Output: <span align="center"><img width="492" height="480" src="figure/baboon_sr.png"/></span>
+<span align="center"><img width="492" height="480" src="figure/baboon_lr.png"/></span>
+
+Output: 
+
+<span align="center"><img width="492" height="480" src="figure/baboon_sr.png"/></span>
 
 ```text
 Build ESRGAN model successfully.

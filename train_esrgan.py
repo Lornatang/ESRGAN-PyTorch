@@ -54,14 +54,37 @@ def main():
     d_scheduler, g_scheduler = define_scheduler(d_optimizer, g_optimizer)
     print("Define all optimizer scheduler functions successfully.")
 
-    if config.resume:
-        print("Loading RRDBNet model weights")
+    print("Check whether to load pretrained discriminator model weights...")
+    if config.pretrained_d_model_path:
         # Load checkpoint model
-        checkpoint = torch.load(config.resume, map_location=lambda storage, loc: storage)
-        generator.load_state_dict(checkpoint["state_dict"])
-        print("Loaded RRDBNet model weights.")
+        checkpoint = torch.load(config.pretrained_d_model_path, map_location=lambda storage, loc: storage)
+        # Load model state dict. Extract the fitted model weights
+        model_state_dict = discriminator.state_dict()
+        state_dict = {k: v for k, v in checkpoint["state_dict"].items() if
+                      k in model_state_dict.keys() and v.size() == model_state_dict[k].size()}
+        # Overwrite the model weights to the current model
+        model_state_dict.update(state_dict)
+        discriminator.load_state_dict(model_state_dict)
+        print(f"Loaded `{config.pretrained_d_model_path}` pretrained discriminator model weights successfully.")
+    else:
+        print("Pretrained discriminator model weights not found.")
 
-    print("Check whether the pretrained discriminator model is restored...")
+    print("Check whether to load pretrained generator model weights...")
+    if config.pretrained_g_model_path:
+        # Load checkpoint model
+        checkpoint = torch.load(config.pretrained_g_model_path, map_location=lambda storage, loc: storage)
+        # Load model state dict. Extract the fitted model weights
+        model_state_dict = generator.state_dict()
+        state_dict = {k: v for k, v in checkpoint["state_dict"].items() if
+                      k in model_state_dict.keys() and v.size() == model_state_dict[k].size()}
+        # Overwrite the model weights to the current model
+        model_state_dict.update(state_dict)
+        generator.load_state_dict(model_state_dict)
+        print(f"Loaded `{config.pretrained_g_model_path}` pretrained generator model weights successfully.")
+    else:
+        print("Pretrained generator model weights not found.")
+
+    print("Check whether to resume training discriminator...")
     if config.resume_d:
         # Load checkpoint model
         checkpoint = torch.load(config.resume_d, map_location=lambda storage, loc: storage)
@@ -71,7 +94,8 @@ def main():
         best_ssim = checkpoint["best_ssim"]
         # Load checkpoint state dict. Extract the fitted model weights
         model_state_dict = discriminator.state_dict()
-        new_state_dict = {k: v for k, v in checkpoint["state_dict"].items() if k in model_state_dict.keys()}
+        new_state_dict = {k: v for k, v in checkpoint["state_dict"].items() if
+                          k in model_state_dict.keys() and v.size() == model_state_dict[k].size()}
         # Overwrite the pretrained model weights to the current model
         model_state_dict.update(new_state_dict)
         discriminator.load_state_dict(model_state_dict)
@@ -79,9 +103,12 @@ def main():
         d_optimizer.load_state_dict(checkpoint["optimizer"])
         # Load the scheduler model
         d_scheduler.load_state_dict(checkpoint["scheduler"])
-        print("Loaded pretrained discriminator model weights.")
+        print(f"Loaded `{config.resume_d}` resume discriminator model weights successfully. "
+              f"Resume training from epoch {start_epoch + 1}.")
+    else:
+        print("Resume training discriminator model not found. Start training from scratch.")
 
-    print("Check whether the pretrained generator model is restored...")
+    print("Check whether to resume training generator...")
     if config.resume_g:
         # Load checkpoint model
         checkpoint = torch.load(config.resume_g, map_location=lambda storage, loc: storage)
@@ -91,7 +118,8 @@ def main():
         best_ssim = checkpoint["best_ssim"]
         # Load checkpoint state dict. Extract the fitted model weights
         model_state_dict = generator.state_dict()
-        new_state_dict = {k: v for k, v in checkpoint["state_dict"].items() if k in model_state_dict.keys()}
+        new_state_dict = {k: v for k, v in checkpoint["state_dict"].items() if
+                          k in model_state_dict.keys() and v.size() == model_state_dict[k].size()}
         # Overwrite the pretrained model weights to the current model
         model_state_dict.update(new_state_dict)
         generator.load_state_dict(model_state_dict)
@@ -99,7 +127,10 @@ def main():
         g_optimizer.load_state_dict(checkpoint["optimizer"])
         # Load the scheduler model
         g_scheduler.load_state_dict(checkpoint["scheduler"])
-        print("Loaded pretrained generator model weights.")
+        print(f"Loaded `{config.resume_g}` resume generator model weights successfully. "
+              f"Resume training from epoch {start_epoch + 1}.")
+    else:
+        print("Resume training generator model not found. Start training from scratch.")
 
     # Create a folder of super-resolution experiment results
     samples_dir = os.path.join("samples", config.exp_name)

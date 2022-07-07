@@ -53,6 +53,21 @@ def main():
     scheduler = define_scheduler(optimizer)
     print("Define all optimizer scheduler successfully.")
 
+    print("Check whether to load pretrained model weights...")
+    if config.pretrained_model_path:
+        # Load checkpoint model
+        checkpoint = torch.load(config.pretrained_model_path, map_location=lambda storage, loc: storage)
+        # Load model state dict. Extract the fitted model weights
+        model_state_dict = model.state_dict()
+        state_dict = {k: v for k, v in checkpoint["state_dict"].items() if
+                      k in model_state_dict.keys() and v.size() == model_state_dict[k].size()}
+        # Overwrite the model weights to the current model
+        model_state_dict.update(state_dict)
+        model.load_state_dict(model_state_dict)
+        print(f"Loaded `{config.pretrained_model_path}` pretrained model weights successfully.")
+    else:
+        print("Pretrained model weights not found.")
+
     print("Check whether the pretrained model is restored...")
     if config.resume:
         # Load checkpoint model
@@ -63,7 +78,8 @@ def main():
         best_ssim = checkpoint["best_ssim"]
         # Load checkpoint state dict. Extract the fitted model weights
         model_state_dict = model.state_dict()
-        new_state_dict = {k: v for k, v in checkpoint["state_dict"].items() if k in model_state_dict.keys()}
+        new_state_dict = {k: v for k, v in checkpoint["state_dict"].items() if
+                      k in model_state_dict.keys() and v.size() == model_state_dict[k].size()}
         # Overwrite the pretrained model weights to the current model
         model_state_dict.update(new_state_dict)
         model.load_state_dict(model_state_dict)

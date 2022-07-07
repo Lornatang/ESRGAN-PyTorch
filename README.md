@@ -42,36 +42,56 @@ Both training and testing only need to modify the `config.py` file.
 
 - line 31: `upscale_factor` change to `4`.
 - line 33: `mode` change to `test`.
-- line 111: `model_path` change to `results/pretrained_models/RRDBNet_x4-DFO2K-2e2a91f4.pth.tar`.
+- line 117: `model_path` change to `results/pretrained_models/RRDBNet_x4-DFO2K-2e2a91f4.pth.tar`.
+
+```bash
+python test.py
+```
 
 ### Train RRDBNet model
 
 - line 31: `upscale_factor` change to `4`.
 - line 33: `mode` change to `train_rrdbnet`.
 - line 35: `exp_name` change to `RRDBNet_baseline`.
+- line 49: `pretrained_model_path` change to `./results/pretrained_models/RRDBNet_x4-DFO2K-2e2a91f4.pth.tar`.
+
+```bash
+python train_rrdbnet.py
+```
 
 ### Resume train RRDBNet model
 
 - line 31: `upscale_factor` change to `4`.
 - line 33: `mode` change to `train_rrdbnet`.
 - line 35: `exp_name` change to `RRDBNet_baseline`.
-- line 49: `resume` change to `samples/RRDBNet_baseline/g_epoch_xxx.pth.tar`.
+- line 52: `resume` change to `samples/RRDBNet_baseline/g_epoch_xxx.pth.tar`.
+
+```bash
+python train_rrdbnet.py
+```
 
 ### Train ESRGAN model
 
 - line 31: `upscale_factor` change to `4`.
 - line 33: `mode` change to `train_esrgan`.
 - line 35: `exp_name` change to `ESRGAN_baseline`.
-- line 77: `resume` change to `results/RRDBNet_baseline/g_last.pth.tar`.
+- line 81: `pretrained_g_model_path` change to `./results/RRDBNet_baseline/g_best.pth.tar`.
+
+```bash
+python train_esrgan.py
+```
 
 ### Resume train ESRGAN model
 
 - line 31: `upscale_factor` change to `4`.
 - line 33: `mode` change to `train_esrgan`.
 - line 35: `exp_name` change to `ESRGAN_baseline`.
-- line 77: `resume` change to `results/RRDBNet_baseline/g_last.pth.tar`.
-- line 78: `resume_d` change to `samples/ESRGAN_baseline/g_epoch_xxx.pth.tar`.
-- line 79: `resume_g` change to `samples/ESRGAN_baseline/g_epoch_xxx.pth.tar`.
+- line 84: `resume_d` change to `samples/ESRGAN_baseline/g_epoch_xxx.pth.tar`.
+- line 85: `resume_g` change to `samples/ESRGAN_baseline/g_epoch_xxx.pth.tar`.
+
+```bash
+python train_esrgan.py
+```
 
 ### Result
 

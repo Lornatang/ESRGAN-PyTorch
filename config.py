@@ -39,14 +39,17 @@ if mode == "train_rrdbnet":
     train_image_dir = "./data/DIV2K/ESRGAN/train"
     valid_image_dir = "./data/DIV2K/ESRGAN/valid"
     test_lr_image_dir = f"./data/Set5/LRbicx{upscale_factor}"
-    test_hr_image_dir = f"./data/Set5/GTmod12"
+    test_hr_image_dir = "./data/Set5/GTmod12"
 
     image_size = 128
     batch_size = 16
     num_workers = 4
 
+    # The address to load the pretrained model
+    pretrained_model_path = "./results/pretrained_models/RRDBNet_x4-DFO2K-2e2a91f4.pth.tar"
+
     # Incremental training and migration training
-    resume = ""
+    resume = f""
 
     # Total num epochs
     epochs = 108
@@ -67,14 +70,17 @@ if mode == "train_esrgan":
     train_image_dir = "./data/DIV2K/ESRGAN/train"
     valid_image_dir = "./data/DIV2K/ESRGAN/valid"
     test_lr_image_dir = f"./data/Set5/LRbicx{upscale_factor}"
-    test_hr_image_dir = f"./data/Set5/GTmod12"
+    test_hr_image_dir = "./data/Set5/GTmod12"
 
     image_size = 128
     batch_size = 16
     num_workers = 4
 
+    # The address to load the pretrained model
+    pretrained_d_model_path = ""
+    pretrained_g_model_path = "./results/RRDBNet_baseline/g_last.pth.tar"
+
     # Incremental training and migration training
-    resume = "./results/RRDBNet_baseline/g_last.pth.tar"
     resume_d = ""
     resume_g = ""
 
@@ -106,6 +112,6 @@ if mode == "test":
     # Test data address
     lr_dir = f"./data/Set5/LRbicx{upscale_factor}"
     sr_dir = f"./results/test/{exp_name}"
-    hr_dir = f"./data/Set5/GTmod12"
+    hr_dir = "./data/Set5/GTmod12"
 
     model_path = "./results/pretrained_models/RRDBNet_x4-DFO2K-2e2a91f4.pth.tar"

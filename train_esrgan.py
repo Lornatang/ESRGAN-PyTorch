@@ -370,8 +370,8 @@ def train(discriminator: nn.Module,
             pixel_loss = config.pixel_weight * pixel_criterion(sr, hr)
             content_loss = config.content_weight * content_criterion(sr, hr)
             # Computational adversarial network loss
-            d_loss_hr = adversarial_criterion(hr_output - torch.mean(sr_output), real_label) * 0.5
-            d_loss_sr = adversarial_criterion(sr_output - torch.mean(hr_output), fake_label) * 0.5
+            d_loss_hr = adversarial_criterion(hr_output - torch.mean(sr_output), fake_label) * 0.5
+            d_loss_sr = adversarial_criterion(sr_output - torch.mean(hr_output), real_label) * 0.5
             adversarial_loss = config.adversarial_weight * (d_loss_hr + d_loss_sr)
             # Calculate the generator total loss value
             g_loss = pixel_loss + content_loss + adversarial_loss

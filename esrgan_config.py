@@ -31,7 +31,7 @@ cudnn.benchmark = True
 only_test_y_channel = True
 # Model architecture name
 d_arch_name = "discriminator"
-g_arch_name = "esrgan_x4"
+g_arch_name = "rrdbnet_x4"
 # Model arch config
 in_channels = 3
 out_channels = 3
@@ -51,7 +51,6 @@ if mode == "train":
     test_gt_images_dir = f"./data/Set5/GTmod12"
     test_lr_images_dir = f"./data/Set5/LRbicx{upscale_factor}"
 
-    crop_image_size = 224
     gt_image_size = 128
     batch_size = 16
     num_workers = 4

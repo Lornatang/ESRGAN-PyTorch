@@ -21,8 +21,8 @@ from torchvision import transforms
 from torchvision.models.feature_extraction import create_feature_extractor
 
 __all__ = [
-    "Discriminator", "ESRGAN", "ContentLoss",
-    "discriminator", "esrgan_x4", "content_loss",
+    "Discriminator", "RRDBNet", "ContentLoss",
+    "discriminator", "rrdbnet_x1", "rrdbnet_x2", "rrdbnet_x4", "rrdbnet_x8", "content_loss",
 ]
 
 
@@ -141,7 +141,7 @@ class Discriminator(nn.Module):
         return out
 
 
-class ESRGAN(nn.Module):
+class RRDBNet(nn.Module):
     def __init__(
             self,
             in_channels: int = 3,
@@ -151,7 +151,7 @@ class ESRGAN(nn.Module):
             num_blocks: int = 23,
             upscale_factor: int = 4,
     ) -> None:
-        super(ESRGAN, self).__init__()
+        super(RRDBNet, self).__init__()
         self.upscale_factor = upscale_factor
 
         # The first layer of convolutional layer.
@@ -167,13 +167,30 @@ class ESRGAN(nn.Module):
         self.conv2 = nn.Conv2d(channels, channels, (3, 3), (1, 1), (1, 1))
 
         # Upsampling convolutional layer.
-        self.upsampling1 = nn.Sequential(
-            nn.Conv2d(channels, channels, (3, 3), (1, 1), (1, 1)),
-            nn.LeakyReLU(0.2, True)
-        )
-
+        if upscale_factor == 2:
+            self.upsampling1 = nn.Sequential(
+                nn.Conv2d(channels, channels, (3, 3), (1, 1), (1, 1)),
+                nn.LeakyReLU(0.2, True)
+            )
         if upscale_factor == 4:
+            self.upsampling1 = nn.Sequential(
+                nn.Conv2d(channels, channels, (3, 3), (1, 1), (1, 1)),
+                nn.LeakyReLU(0.2, True)
+            )
             self.upsampling2 = nn.Sequential(
+                nn.Conv2d(channels, channels, (3, 3), (1, 1), (1, 1)),
+                nn.LeakyReLU(0.2, True)
+            )
+        if upscale_factor == 8:
+            self.upsampling1 = nn.Sequential(
+                nn.Conv2d(channels, channels, (3, 3), (1, 1), (1, 1)),
+                nn.LeakyReLU(0.2, True)
+            )
+            self.upsampling2 = nn.Sequential(
+                nn.Conv2d(channels, channels, (3, 3), (1, 1), (1, 1)),
+                nn.LeakyReLU(0.2, True)
+            )
+            self.upsampling3 = nn.Sequential(
                 nn.Conv2d(channels, channels, (3, 3), (1, 1), (1, 1)),
                 nn.LeakyReLU(0.2, True)
             )
@@ -197,9 +214,15 @@ class ESRGAN(nn.Module):
         out2 = self.conv2(out)
         out = torch.add(out1, out2)
 
-        out = self.upsampling1(F.interpolate(out, scale_factor=2, mode="nearest"))
+        if self.upscale_factor == 2:
+            out = self.upsampling1(F.interpolate(out, scale_factor=2, mode="nearest"))
         if self.upscale_factor == 4:
+            out = self.upsampling1(F.interpolate(out, scale_factor=2, mode="nearest"))
             out = self.upsampling2(F.interpolate(out, scale_factor=2, mode="nearest"))
+        if self.upscale_factor == 8:
+            out = self.upsampling1(F.interpolate(out, scale_factor=2, mode="nearest"))
+            out = self.upsampling2(F.interpolate(out, scale_factor=2, mode="nearest"))
+            out = self.upsampling3(F.interpolate(out, scale_factor=2, mode="nearest"))
 
         out = self.conv3(out)
         out = self.conv4(out)
@@ -275,8 +298,26 @@ def discriminator() -> Discriminator:
     return model
 
 
-def esrgan_x4(**kwargs: Any) -> ESRGAN:
-    model = ESRGAN(upscale_factor=4, **kwargs)
+def rrdbnet_x1(**kwargs: Any) -> RRDBNet:
+    model = RRDBNet(upscale_factor=1, **kwargs)
+
+    return model
+
+
+def rrdbnet_x2(**kwargs: Any) -> RRDBNet:
+    model = RRDBNet(upscale_factor=2, **kwargs)
+
+    return model
+
+
+def rrdbnet_x4(**kwargs: Any) -> RRDBNet:
+    model = RRDBNet(upscale_factor=4, **kwargs)
+
+    return model
+
+
+def rrdbnet_x8(**kwargs: Any) -> RRDBNet:
+    model = RRDBNet(upscale_factor=8, **kwargs)
 
     return model
 

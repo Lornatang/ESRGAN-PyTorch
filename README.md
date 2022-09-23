@@ -47,7 +47,7 @@ modify the `esrgan_config.py`
 - line 34: `g_arch_name` change to `esrgan_x4`.
 - line 41: `upscale_factor` change to `4`.
 - line 43: `mode` change to `test`.
-- line 105: `g_model_weights_path` change to `./results/pretrained_models/BSRNet_x4-DIV2K-353eb572.pth.tar`.
+- line 102: `g_model_weights_path` change to `./results/pretrained_models/BSRNet_x4-DIV2K-353eb572.pth.tar`.
 
 ```bash
 python3 test.py
@@ -57,7 +57,7 @@ python3 test.py
 
 modify the `rrdbnet_config.py`
 
-- line 31: `g_arch_name` change to `esrgan_x4`.
+- line 31: `g_arch_name` change to `rrdbnet_x4`.
 - line 38: `upscale_factor` change to `4`.
 - line 40: `mode` change to `train`.
 - line 57: `g_model_weights_path` change to `./results/pretrained_models/RRDBNet_x4-DFO2K-2e2a91f4.pth.tar`.
@@ -70,10 +70,10 @@ python train_rrdbnet.py
 
 modify the `rrdbnet_config.py`
 
-- line 31: `g_arch_name` change to `esrgan_x4`.
+- line 31: `g_arch_name` change to `rrdbnet_x4`.
 - line 38: `upscale_factor` change to `4`.
 - line 40: `mode` change to `train`.
-- line 57: `resume_g` change to `samples/RRDBNet_x4/g_epoch_xxx.pth.tar`.
+- line 56: `resume_g` change to `samples/RRDBNet_x4/g_epoch_xxx.pth.tar`.
 
 ```bash
 python train_rrdbnet.py
@@ -87,7 +87,7 @@ modify the `esrgan_config.py`
 - line 34: `g_arch_name` change to `esrgan_x4`.
 - line 41: `upscale_factor` change to `4`.
 - line 43: `mode` change to `train`.
-- line 61: `pretrained_g_model_path` change to `./results/ESRGAN_x4/g_best.pth.tar`.
+- line 60: `pretrained_g_model_path` change to `./results/ESRGAN_x4/g_best.pth.tar`.
 
 ```bash
 python train_esrgan.py
@@ -101,8 +101,8 @@ modify the `esrgan_config.py`
 - line 34: `g_arch_name` change to `esrgan_x4`.
 - line 41: `upscale_factor` change to `4`.
 - line 43: `mode` change to `train`.
-- line 64: `resume_d` change to `samples/ESRGAN_x4/g_epoch_xxx.pth.tar`.
-- line 65: `resume_g` change to `samples/ESRGAN_x4/g_epoch_xxx.pth.tar`.
+- line 63: `resume_d` change to `samples/ESRGAN_x4/g_epoch_xxx.pth.tar`.
+- line 64: `resume_g` change to `samples/ESRGAN_x4/g_epoch_xxx.pth.tar`.
 
 ```bash
 python train_esrgan.py

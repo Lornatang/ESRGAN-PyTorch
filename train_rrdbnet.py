@@ -27,7 +27,6 @@ import rrdbnet_config
 import model
 from dataset import CUDAPrefetcher, TrainValidImageDataset, TestImageDataset
 from image_quality_assessment import PSNR, SSIM
-from imgproc import random_crop
 from utils import load_state_dict, make_directory, save_checkpoint, AverageMeter, ProgressMeter
 
 model_names = sorted(
@@ -141,7 +140,7 @@ def main():
 def load_dataset() -> [CUDAPrefetcher, CUDAPrefetcher]:
     # Load train, test and valid datasets
     train_datasets = TrainValidImageDataset(rrdbnet_config.train_gt_images_dir,
-                                            rrdbnet_config.crop_image_size,
+                                            rrdbnet_config.gt_image_size,
                                             rrdbnet_config.upscale_factor,
                                             "Train")
     test_datasets = TestImageDataset(rrdbnet_config.test_gt_images_dir, rrdbnet_config.test_lr_images_dir)
@@ -247,13 +246,6 @@ def train(
         # Transfer in-memory data to CUDA devices to speed up training
         gt = batch_data["gt"].to(device=rrdbnet_config.device, non_blocking=True)
         lr = batch_data["lr"].to(device=rrdbnet_config.device, non_blocking=True)
-
-        # Clamp and round
-        gt = torch.clamp((gt * 255.0).round(), 0, 255) / 255.
-        lr = torch.clamp((lr * 255.0).round(), 0, 255) / 255.
-
-        # Crop image patch
-        gt, lr = random_crop(gt, lr, rrdbnet_config.gt_image_size, rrdbnet_config.upscale_factor)
 
         # Initialize generator gradients
         rrdbnet_model.zero_grad(set_to_none=True)

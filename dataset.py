@@ -35,7 +35,7 @@ class TrainValidImageDataset(Dataset):
 
     Args:
         image_dir (str): Train/Valid dataset address.
-        crop_image_size (int): Crop ground-truth resolution image size.
+        gt_image_size (int): Ground-truth resolution image size.
         upscale_factor (int): Image up scale factor.
         mode (str): Data set loading method, the training data set is for data enhancement, and the
             verification dataset is not for data enhancement.
@@ -44,13 +44,13 @@ class TrainValidImageDataset(Dataset):
     def __init__(
             self,
             image_dir: str,
-            crop_image_size: int,
+            gt_image_size: int,
             upscale_factor: int,
             mode: str,
     ) -> None:
         super(TrainValidImageDataset, self).__init__()
         self.image_file_names = [os.path.join(image_dir, image_file_name) for image_file_name in os.listdir(image_dir)]
-        self.crop_image_size = crop_image_size
+        self.gt_image_size = gt_image_size
         self.upscale_factor = upscale_factor
         self.mode = mode
 
@@ -60,16 +60,20 @@ class TrainValidImageDataset(Dataset):
 
         # Image processing operations
         if self.mode == "Train":
-            gt_image = imgproc.random_crop_np(gt_image, self.crop_image_size)
+            gt_image = imgproc.random_crop_np(gt_image, self.gt_image_size)
             gt_image = imgproc.random_rotate(gt_image, [90, 180, 270])
             gt_image = imgproc.random_horizontally_flip(gt_image, 0.5)
             gt_image = imgproc.random_vertically_flip(gt_image, 0.5)
         elif self.mode == "Valid":
-            gt_image = imgproc.center_crop(gt_image, self.crop_image_size)
+            gt_image = imgproc.center_crop(gt_image, self.gt_image_size)
         else:
             raise ValueError("Unsupported data processing model, please use `Train` or `Valid`.")
 
         lr_image = imgproc.image_resize(gt_image, 1 / self.upscale_factor)
+
+        # BGR convert RGB
+        gt_image = cv2.cvtColor(gt_image, cv2.COLOR_BGR2RGB)
+        lr_image = cv2.cvtColor(lr_image, cv2.COLOR_BGR2RGB)
 
         # Convert image data into Tensor stream format (PyTorch).
         # Note: The range of input and output is between [0, 1]
@@ -101,7 +105,7 @@ class TestImageDataset(Dataset):
         gt_image = cv2.imread(self.gt_image_file_names[batch_index]).astype(np.float32) / 255.
         lr_image = cv2.imread(self.lr_image_file_names[batch_index]).astype(np.float32) / 255.
 
-        # BGR convert to RGB
+        # BGR convert RGB
         gt_image = cv2.cvtColor(gt_image, cv2.COLOR_BGR2RGB)
         lr_image = cv2.cvtColor(lr_image, cv2.COLOR_BGR2RGB)
 

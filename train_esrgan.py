@@ -27,7 +27,6 @@ import esrgan_config
 import model
 from dataset import CUDAPrefetcher, TrainValidImageDataset, TestImageDataset
 from image_quality_assessment import PSNR, SSIM
-from imgproc import random_crop
 from utils import load_state_dict, make_directory, save_checkpoint, AverageMeter, ProgressMeter
 
 model_names = sorted(
@@ -176,7 +175,7 @@ def main():
 def load_dataset() -> [CUDAPrefetcher, CUDAPrefetcher]:
     # Load train, test and valid datasets
     train_datasets = TrainValidImageDataset(esrgan_config.train_gt_images_dir,
-                                            esrgan_config.crop_image_size,
+                                            esrgan_config.gt_image_size,
                                             esrgan_config.upscale_factor,
                                             "Train")
     test_datasets = TestImageDataset(esrgan_config.test_gt_images_dir, esrgan_config.test_lr_images_dir)
@@ -315,9 +314,6 @@ def train(
         # Transfer in-memory data to CUDA devices to speed up training
         gt = batch_data["gt"].to(device=esrgan_config.device, non_blocking=True)
         lr = batch_data["lr"].to(device=esrgan_config.device, non_blocking=True)
-
-        # Crop image patch
-        gt, lr = random_crop(gt, lr, esrgan_config.gt_image_size, esrgan_config.upscale_factor)
 
         # Set the real sample label to 1, and the false sample label to 0
         batch_size, _, height, width = gt.shape

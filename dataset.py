@@ -60,7 +60,7 @@ class TrainValidImageDataset(Dataset):
 
         # Image processing operations
         if self.mode == "Train":
-            gt_image = imgproc.random_crop_np(gt_image, self.gt_image_size)
+            gt_image = imgproc.random_crop(gt_image, self.gt_image_size)
             gt_image = imgproc.random_rotate(gt_image, [90, 180, 270])
             gt_image = imgproc.random_horizontally_flip(gt_image, 0.5)
             gt_image = imgproc.random_vertically_flip(gt_image, 0.5)

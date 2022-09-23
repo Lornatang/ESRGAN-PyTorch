@@ -11,21 +11,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from typing import Any
+
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-import torchvision.models as models
-from torchvision.models.feature_extraction import create_feature_extractor
+from torch import nn
+from torchvision import models
 from torchvision import transforms
+from torchvision.models.feature_extraction import create_feature_extractor
 
 __all__ = [
-    "ResidualDenseBlock", "ResidualResidualDenseBlock",
-    "Discriminator", "Generator",
-    "ContentLoss"
+    "Discriminator", "ESRGAN", "ContentLoss",
+    "discriminator", "esrgan_x4", "content_loss",
 ]
 
 
-class ResidualDenseBlock(nn.Module):
+class _ResidualDenseBlock(nn.Module):
     """Achieves densely connected convolutional layers.
     `Densely Connected Convolutional Networks <https://arxiv.org/pdf/1608.06993v5.pdf>` paper.
 
@@ -35,7 +36,7 @@ class ResidualDenseBlock(nn.Module):
     """
 
     def __init__(self, channels: int, growth_channels: int) -> None:
-        super(ResidualDenseBlock, self).__init__()
+        super(_ResidualDenseBlock, self).__init__()
         self.conv1 = nn.Conv2d(channels + growth_channels * 0, growth_channels, (3, 3), (1, 1), (1, 1))
         self.conv2 = nn.Conv2d(channels + growth_channels * 1, growth_channels, (3, 3), (1, 1), (1, 1))
         self.conv3 = nn.Conv2d(channels + growth_channels * 2, growth_channels, (3, 3), (1, 1), (1, 1))
@@ -44,9 +45,6 @@ class ResidualDenseBlock(nn.Module):
 
         self.leaky_relu = nn.LeakyReLU(0.2, True)
         self.identity = nn.Identity()
-
-        # Initialize model weights
-        self._initialize_weights()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         identity = x
@@ -61,16 +59,8 @@ class ResidualDenseBlock(nn.Module):
 
         return out
 
-    def _initialize_weights(self) -> None:
-        for module in self.modules():
-            if isinstance(module, nn.Conv2d):
-                nn.init.kaiming_normal_(module.weight)
-                module.weight.data *= 0.1
-                if module.bias is not None:
-                    nn.init.constant_(module.bias, 0)
 
-
-class ResidualResidualDenseBlock(nn.Module):
+class _ResidualResidualDenseBlock(nn.Module):
     """Multi-layer residual dense convolution block.
 
     Args:
@@ -79,10 +69,10 @@ class ResidualResidualDenseBlock(nn.Module):
     """
 
     def __init__(self, channels: int, growth_channels: int) -> None:
-        super(ResidualResidualDenseBlock, self).__init__()
-        self.rdb1 = ResidualDenseBlock(channels, growth_channels)
-        self.rdb2 = ResidualDenseBlock(channels, growth_channels)
-        self.rdb3 = ResidualDenseBlock(channels, growth_channels)
+        super(_ResidualResidualDenseBlock, self).__init__()
+        self.rdb1 = _ResidualDenseBlock(channels, growth_channels)
+        self.rdb2 = _ResidualDenseBlock(channels, growth_channels)
+        self.rdb3 = _ResidualDenseBlock(channels, growth_channels)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         identity = x
@@ -151,39 +141,54 @@ class Discriminator(nn.Module):
         return out
 
 
-class Generator(nn.Module):
-    def __init__(self) -> None:
-        super(Generator, self).__init__()
+class ESRGAN(nn.Module):
+    def __init__(
+            self,
+            in_channels: int = 3,
+            out_channels: int = 3,
+            channels: int = 64,
+            growth_channels: int = 32,
+            num_blocks: int = 23,
+            upscale_factor: int = 4,
+    ) -> None:
+        super(ESRGAN, self).__init__()
+        self.upscale_factor = upscale_factor
+
         # The first layer of convolutional layer.
-        self.conv1 = nn.Conv2d(3, 64, (3, 3), (1, 1), (1, 1))
+        self.conv1 = nn.Conv2d(in_channels, channels, (3, 3), (1, 1), (1, 1))
 
         # Feature extraction backbone network.
         trunk = []
-        for _ in range(23):
-            trunk.append(ResidualResidualDenseBlock(64, 32))
+        for _ in range(num_blocks):
+            trunk.append(_ResidualResidualDenseBlock(channels, growth_channels))
         self.trunk = nn.Sequential(*trunk)
 
         # After the feature extraction network, reconnect a layer of convolutional blocks.
-        self.conv2 = nn.Conv2d(64, 64, (3, 3), (1, 1), (1, 1))
+        self.conv2 = nn.Conv2d(channels, channels, (3, 3), (1, 1), (1, 1))
 
         # Upsampling convolutional layer.
         self.upsampling1 = nn.Sequential(
-            nn.Conv2d(64, 64, (3, 3), (1, 1), (1, 1)),
-            nn.LeakyReLU(0.2, True)
-        )
-        self.upsampling2 = nn.Sequential(
-            nn.Conv2d(64, 64, (3, 3), (1, 1), (1, 1)),
+            nn.Conv2d(channels, channels, (3, 3), (1, 1), (1, 1)),
             nn.LeakyReLU(0.2, True)
         )
 
+        if upscale_factor == 4:
+            self.upsampling2 = nn.Sequential(
+                nn.Conv2d(channels, channels, (3, 3), (1, 1), (1, 1)),
+                nn.LeakyReLU(0.2, True)
+            )
+
         # Reconnect a layer of convolution block after upsampling.
         self.conv3 = nn.Sequential(
-            nn.Conv2d(64, 64, (3, 3), (1, 1), (1, 1)),
+            nn.Conv2d(channels, channels, (3, 3), (1, 1), (1, 1)),
             nn.LeakyReLU(0.2, True)
         )
 
         # Output layer.
-        self.conv4 = nn.Conv2d(64, 3, (3, 3), (1, 1), (1, 1))
+        self.conv4 = nn.Conv2d(channels, out_channels, (3, 3), (1, 1), (1, 1))
+
+        # Initialize all layer
+        self._initialize_weights()
 
     # The model should be defined in the Torch.script method.
     def _forward_impl(self, x: torch.Tensor) -> torch.Tensor:
@@ -193,7 +198,8 @@ class Generator(nn.Module):
         out = torch.add(out1, out2)
 
         out = self.upsampling1(F.interpolate(out, scale_factor=2, mode="nearest"))
-        out = self.upsampling2(F.interpolate(out, scale_factor=2, mode="nearest"))
+        if self.upscale_factor == 4:
+            out = self.upsampling2(F.interpolate(out, scale_factor=2, mode="nearest"))
 
         out = self.conv3(out)
         out = self.conv4(out)
@@ -204,6 +210,14 @@ class Generator(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self._forward_impl(x)
+
+    def _initialize_weights(self) -> None:
+        for module in self.modules():
+            if isinstance(module, nn.Conv2d):
+                nn.init.kaiming_normal_(module.weight)
+                module.weight.data *= 0.1
+                if module.bias is not None:
+                    nn.init.constant_(module.bias, 0)
 
 
 class ContentLoss(nn.Module):
@@ -217,14 +231,17 @@ class ContentLoss(nn.Module):
 
      """
 
-    def __init__(self, feature_model_extractor_node: str,
-                 feature_model_normalize_mean: list,
-                 feature_model_normalize_std: list) -> None:
+    def __init__(
+            self,
+            feature_model_extractor_node: str,
+            feature_model_normalize_mean: list,
+            feature_model_normalize_std: list
+    ) -> None:
         super(ContentLoss, self).__init__()
         # Get the name of the specified feature extraction node
         self.feature_model_extractor_node = feature_model_extractor_node
         # Load the VGG19 model trained on the ImageNet dataset.
-        model = models.vgg19(True)
+        model = models.vgg19(weights=models.VGG19_Weights.IMAGENET1K_V1)
         # Extract the thirty-fifth layer output in the VGG19 model as the content loss.
         self.feature_extractor = create_feature_extractor(model, [feature_model_extractor_node])
         # set to validation mode
@@ -238,15 +255,37 @@ class ContentLoss(nn.Module):
         for model_parameters in self.feature_extractor.parameters():
             model_parameters.requires_grad = False
 
-    def forward(self, sr_tensor: torch.Tensor, hr_tensor: torch.Tensor) -> torch.Tensor:
+    def forward(self, sr_tensor: torch.Tensor, gt_tensor: torch.Tensor) -> torch.Tensor:
         # Standardized operations
         sr_tensor = self.normalize(sr_tensor)
-        hr_tensor = self.normalize(hr_tensor)
+        gt_tensor = self.normalize(gt_tensor)
 
         sr_feature = self.feature_extractor(sr_tensor)[self.feature_model_extractor_node]
-        hr_feature = self.feature_extractor(hr_tensor)[self.feature_model_extractor_node]
+        gt_feature = self.feature_extractor(gt_tensor)[self.feature_model_extractor_node]
 
         # Find the feature map difference between the two images
-        content_loss = F.l1_loss(sr_feature, hr_feature)
+        loss = F.l1_loss(sr_feature, gt_feature)
 
-        return content_loss
+        return loss
+
+
+def discriminator() -> Discriminator:
+    model = Discriminator()
+
+    return model
+
+
+def esrgan_x4(**kwargs: Any) -> ESRGAN:
+    model = ESRGAN(upscale_factor=4, **kwargs)
+
+    return model
+
+
+def content_loss(feature_model_extractor_node,
+                 feature_model_normalize_mean,
+                 feature_model_normalize_std) -> ContentLoss:
+    content_loss = ContentLoss(feature_model_extractor_node,
+                               feature_model_normalize_mean,
+                               feature_model_normalize_std)
+
+    return content_loss

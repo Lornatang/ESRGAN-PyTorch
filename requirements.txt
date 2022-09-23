@@ -5,3 +5,4 @@ torch>=1.12.1+cu116
 natsort>=8.1.0
 torchvision>=0.13.1+cu116
 typing>=3.7.4.3
+scipy>=1.9.0

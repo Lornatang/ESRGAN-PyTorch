@@ -17,6 +17,8 @@ import numpy as np
 import torch
 from torch.backends import cudnn
 
+from rrdbnet_config import crop_image_size
+
 # Random seed to maintain reproducible results
 random.seed(0)
 torch.manual_seed(0)
@@ -27,91 +29,75 @@ device = torch.device("cuda", 0)
 cudnn.benchmark = True
 # When evaluating the performance of the SR model, whether to verify only the Y channel image data
 only_test_y_channel = True
-# Image magnification factor
+# Model architecture name
+d_arch_name = "discriminator"
+g_arch_name = "esrgan_x4"
+# Model arch config
+in_channels = 3
+out_channels = 3
+channels = 64
+growth_channels = 32
+num_blocks = 23
 upscale_factor = 4
 # Current configuration parameter method
-mode = "train_rrdbnet"
+mode = "train"
 # Experiment name, easy to save weights and log files
-exp_name = "RRDBNet_baseline"
+exp_name = "ESRGAN_x4"
 
-if mode == "train_rrdbnet":
+if mode == "train":
     # Dataset address
-    train_image_dir = "./data/DIV2K/ESRGAN/train"
-    valid_image_dir = "./data/DIV2K/ESRGAN/valid"
-    test_lr_image_dir = f"./data/Set5/LRbicx{upscale_factor}"
-    test_hr_image_dir = "./data/Set5/GTmod12"
+    train_gt_images_dir = f"./data/DIV2K/ESRGAN/train"
 
-    image_size = 128
+    test_gt_images_dir = f"./data/Set5/GTmod12"
+    test_lr_images_dir = f"./data/Set5/LRbicx{upscale_factor}"
+
+    crop_image_size = 224
+    gt_image_size = 128
     batch_size = 16
     num_workers = 4
 
     # The address to load the pretrained model
-    pretrained_model_path = "./results/pretrained_models/RRDBNet_x4-DFO2K-2e2a91f4.pth.tar"
+    pretrained_d_model_weights_path = ""
+    pretrained_g_model_weights_path = "./results/RRDBNet_x4/g_last.pth.tar"
 
     # Incremental training and migration training
-    resume = f""
+    resume_d = f""
+    resume_g = f""
 
-    # Total num epochs
-    epochs = 108
-
-    # Optimizer parameter
-    model_lr = 2e-4
-    model_betas = (0.9, 0.99)
-
-    # Dynamically adjust the learning rate policy
-    lr_scheduler_step_size = epochs // 5
-    lr_scheduler_gamma = 0.5
-
-    # How many iterations to print the training result
-    print_frequency = 200
-
-if mode == "train_esrgan":
-    # Dataset address
-    train_image_dir = "./data/DIV2K/ESRGAN/train"
-    valid_image_dir = "./data/DIV2K/ESRGAN/valid"
-    test_lr_image_dir = f"./data/Set5/LRbicx{upscale_factor}"
-    test_hr_image_dir = "./data/Set5/GTmod12"
-
-    image_size = 128
-    batch_size = 16
-    num_workers = 4
-
-    # The address to load the pretrained model
-    pretrained_d_model_path = ""
-    pretrained_g_model_path = "./results/RRDBNet_baseline/g_last.pth.tar"
-
-    # Incremental training and migration training
-    resume_d = ""
-    resume_g = ""
-
-    # Total num epochs
-    epochs = 44
-
-    # Feature extraction layer parameter configuration
-    feature_model_extractor_node = "features.34"
-    feature_model_normalize_mean = [0.485, 0.456, 0.406]
-    feature_model_normalize_std = [0.229, 0.224, 0.225]
+    # Total num epochs (400,000 iters)
+    epochs = 94
 
     # Loss function weight
     pixel_weight = 0.01
     content_weight = 1.0
     adversarial_weight = 0.005
 
-    # Adam optimizer parameter
+    # Feature extraction layer parameter configuration
+    feature_model_extractor_node = "features.34"
+    feature_model_normalize_mean = [0.485, 0.456, 0.406]
+    feature_model_normalize_std = [0.229, 0.224, 0.225]
+
+    # Optimizer parameter
     model_lr = 1e-4
     model_betas = (0.9, 0.99)
+    model_eps = 1e-8
+    model_weight_decay = 0.0
+
+    # EMA parameter
+    model_ema_decay = 0.99998
 
     # Dynamically adjust the learning rate policy
     lr_scheduler_milestones = [int(epochs * 0.125), int(epochs * 0.250), int(epochs * 0.500), int(epochs * 0.750)]
     lr_scheduler_gamma = 0.5
 
     # How many iterations to print the training result
-    print_frequency = 200
+    train_print_frequency = 100
+    valid_print_frequency = 1
 
 if mode == "test":
     # Test data address
     lr_dir = f"./data/Set5/LRbicx{upscale_factor}"
     sr_dir = f"./results/test/{exp_name}"
-    hr_dir = "./data/Set5/GTmod12"
+    gt_dir = "./data/Set5/GTmod12"
 
-    model_path = "./results/pretrained_models/RRDBNet_x4-DFO2K-2e2a91f4.pth.tar"
+    g_model_weights_path = "./results/pretrained_models/ESRGAN_x4-DFO2K-25393df7.pth.tar"

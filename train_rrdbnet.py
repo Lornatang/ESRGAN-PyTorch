@@ -12,22 +12,27 @@
 # limitations under the License.
 # ==============================================================================
 import os
-import shutil
 import time
-from enum import Enum
 
 import torch
 from torch import nn
 from torch import optim
 from torch.cuda import amp
 from torch.optim import lr_scheduler
+from torch.optim.swa_utils import AveragedModel
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-import config
+import rrdbnet_config
+import model
 from dataset import CUDAPrefetcher, TrainValidImageDataset, TestImageDataset
 from image_quality_assessment import PSNR, SSIM
-from model import Generator
+from imgproc import random_crop
+from utils import load_state_dict, make_directory, save_checkpoint, AverageMeter, ProgressMeter
+
+model_names = sorted(
+    name for name in model.__dict__ if
+    name.islower() and not name.startswith("__") and callable(model.__dict__[name]))
 
 
 def main():
@@ -38,83 +43,77 @@ def main():
     best_psnr = 0.0
     best_ssim = 0.0
 
-    train_prefetcher, valid_prefetcher, test_prefetcher = load_dataset()
+    train_prefetcher, test_prefetcher = load_dataset()
     print("Load all datasets successfully.")
 
-    model = build_model()
-    print("Build RRDBNet model successfully.")
+    rrdbnet_model, ema_rrdbnet_model = build_model()
+    print(f"Build `{rrdbnet_config.g_arch_name}` model successfully.")
 
-    pixel_criterion = define_loss()
+    criterion = define_loss()
     print("Define all loss functions successfully.")
 
-    optimizer = define_optimizer(model)
+    optimizer = define_optimizer(rrdbnet_model)
     print("Define all optimizer functions successfully.")
 
     scheduler = define_scheduler(optimizer)
-    print("Define all optimizer scheduler successfully.")
+    print("Define all optimizer scheduler functions successfully.")
 
     print("Check whether to load pretrained model weights...")
-    if config.pretrained_model_path:
-        # Load checkpoint model
-        checkpoint = torch.load(config.pretrained_model_path, map_location=lambda storage, loc: storage)
-        # Load model state dict. Extract the fitted model weights
-        model_state_dict = model.state_dict()
-        state_dict = {k: v for k, v in checkpoint["state_dict"].items() if
-                      k in model_state_dict.keys() and v.size() == model_state_dict[k].size()}
-        # Overwrite the model weights to the current model
-        model_state_dict.update(state_dict)
-        model.load_state_dict(model_state_dict)
-        print(f"Loaded `{config.pretrained_model_path}` pretrained model weights successfully.")
+    if rrdbnet_config.pretrained_g_model_weights_path:
+        rrdbnet_model = load_state_dict(rrdbnet_model, rrdbnet_config.pretrained_g_model_weights_path)
+        print(f"Loaded `{rrdbnet_config.pretrained_g_model_weights_path}` pretrained model weights successfully.")
     else:
         print("Pretrained model weights not found.")
 
     print("Check whether the pretrained model is restored...")
-    if config.resume:
-        # Load checkpoint model
-        checkpoint = torch.load(config.resume, map_location=lambda storage, loc: storage)
-        # Restore the parameters in the training node to this point
-        start_epoch = checkpoint["epoch"]
-        best_psnr = checkpoint["best_psnr"]
-        best_ssim = checkpoint["best_ssim"]
-        # Load checkpoint state dict. Extract the fitted model weights
-        model_state_dict = model.state_dict()
-        new_state_dict = {k: v for k, v in checkpoint["state_dict"].items() if
-                      k in model_state_dict.keys() and v.size() == model_state_dict[k].size()}
-        # Overwrite the pretrained model weights to the current model
-        model_state_dict.update(new_state_dict)
-        model.load_state_dict(model_state_dict)
-        # Load the optimizer model
-        optimizer.load_state_dict(checkpoint["optimizer"])
-        # Load the optimizer scheduler
-        scheduler.load_state_dict(checkpoint["scheduler"])
+    if rrdbnet_config.resume_g:
+        rrdbnet_model, ema_rrdbnet_model, start_epoch, est_psnr, best_ssim, optimizer, scheduler = load_state_dict(
+            rrdbnet_model,
+            rrdbnet_config.pretrained_g_model_weights_path,
+            ema_rrdbnet_model,
+            optimizer,
+            scheduler,
+            "resume")
         print("Loaded pretrained model weights.")
+    else:
+        print("Resume training model not found. Start training from scratch.")
 
-    # Create a folder of super-resolution experiment results
-    samples_dir = os.path.join("samples", config.exp_name)
-    results_dir = os.path.join("results", config.exp_name)
-    if not os.path.exists(samples_dir):
-        os.makedirs(samples_dir)
-    if not os.path.exists(results_dir):
-        os.makedirs(results_dir)
+    # Create a experiment results
+    samples_dir = os.path.join("samples", rrdbnet_config.exp_name)
+    results_dir = os.path.join("results", rrdbnet_config.exp_name)
+    make_directory(samples_dir)
+    make_directory(results_dir)
 
     # Create training process log file
-    writer = SummaryWriter(os.path.join("samples", "logs", config.exp_name))
+    writer = SummaryWriter(os.path.join("samples", "logs", rrdbnet_config.exp_name))
 
     # Initialize the gradient scaler
     scaler = amp.GradScaler()
 
     # Create an IQA evaluation model
-    psnr_model = PSNR(config.upscale_factor, config.only_test_y_channel)
-    ssim_model = SSIM(config.upscale_factor, config.only_test_y_channel)
+    psnr_model = PSNR(rrdbnet_config.upscale_factor, rrdbnet_config.only_test_y_channel)
+    ssim_model = SSIM(rrdbnet_config.upscale_factor, rrdbnet_config.only_test_y_channel)
 
     # Transfer the IQA model to the specified device
-    psnr_model = psnr_model.to(device=config.device, memory_format=torch.channels_last, non_blocking=True)
-    ssim_model = ssim_model.to(device=config.device, memory_format=torch.channels_last, non_blocking=True)
+    psnr_model = psnr_model.to(device=rrdbnet_config.device)
+    ssim_model = ssim_model.to(device=rrdbnet_config.device)
 
-    for epoch in range(start_epoch, config.epochs):
-        train(model, train_prefetcher, pixel_criterion, optimizer, epoch, scaler, writer)
-        _, _ = validate(model, valid_prefetcher, epoch, writer, psnr_model, ssim_model, "Valid")
-        psnr, ssim = validate(model, test_prefetcher, epoch, writer, psnr_model, ssim_model, "Test")
+    for epoch in range(start_epoch, rrdbnet_config.epochs):
+        train(rrdbnet_model,
+              ema_rrdbnet_model,
+              train_prefetcher,
+              criterion,
+              optimizer,
+              epoch,
+              scaler,
+              writer)
+        psnr, ssim = validate(rrdbnet_model,
+                              test_prefetcher,
+                              epoch,
+                              writer,
+                              psnr_model,
+                              ssim_model,
+                              "Test")
         print("\n")
 
         # Update LR
@@ -122,43 +121,38 @@ def main():
 
         # Automatically save the model with the highest index
         is_best = psnr > best_psnr and ssim > best_ssim
+        is_last = (epoch + 1) == rrdbnet_config.epochs
         best_psnr = max(psnr, best_psnr)
         best_ssim = max(ssim, best_ssim)
-        torch.save({"epoch": epoch + 1,
-                    "best_psnr": best_psnr,
-                    "best_ssim": best_ssim,
-                    "state_dict": model.state_dict(),
-                    "optimizer": optimizer.state_dict(),
-                    "scheduler": scheduler.state_dict()},
-                   os.path.join(samples_dir, f"g_epoch_{epoch + 1}.pth.tar"))
-        if is_best:
-            shutil.copyfile(os.path.join(samples_dir, f"g_epoch_{epoch + 1}.pth.tar"),
-                            os.path.join(results_dir, "g_best.pth.tar"))
-        if (epoch + 1) == config.epochs:
-            shutil.copyfile(os.path.join(samples_dir, f"g_epoch_{epoch + 1}.pth.tar"),
-                            os.path.join(results_dir, "g_last.pth.tar"))
+        save_checkpoint({"epoch": epoch + 1,
+                         "best_psnr": best_psnr,
+                         "best_ssim": best_ssim,
+                         "state_dict": rrdbnet_model.state_dict(),
+                         "ema_state_dict": ema_rrdbnet_model.state_dict(),
+                         "optimizer": optimizer.state_dict(),
+                         "scheduler": scheduler.state_dict()},
+                        f"epoch_{epoch + 1}.pth.tar",
+                        samples_dir,
+                        results_dir,
+                        is_best,
+                        is_last)
 
 
-def load_dataset() -> [CUDAPrefetcher, CUDAPrefetcher, CUDAPrefetcher]:
+def load_dataset() -> [CUDAPrefetcher, CUDAPrefetcher]:
     # Load train, test and valid datasets
-    train_datasets = TrainValidImageDataset(config.train_image_dir, config.image_size, config.upscale_factor, "Train")
-    valid_datasets = TrainValidImageDataset(config.valid_image_dir, config.image_size, config.upscale_factor, "Valid")
-    test_datasets = TestImageDataset(config.test_lr_image_dir, config.test_hr_image_dir)
+    train_datasets = TrainValidImageDataset(rrdbnet_config.train_gt_images_dir,
+                                            rrdbnet_config.crop_image_size,
+                                            rrdbnet_config.upscale_factor,
+                                            "Train")
+    test_datasets = TestImageDataset(rrdbnet_config.test_gt_images_dir, rrdbnet_config.test_lr_images_dir)
 
     # Generator all dataloader
     train_dataloader = DataLoader(train_datasets,
-                                  batch_size=config.batch_size,
+                                  batch_size=rrdbnet_config.batch_size,
                                   shuffle=True,
-                                  num_workers=config.num_workers,
+                                  num_workers=rrdbnet_config.num_workers,
                                   pin_memory=True,
                                   drop_last=True,
-                                  persistent_workers=True)
-    valid_dataloader = DataLoader(valid_datasets,
-                                  batch_size=1,
-                                  shuffle=False,
-                                  num_workers=1,
-                                  pin_memory=True,
-                                  drop_last=False,
                                   persistent_workers=True)
     test_dataloader = DataLoader(test_datasets,
                                  batch_size=1,
@@ -169,58 +163,62 @@ def load_dataset() -> [CUDAPrefetcher, CUDAPrefetcher, CUDAPrefetcher]:
                                  persistent_workers=True)
 
     # Place all data on the preprocessing data loader
-    train_prefetcher = CUDAPrefetcher(train_dataloader, config.device)
-    valid_prefetcher = CUDAPrefetcher(valid_dataloader, config.device)
-    test_prefetcher = CUDAPrefetcher(test_dataloader, config.device)
+    train_prefetcher = CUDAPrefetcher(train_dataloader, rrdbnet_config.device)
+    test_prefetcher = CUDAPrefetcher(test_dataloader, rrdbnet_config.device)
 
-    return train_prefetcher, valid_prefetcher, test_prefetcher
+    return train_prefetcher, test_prefetcher
 
 
-def build_model() -> nn.Module:
-    model = Generator()
-    model = model.to(device=config.device, memory_format=torch.channels_last)
+def build_model() -> [nn.Module, nn.Module]:
+    rrdbnet_model = model.__dict__[rrdbnet_config.g_arch_name](in_channels=rrdbnet_config.in_channels,
+                                                               out_channels=rrdbnet_config.out_channels,
+                                                               channels=rrdbnet_config.channels,
+                                                               growth_channels=rrdbnet_config.growth_channels,
+                                                               num_blocks=rrdbnet_config.num_blocks)
+    rrdbnet_model = rrdbnet_model.to(device=rrdbnet_config.device)
 
-    return model
+    # Create an Exponential Moving Average Model
+    ema_avg = lambda averaged_model_parameter, model_parameter, num_averaged: (1 - rrdbnet_config.model_ema_decay) * averaged_model_parameter + rrdbnet_config.model_ema_decay * model_parameter
+    ema_rrdbnet_model = AveragedModel(rrdbnet_model, avg_fn=ema_avg)
+
+    return rrdbnet_model, ema_rrdbnet_model
 
 
 def define_loss() -> nn.L1Loss:
-    pixel_criterion = nn.L1Loss()
-    pixel_criterion = pixel_criterion.to(device=config.device, memory_format=torch.channels_last)
+    criterion = nn.L1Loss()
+    criterion = criterion.to(device=rrdbnet_config.device)
 
-    return pixel_criterion
+    return criterion
 
 
-def define_optimizer(model) -> optim.Adam:
-    optimizer = optim.Adam(model.parameters(), config.model_lr, config.model_betas)
+def define_optimizer(rrdbnet_model) -> optim.Adam:
+    optimizer = optim.Adam(rrdbnet_model.parameters(),
+                           rrdbnet_config.model_lr,
+                           rrdbnet_config.model_betas,
+                           rrdbnet_config.model_eps,
+                           rrdbnet_config.model_ema_decay)
 
     return optimizer
 
 
 def define_scheduler(optimizer) -> lr_scheduler.StepLR:
-    scheduler = lr_scheduler.StepLR(optimizer, config.lr_scheduler_step_size, config.lr_scheduler_gamma)
+    scheduler = lr_scheduler.StepLR(optimizer, 
+                                    rrdbnet_config.lr_scheduler_step_size,
+                                    rrdbnet_config.lr_scheduler_gamma)
 
     return scheduler
 
 
-def train(model: nn.Module,
-          train_prefetcher: CUDAPrefetcher,
-          pixel_criterion: nn.L1Loss,
-          optimizer: optim.Adam,
-          epoch: int,
-          scaler: amp.GradScaler,
-          writer: SummaryWriter) -> None:
-    """Training main program
-
-    Args:
-        model (nn.Module): the generator model in the generative network
-        train_prefetcher (CUDAPrefetcher): training dataset iterator
-        pixel_criterion (nn.L1Loss): Calculate the pixel difference between real and fake samples
-        optimizer (optim.Adam): optimizer for optimizing generator models in generative networks
-        epoch (int): number of training epochs during training the generative network
-        scaler (amp.GradScaler): Mixed precision training function
-        writer (SummaryWrite): log file management function
-
-    """
+def train(
+        rrdbnet_model: nn.Module,
+        ema_rrdbnet_model: nn.Module,
+        train_prefetcher: CUDAPrefetcher,
+        criterion: nn.L1Loss,
+        optimizer: optim.Adam,
+        epoch: int,
+        scaler: amp.GradScaler,
+        writer: SummaryWriter
+) -> None:
     # Calculate how many batches of data are in each Epoch
     batches = len(train_prefetcher)
     # Print information of progress bar during training
@@ -230,7 +228,7 @@ def train(model: nn.Module,
     progress = ProgressMeter(batches, [batch_time, data_time, losses], prefix=f"Epoch: [{epoch + 1}]")
 
     # Put the generative network model in training mode
-    model.train()
+    rrdbnet_model.train()
 
     # Initialize the number of data batches to print logs on the terminal
     batch_index = 0
@@ -247,22 +245,32 @@ def train(model: nn.Module,
         data_time.update(time.time() - end)
 
         # Transfer in-memory data to CUDA devices to speed up training
-        lr = batch_data["lr"].to(device=config.device, memory_format=torch.channels_last, non_blocking=True)
-        hr = batch_data["hr"].to(device=config.device, memory_format=torch.channels_last, non_blocking=True)
+        gt = batch_data["gt"].to(device=rrdbnet_config.device, non_blocking=True)
+        lr = batch_data["lr"].to(device=rrdbnet_config.device, non_blocking=True)
+
+        # Clamp and round
+        gt = torch.clamp((gt * 255.0).round(), 0, 255) / 255.
+        lr = torch.clamp((lr * 255.0).round(), 0, 255) / 255.
+
+        # Crop image patch
+        gt, lr = random_crop(gt, lr, rrdbnet_config.gt_image_size, rrdbnet_config.upscale_factor)
 
         # Initialize generator gradients
-        model.zero_grad(set_to_none=True)
+        rrdbnet_model.zero_grad(set_to_none=True)
 
         # Mixed precision training
         with amp.autocast():
-            sr = model(lr)
-            loss = pixel_criterion(sr, hr)
+            sr = rrdbnet_model(lr)
+            loss = torch.mul(rrdbnet_config.loss_weights, criterion(sr, gt))
 
         # Backpropagation
         scaler.scale(loss).backward()
         # update generator weights
         scaler.step(optimizer)
         scaler.update()
+
+        # Update EMA
+        ema_rrdbnet_model.update_parameters(rrdbnet_model)
 
         # Statistical loss value for terminal data output
         losses.update(loss.item(), lr.size(0))
@@ -272,7 +280,7 @@ def train(model: nn.Module,
         end = time.time()
 
         # Write the data during training to the training log file
-        if batch_index % config.print_frequency == 0:
+        if batch_index % rrdbnet_config.train_print_frequency == 0:
             # Record loss during training and output to file
             writer.add_scalar("Train/Loss", loss.item(), batch_index + epoch * batches + 1)
             progress.display(batch_index)
@@ -280,38 +288,27 @@ def train(model: nn.Module,
         # Preload the next batch of data
         batch_data = train_prefetcher.next()
 
-        # After training a batch of data, add 1 to the number of data batches to ensure that the terminal prints data normally
+        # Add 1 to the number of data batches to ensure that the terminal prints data normally
         batch_index += 1
 
 
-def validate(model: nn.Module,
-             data_prefetcher: CUDAPrefetcher,
-             epoch: int,
-             writer: SummaryWriter,
-             psnr_model: nn.Module,
-             ssim_model: nn.Module,
-             mode: str) -> [float, float]:
-    """Test main program
-
-    Args:
-        model (nn.Module): generator model in adversarial networks
-        data_prefetcher (CUDAPrefetcher): test dataset iterator
-        epoch (int): number of test epochs during training of the adversarial network
-        writer (SummaryWriter): log file management function
-        psnr_model (nn.Module): The model used to calculate the PSNR function
-        ssim_model (nn.Module): The model used to compute the SSIM function
-        mode (str): test validation dataset accuracy or test dataset accuracy
-
-    """
+def validate(
+        rrdbnet_model: nn.Module,
+        data_prefetcher: CUDAPrefetcher,
+        epoch: int,
+        writer: SummaryWriter,
+        psnr_model: nn.Module,
+        ssim_model: nn.Module,
+        mode: str
+) -> [float, float]:
     # Calculate how many batches of data are in each Epoch
-    batches = len(data_prefetcher)
     batch_time = AverageMeter("Time", ":6.3f")
     psnres = AverageMeter("PSNR", ":4.2f")
     ssimes = AverageMeter("SSIM", ":4.4f")
     progress = ProgressMeter(len(data_prefetcher), [batch_time, psnres, ssimes], prefix=f"{mode}: ")
 
     # Put the adversarial network model in validation mode
-    model.eval()
+    rrdbnet_model.eval()
 
     # Initialize the number of data batches to print logs on the terminal
     batch_index = 0
@@ -326,16 +323,16 @@ def validate(model: nn.Module,
     with torch.no_grad():
         while batch_data is not None:
             # Transfer the in-memory data to the CUDA device to speed up the test
-            lr = batch_data["lr"].to(device=config.device, memory_format=torch.channels_last, non_blocking=True)
-            hr = batch_data["hr"].to(device=config.device, memory_format=torch.channels_last, non_blocking=True)
+            gt = batch_data["gt"].to(device=rrdbnet_config.device, non_blocking=True)
+            lr = batch_data["lr"].to(device=rrdbnet_config.device, non_blocking=True)
 
             # Use the generator model to generate a fake sample
             with amp.autocast():
-                sr = model(lr)
+                sr = rrdbnet_model(lr)
 
             # Statistical loss value for terminal data output
-            psnr = psnr_model(sr, hr)
-            ssim = ssim_model(sr, hr)
+            psnr = psnr_model(sr, gt)
+            ssim = ssim_model(sr, gt)
             psnres.update(psnr.item(), lr.size(0))
             ssimes.update(ssim.item(), lr.size(0))
 
@@ -344,8 +341,8 @@ def validate(model: nn.Module,
             end = time.time()
 
             # Record training log information
-            if batch_index % (batches // 5) == 0:
-                progress.display(batch_index)
+            if batch_index % rrdbnet_config.valid_print_frequency == 0:
+                progress.display(batch_index + 1)
 
             # Preload the next batch of data
             batch_data = data_prefetcher.next()
@@ -364,73 +361,6 @@ def validate(model: nn.Module,
         raise ValueError("Unsupported mode, please use `Valid` or `Test`.")
 
     return psnres.avg, ssimes.avg
-
-
-class Summary(Enum):
-    NONE = 0
-    AVERAGE = 1
-    SUM = 2
-    COUNT = 3
-
-
-class AverageMeter(object):
-    def __init__(self, name, fmt=":f", summary_type=Summary.AVERAGE):
-        self.name = name
-        self.fmt = fmt
-        self.summary_type = summary_type
-        self.reset()
-
-    def reset(self):
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
-
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count
-
-    def __str__(self):
-        fmtstr = "{name} {val" + self.fmt + "} ({avg" + self.fmt + "})"
-        return fmtstr.format(**self.__dict__)
-
-    def summary(self):
-        if self.summary_type is Summary.NONE:
-            fmtstr = ""
-        elif self.summary_type is Summary.AVERAGE:
-            fmtstr = "{name} {avg:.2f}"
-        elif self.summary_type is Summary.SUM:
-            fmtstr = "{name} {sum:.2f}"
-        elif self.summary_type is Summary.COUNT:
-            fmtstr = "{name} {count:.2f}"
-        else:
-            raise ValueError(f"Invalid summary type {self.summary_type}")
-
-        return fmtstr.format(**self.__dict__)
-
-
-class ProgressMeter(object):
-    def __init__(self, num_batches, meters, prefix=""):
-        self.batch_fmtstr = self._get_batch_fmtstr(num_batches)
-        self.meters = meters
-        self.prefix = prefix
-
-    def display(self, batch):
-        entries = [self.prefix + self.batch_fmtstr.format(batch)]
-        entries += [str(meter) for meter in self.meters]
-        print("\t".join(entries))
-
-    def display_summary(self):
-        entries = [" *"]
-        entries += [meter.summary() for meter in self.meters]
-        print(" ".join(entries))
-
-    def _get_batch_fmtstr(self, num_batches):
-        num_digits = len(str(num_batches // 1))
-        fmt = "{:" + str(num_digits) + "d}"
-        return "[" + fmt + "/" + fmt.format(num_batches) + "]"
 
 
 if __name__ == "__main__":

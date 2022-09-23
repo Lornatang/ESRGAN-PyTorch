@@ -330,7 +330,7 @@ def train(
             d_parameters.requires_grad = False
 
         # Initialize generator model gradients
-        d_model.zero_grad(set_to_none=True)
+        g_model.zero_grad(set_to_none=True)
 
         # Calculate the perceptual loss of the generator, mainly including pixel loss, feature loss and adversarial loss
         with amp.autocast():

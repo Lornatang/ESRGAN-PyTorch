@@ -26,7 +26,6 @@ __all__ = [
     "image_resize", "preprocess_one_image",
     "expand_y", "rgb_to_ycbcr", "bgr_to_ycbcr", "ycbcr_to_bgr", "ycbcr_to_rgb",
     "rgb_to_ycbcr_torch", "bgr_to_ycbcr_torch",
-    "random_crop_np",
     "center_crop", "random_crop", "random_rotate", "random_vertically_flip", "random_horizontally_flip",
 ]
 
@@ -463,29 +462,6 @@ def bgr_to_ycbcr_torch(tensor: Tensor, only_use_y_channel: bool) -> Tensor:
     return tensor
 
 
-def random_crop_np(image: np.ndarray, image_size: int) -> np.ndarray:
-    """Crop small image patches from one image.
-
-    Args:
-        image (np.ndarray): The input image for `OpenCV.imread`.
-        image_size (int): The size of the captured image area.
-
-    Returns:
-        patch_image (np.ndarray): Small patch image
-
-    """
-    image_height, image_width = image.shape[:2]
-
-    # Just need to find the top and left coordinates of the image
-    top = random.randint(0, image_height - image_size)
-    left = random.randint(0, image_width - image_size)
-
-    # Crop image patch
-    patch_image = image[top:top + image_size, left:left + image_size, ...]
-
-    return patch_image
-
-
 def center_crop(image: np.ndarray, image_size: int) -> np.ndarray:
     """Crop small image patches from one image center area.
 
@@ -509,47 +485,27 @@ def center_crop(image: np.ndarray, image_size: int) -> np.ndarray:
     return patch_image
 
 
-def random_crop(gt_tensor: Tensor,
-                lr_tensor: Tensor,
-                gt_image_size: int,
-                upscale_factor: int) -> [Tensor, Tensor]:
+def random_crop(image: np.ndarray, image_size: int) -> np.ndarray:
     """Crop small image patches from one image.
 
     Args:
-        gt_tensor (Tensor): High resolution images
-        lr_tensor (Tensor): Low resolution images
-        gt_image_size (int): The size of the captured high-resolution image area.
-        upscale_factor (int): How many times the high-resolution image should be the low-resolution image
+        image (np.ndarray): The input image for `OpenCV.imread`.
+        image_size (int): The size of the captured image area.
 
     Returns:
-        patch_gt_tensor, patch_lr_tensor(Tensor, Tensor): Small gt patch images, small lr patch images
+        patch_image (np.ndarray): Small patch image
 
     """
-    gt_image_height, hr_image_width = gt_tensor[0].size()[1:]
+    image_height, image_width = image.shape[:2]
 
     # Just need to find the top and left coordinates of the image
-    gt_top = random.randint(0, gt_image_height - gt_image_size)
-    gt_left = random.randint(0, hr_image_width - gt_image_size)
-
-    # Define the LR image position
-    lr_top = gt_top // upscale_factor
-    lr_left = gt_left // upscale_factor
-    lr_image_size = gt_image_size // upscale_factor
-
-    # Create patch images
-    patch_gt_tensor = torch.zeros([gt_tensor.shape[0], gt_tensor.shape[1], gt_image_size, gt_image_size],
-                                  dtype=lr_tensor.dtype,
-                                  device=gt_tensor.device)
-    patch_lr_tensor = torch.zeros([lr_tensor.shape[0], lr_tensor.shape[1], lr_image_size, lr_image_size],
-                                  dtype=lr_tensor.dtype,
-                                  device=lr_tensor.device)
+    top = random.randint(0, image_height - image_size)
+    left = random.randint(0, image_width - image_size)
 
     # Crop image patch
-    for i in range(lr_tensor.shape[0]):
-        patch_gt_tensor[i, :, :, :] = gt_tensor[i, :, gt_top:gt_top + gt_image_size, gt_left:gt_left + gt_image_size]
-        patch_lr_tensor[i, :, :, :] = lr_tensor[i, :, lr_top:lr_top + lr_image_size, lr_left:lr_left + lr_image_size]
+    patch_image = image[top:top + image_size, left:left + image_size, ...]
 
-    return patch_gt_tensor, patch_lr_tensor
+    return patch_image
 
 
 def random_rotate(image,

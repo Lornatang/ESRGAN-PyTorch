@@ -17,8 +17,6 @@ import numpy as np
 import torch
 from torch.backends import cudnn
 
-from rrdbnet_config import crop_image_size
-
 # Random seed to maintain reproducible results
 random.seed(0)
 torch.manual_seed(0)

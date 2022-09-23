@@ -87,7 +87,7 @@ modify the `esrgan_config.py`
 - line 34: `g_arch_name` change to `esrgan_x4`.
 - line 41: `upscale_factor` change to `4`.
 - line 43: `mode` change to `train`.
-- line 61: `pretrained_g_model_path` change to `./results/RRDBNet_baseline/g_best.pth.tar`.
+- line 61: `pretrained_g_model_path` change to `./results/ESRGAN_x4/g_best.pth.tar`.
 
 ```bash
 python train_esrgan.py

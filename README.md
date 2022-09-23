@@ -34,26 +34,33 @@ Contains DIV2K, DIV8K, Flickr2K, OST, T91, Set5, Set14, BSDS100 and BSDS200, etc
 - [Google Driver](https://drive.google.com/drive/folders/1A6lzGeQrFMxPqJehK9s37ce-tPDj20mD?usp=sharing)
 - [Baidu Driver](https://pan.baidu.com/s/1o-8Ty_7q6DiS3ykLU09IVg?pwd=llot)
 
+Please refer to `README.md` in the `data` directory for the method of making a dataset.
+
 ## How Test and Train
 
-Both training and testing only need to modify the `config.py` file. 
+Both training and testing only need to modify the `rrdbnet_config.py` or `esrgan_config.py` file.
 
 ### Test
 
-- line 31: `upscale_factor` change to `4`.
-- line 33: `mode` change to `test`.
-- line 117: `model_path` change to `results/pretrained_models/RRDBNet_x4-DFO2K-2e2a91f4.pth.tar`.
+modify the `esrgan_config.py`
+
+- line 34: `g_arch_name` change to `esrgan_x4`.
+- line 41: `upscale_factor` change to `4`.
+- line 43: `mode` change to `test`.
+- line 105: `g_model_weights_path` change to `./results/pretrained_models/BSRNet_x4-DIV2K-353eb572.pth.tar`.
 
 ```bash
-python test.py
+python3 test.py
 ```
 
 ### Train RRDBNet model
 
-- line 31: `upscale_factor` change to `4`.
-- line 33: `mode` change to `train_rrdbnet`.
-- line 35: `exp_name` change to `RRDBNet_baseline`.
-- line 49: `pretrained_model_path` change to `./results/pretrained_models/RRDBNet_x4-DFO2K-2e2a91f4.pth.tar`.
+modify the `rrdbnet_config.py`
+
+- line 31: `g_arch_name` change to `esrgan_x4`.
+- line 38: `upscale_factor` change to `4`.
+- line 40: `mode` change to `train`.
+- line 57: `g_model_weights_path` change to `./results/pretrained_models/RRDBNet_x4-DFO2K-2e2a91f4.pth.tar`.
 
 ```bash
 python train_rrdbnet.py
@@ -61,10 +68,12 @@ python train_rrdbnet.py
 
 ### Resume train RRDBNet model
 
-- line 31: `upscale_factor` change to `4`.
-- line 33: `mode` change to `train_rrdbnet`.
-- line 35: `exp_name` change to `RRDBNet_baseline`.
-- line 52: `resume` change to `samples/RRDBNet_baseline/g_epoch_xxx.pth.tar`.
+modify the `rrdbnet_config.py`
+
+- line 31: `g_arch_name` change to `esrgan_x4`.
+- line 38: `upscale_factor` change to `4`.
+- line 40: `mode` change to `train`.
+- line 57: `resume_g` change to `samples/RRDBNet_x4/g_epoch_xxx.pth.tar`.
 
 ```bash
 python train_rrdbnet.py
@@ -72,10 +81,13 @@ python train_rrdbnet.py
 
 ### Train ESRGAN model
 
-- line 31: `upscale_factor` change to `4`.
-- line 33: `mode` change to `train_esrgan`.
-- line 35: `exp_name` change to `ESRGAN_baseline`.
-- line 81: `pretrained_g_model_path` change to `./results/RRDBNet_baseline/g_best.pth.tar`.
+modify the `esrgan_config.py`
+
+- line 33: `d_arch_name` change to `discriminator`.
+- line 34: `g_arch_name` change to `esrgan_x4`.
+- line 41: `upscale_factor` change to `4`.
+- line 43: `mode` change to `train`.
+- line 61: `pretrained_g_model_path` change to `./results/RRDBNet_baseline/g_best.pth.tar`.
 
 ```bash
 python train_esrgan.py
@@ -83,11 +95,14 @@ python train_esrgan.py
 
 ### Resume train ESRGAN model
 
-- line 31: `upscale_factor` change to `4`.
-- line 33: `mode` change to `train_esrgan`.
-- line 35: `exp_name` change to `ESRGAN_baseline`.
-- line 84: `resume_d` change to `samples/ESRGAN_baseline/g_epoch_xxx.pth.tar`.
-- line 85: `resume_g` change to `samples/ESRGAN_baseline/g_epoch_xxx.pth.tar`.
+modify the `esrgan_config.py`
+
+- line 33: `d_arch_name` change to `discriminator`.
+- line 34: `g_arch_name` change to `esrgan_x4`.
+- line 41: `upscale_factor` change to `4`.
+- line 43: `mode` change to `train`.
+- line 64: `resume_d` change to `samples/ESRGAN_x4/g_epoch_xxx.pth.tar`.
+- line 65: `resume_g` change to `samples/ESRGAN_x4/g_epoch_xxx.pth.tar`.
 
 ```bash
 python train_esrgan.py
@@ -107,7 +122,7 @@ In the following table, the value in `()` indicates the result of the project, a
 ```bash
 # Download `ESRGAN_x4-DFO2K-25393df7.pth.tar` weights to `./results/pretrained_models`
 # More detail see `README.md<Download weights>`
-python ./inference.py --inputs_path ./figure/baboon_lr.png --output_path ./figure/baboon_sr.png --weights_path ./results/pretrained_models/ESRGAN_x4-DFO2K-25393df7.pth.tar
+python3 ./inference.py
 ```
 
 Input: 

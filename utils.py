@@ -51,8 +51,10 @@ def load_state_dict(
         model.load_state_dict(model_state_dict)
         # Load the optimizer model
         optimizer.load_state_dict(checkpoint["optimizer"])
-        # Load the scheduler model
-        scheduler.load_state_dict(checkpoint["scheduler"])
+
+        if scheduler is not None:
+            # Load the scheduler model
+            scheduler.load_state_dict(checkpoint["scheduler"])
 
         if ema_model is not None:
             # Load ema model state dict. Extract the fitted model weights
@@ -61,9 +63,8 @@ def load_state_dict(
             # Overwrite the model weights to the current model (ema model)
             ema_model_state_dict.update(ema_state_dict)
             ema_model.load_state_dict(ema_model_state_dict)
-            return model, ema_model, start_epoch, best_psnr, best_ssim, optimizer, scheduler
 
-        return model, start_epoch, best_psnr, best_ssim, optimizer, scheduler
+        return model, ema_model, start_epoch, best_psnr, best_ssim, optimizer, scheduler
     else:
         # Load model state dict. Extract the fitted model weights
         model_state_dict = model.state_dict()
@@ -74,6 +75,7 @@ def load_state_dict(
         model.load_state_dict(model_state_dict)
 
         return model
+
 
 
 def make_directory(dir_path: str) -> None:

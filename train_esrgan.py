@@ -74,7 +74,7 @@ def main():
 
     print("Check whether the pretrained d model is restored...")
     if esrgan_config.resume_d:
-        lsrresnet_model, ema_lsrresnet_model, start_epoch, est_psnr, best_ssim, optimizer, scheduler = load_state_dict(
+        d_model, _, start_epoch, best_psnr, best_ssim, optimizer, scheduler = load_state_dict(
             d_model,
             esrgan_config.pretrained_d_model_weights_path,
             optimizer=d_optimizer,
@@ -86,7 +86,7 @@ def main():
 
     print("Check whether the pretrained g model is restored...")
     if esrgan_config.resume_g:
-        lsrresnet_model, ema_lsrresnet_model, start_epoch, est_psnr, best_ssim, optimizer, scheduler = load_state_dict(
+        lsrresnet_model, ema_lsrresnet_model, start_epoch, best_psnr, best_ssim, optimizer, scheduler = load_state_dict(
             g_model,
             esrgan_config.pretrained_g_model_weights_path,
             ema_model=ema_g_model,

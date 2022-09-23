@@ -67,7 +67,7 @@ def main():
 
     print("Check whether the pretrained model is restored...")
     if rrdbnet_config.resume_g:
-        rrdbnet_model, ema_rrdbnet_model, start_epoch, est_psnr, best_ssim, optimizer, scheduler = load_state_dict(
+        rrdbnet_model, ema_rrdbnet_model, start_epoch, best_psnr, best_ssim, optimizer, scheduler = load_state_dict(
             rrdbnet_model,
             rrdbnet_config.pretrained_g_model_weights_path,
             ema_rrdbnet_model,
@@ -196,7 +196,7 @@ def define_optimizer(rrdbnet_model) -> optim.Adam:
                            rrdbnet_config.model_lr,
                            rrdbnet_config.model_betas,
                            rrdbnet_config.model_eps,
-                           rrdbnet_config.model_ema_decay)
+                           rrdbnet_config.model_weight_decay)
 
     return optimizer
 

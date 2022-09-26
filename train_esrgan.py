@@ -320,9 +320,9 @@ def train(
         lr = batch_data["lr"].to(device=esrgan_config.device, non_blocking=True)
 
         # Set the real sample label to 1, and the false sample label to 0
-        batch_size, _, height, width = gt.shape
-        real_label = torch.full([batch_size, 1, height, width], 1.0, dtype=gt.dtype, device=esrgan_config.device)
-        fake_label = torch.full([batch_size, 1, height, width], 0.0, dtype=gt.dtype, device=esrgan_config.device)
+        batch_size, _, _, _ = gt.shape
+        real_label = torch.full([batch_size, 1], 1.0, dtype=gt.dtype, device=esrgan_config.device)
+        fake_label = torch.full([batch_size, 1], 0.0, dtype=gt.dtype, device=esrgan_config.device)
 
         # Start training the generator model
         # During generator training, turn off discriminator backpropagation

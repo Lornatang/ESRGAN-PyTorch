@@ -58,8 +58,8 @@ if mode == "train":
     pretrained_g_model_weights_path = "./results/RRDBNet_x4/g_last.pth.tar"
 
     # Incremental training and migration training
-    resume_d = f""
-    resume_g = f""
+    resume_d_model_weights_path = f""
+    resume_g_model_weights_path = f""
 
     # Total num epochs (400,000 iters)
     epochs = 94

@@ -53,10 +53,10 @@ if mode == "train":
     num_workers = 4
 
     # The address to load the pretrained model
-    pretrained_g_model_weights_path = "./results/pretrained_models/RRDBNet_x4-DFO2K-2e2a91f4.pth.tar"
+    pretrained_g_model_weights_path = ""
 
     # Incremental training and migration training
-    resume_g = f""
+    resume_g_model_weights_path = f""
 
     # Total num epochs (1,000,000 iters)
     epochs = 234

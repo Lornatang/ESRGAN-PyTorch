@@ -65,7 +65,7 @@ def main():
         print("Pretrained model weights not found.")
 
     print("Check whether the pretrained model is restored...")
-    if rrdbnet_config.resume_g:
+    if rrdbnet_config.resume_g_model_weights_path:
         rrdbnet_model, ema_rrdbnet_model, start_epoch, best_psnr, best_ssim, optimizer, scheduler = load_state_dict(
             rrdbnet_model,
             rrdbnet_config.pretrained_g_model_weights_path,
@@ -130,9 +130,11 @@ def main():
                          "ema_state_dict": ema_rrdbnet_model.state_dict(),
                          "optimizer": optimizer.state_dict(),
                          "scheduler": scheduler.state_dict()},
-                        f"epoch_{epoch + 1}.pth.tar",
+                        f"g_epoch_{epoch + 1}.pth.tar",
                         samples_dir,
                         results_dir,
+                        "g_best.pth.tar",
+                        "g_last.pth.tar",
                         is_best,
                         is_last)
 
@@ -275,7 +277,7 @@ def train(
         if batch_index % rrdbnet_config.train_print_frequency == 0:
             # Record loss during training and output to file
             writer.add_scalar("Train/Loss", loss.item(), batch_index + epoch * batches + 1)
-            progress.display(batch_index)
+            progress.display(batch_index + 1)
 
         # Preload the next batch of data
         batch_data = train_prefetcher.next()

@@ -77,7 +77,6 @@ def load_state_dict(
         return model
 
 
-
 def make_directory(dir_path: str) -> None:
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
@@ -88,6 +87,8 @@ def save_checkpoint(
         file_name: str,
         samples_dir: str,
         results_dir: str,
+        best_file_name: str,
+        last_file_name: str,
         is_best: bool = False,
         is_last: bool = False,
 ) -> None:
@@ -95,9 +96,9 @@ def save_checkpoint(
     torch.save(state_dict, checkpoint_path)
 
     if is_best:
-        shutil.copyfile(checkpoint_path, os.path.join(results_dir, "best.pth.tar"))
+        shutil.copyfile(checkpoint_path, os.path.join(results_dir, best_file_name))
     if is_last:
-        shutil.copyfile(checkpoint_path, os.path.join(results_dir, "last.pth.tar"))
+        shutil.copyfile(checkpoint_path, os.path.join(results_dir, last_file_name))
 
 
 class Summary(Enum):

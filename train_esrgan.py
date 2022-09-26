@@ -72,7 +72,7 @@ def main():
         print("Pretrained g model weights not found.")
 
     print("Check whether the pretrained d model is restored...")
-    if esrgan_config.resume_d:
+    if esrgan_config.resume_d_model_weights_path:
         d_model, _, start_epoch, best_psnr, best_ssim, optimizer, scheduler = load_state_dict(
             d_model,
             esrgan_config.pretrained_d_model_weights_path,
@@ -84,7 +84,7 @@ def main():
         print("Resume training d model not found. Start training from scratch.")
 
     print("Check whether the pretrained g model is restored...")
-    if esrgan_config.resume_g:
+    if esrgan_config.resume_g_model_weights_path:
         lsrresnet_model, ema_lsrresnet_model, start_epoch, best_psnr, best_ssim, optimizer, scheduler = load_state_dict(
             g_model,
             esrgan_config.pretrained_g_model_weights_path,
@@ -156,6 +156,8 @@ def main():
                         f"d_epoch_{epoch + 1}.pth.tar",
                         samples_dir,
                         results_dir,
+                        "d_best.pth.tar",
+                        "d_last.pth.tar",
                         is_best,
                         is_last)
         save_checkpoint({"epoch": epoch + 1,
@@ -168,6 +170,8 @@ def main():
                         f"g_epoch_{epoch + 1}.pth.tar",
                         samples_dir,
                         results_dir,
+                        "g_best.pth.tar",
+                        "g_last.pth.tar",
                         is_best,
                         is_last)
 

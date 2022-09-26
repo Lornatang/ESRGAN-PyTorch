@@ -55,7 +55,7 @@ if mode == "train":
 
     # The address to load the pretrained model
     pretrained_d_model_weights_path = ""
-    pretrained_g_model_weights_path = "./results/RRDBNet_x4/g_last.pth.tar"
+    pretrained_g_model_weights_path = "./results/RRDBNet_x4/g_best.pth.tar"
 
     # Incremental training and migration training
     resume_d_model_weights_path = f""

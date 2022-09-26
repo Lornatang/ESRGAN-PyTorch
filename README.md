@@ -42,12 +42,13 @@ Both training and testing only need to modify the `rrdbnet_config.py` or `esrgan
 
 ### Test
 
-modify the `esrgan_config.py`
+Modify the `esrgan_config.py` file.
 
-- line 34: `g_arch_name` change to `esrgan_x4`.
-- line 41: `upscale_factor` change to `4`.
-- line 43: `mode` change to `test`.
-- line 102: `g_model_weights_path` change to `./results/pretrained_models/BSRNet_x4-DIV2K-353eb572.pth.tar`.
+- line 32: `g_arch_name` change to `rrdbnet_x4`.
+- line 39: `upscale_factor` change to `4`.
+- line 41: `mode` change to `test`.
+- line 43: `exp_name` change to `test_ESRGAN_x4`.
+- line 100: `g_model_weights_path` change to `./results/pretrained_models/ESRGAN_x4-DFO2K-25393df7.pth.tar`.
 
 ```bash
 python3 test.py
@@ -60,10 +61,10 @@ modify the `rrdbnet_config.py`
 - line 31: `g_arch_name` change to `rrdbnet_x4`.
 - line 38: `upscale_factor` change to `4`.
 - line 40: `mode` change to `train`.
-- line 57: `g_model_weights_path` change to `./results/pretrained_models/RRDBNet_x4-DFO2K-2e2a91f4.pth.tar`.
+- line 43: `exp_name` change to `RRDBNet_x4`.
 
 ```bash
-python train_rrdbnet.py
+python3 train_rrdbnet.py
 ```
 
 ### Resume train RRDBNet model
@@ -73,39 +74,40 @@ modify the `rrdbnet_config.py`
 - line 31: `g_arch_name` change to `rrdbnet_x4`.
 - line 38: `upscale_factor` change to `4`.
 - line 40: `mode` change to `train`.
-- line 56: `resume_g` change to `samples/RRDBNet_x4/g_epoch_xxx.pth.tar`.
+- line 43: `exp_name` change to `RRDBNet_x4`.
+- line 59: `resume_g_model_weights_path` change to `./samples/RRDBNet_x4/g_epoch_xxx.pth.tar`.
 
 ```bash
-python train_rrdbnet.py
+python3 train_rrdbnet.py
 ```
 
 ### Train ESRGAN model
 
 modify the `esrgan_config.py`
 
-- line 33: `d_arch_name` change to `discriminator`.
-- line 34: `g_arch_name` change to `esrgan_x4`.
-- line 41: `upscale_factor` change to `4`.
-- line 43: `mode` change to `train`.
-- line 60: `pretrained_g_model_path` change to `./results/ESRGAN_x4/g_best.pth.tar`.
+- line 32: `g_arch_name` change to `rrdbnet_x4`.
+- line 39: `upscale_factor` change to `4`.
+- line 41: `mode` change to `test`.
+- line 43: `exp_name` change to `ESRGAN_x4`.
+- line 58: `pretrained_g_model_path` change to `./results/RRDBNet_x4/g_best.pth.tar`.
 
 ```bash
-python train_esrgan.py
+python3 train_esrgan.py
 ```
 
 ### Resume train ESRGAN model
 
 modify the `esrgan_config.py`
 
-- line 33: `d_arch_name` change to `discriminator`.
-- line 34: `g_arch_name` change to `esrgan_x4`.
-- line 41: `upscale_factor` change to `4`.
-- line 43: `mode` change to `train`.
-- line 63: `resume_d` change to `samples/ESRGAN_x4/g_epoch_xxx.pth.tar`.
-- line 64: `resume_g` change to `samples/ESRGAN_x4/g_epoch_xxx.pth.tar`.
+- line 32: `g_arch_name` change to `rrdbnet_x4`.
+- line 39: `upscale_factor` change to `4`.
+- line 41: `mode` change to `test`.
+- line 43: `exp_name` change to `ESRGAN_x4`.
+- line 61: `resume_d` change to `./samples/ESRGAN_x4/g_epoch_xxx.pth.tar`.
+- line 62: `resume_g` change to `./samples/ESRGAN_x4/g_epoch_xxx.pth.tar`.
 
 ```bash
-python train_esrgan.py
+python3 train_esrgan.py
 ```
 
 ### Result
@@ -134,8 +136,8 @@ Output:
 <span align="center"><img width="492" height="480" src="figure/baboon_sr.png"/></span>
 
 ```text
-Build ESRGAN model successfully.
-Load ESRGAN model weights `./results/pretrained_models/ESRGAN_x4-DFO2K-25393df7.pth.tar` successfully.
+Build `rrdbnet_x4` model successfully.
+Load `rrdbnet_x4` model weights `./results/pretrained_models/ESRGAN_x4-DFO2K-25393df7.pth.tar` successfully.
 SR image save to `./figure/baboon_sr.png`
 ```
 

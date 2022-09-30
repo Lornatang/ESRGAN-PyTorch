@@ -80,7 +80,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Using the model generator super-resolution images.")
     parser.add_argument("--model_arch_name",
                         type=str,
-                        default="esrgan_x4")
+                        default="rrdbnet_x4")
     parser.add_argument("--inputs_path",
                         type=str,
                         default="./figure/baboon_lr.png",

@@ -38,9 +38,9 @@ growth_channels = 32
 num_blocks = 23
 upscale_factor = 4
 # Current configuration parameter method
-mode = "train"
+mode = "test"
 # Experiment name, easy to save weights and log files
-exp_name = "ESRGAN_x4"
+exp_name = "test_ESRGAN_x4"
 
 if mode == "train":
     # Dataset address

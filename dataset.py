@@ -53,8 +53,8 @@ class TrainValidImageDataset(Dataset):
 
     def __getitem__(self, batch_index: int):
         # Read a batch of image data
-        lr_image = cv2.imread(self.lr_img_names_names[batch_index]).astype(np.float32) / 255.
-        hr_image = cv2.imread(self.hr_img_names_names[batch_index]).astype(np.float32) / 255.
+        lr_image = cv2.imread(self.lr_img_names[batch_index]).astype(np.float32) / 255.
+        hr_image = cv2.imread(self.hr_img_names[batch_index]).astype(np.float32) / 255.
 
         hr_image = cv2.cvtColor(hr_image, cv2.COLOR_BGR2RGB)
         lr_image = cv2.cvtColor(lr_image, cv2.COLOR_BGR2RGB)
@@ -67,7 +67,7 @@ class TrainValidImageDataset(Dataset):
         return {"gt": gt_tensor, "lr": lr_tensor}
 
     def __len__(self) -> int:
-        return len(self.image_file_names)
+        return len(self.lr_img_names)
 
 
 class TestImageDataset(Dataset):

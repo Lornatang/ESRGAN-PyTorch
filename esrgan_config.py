@@ -38,24 +38,24 @@ growth_channels = 32
 num_blocks = 23
 upscale_factor = 4
 # Current configuration parameter method
-mode = "test"
+mode = "train"
 # Experiment name, easy to save weights and log files
-exp_name = "test_ESRGAN_x4"
+exp_name = "train_ESRGAN_x4"
 
 if mode == "train":
     # Dataset address
     train_gt_images_dir = f"./data/hr"
     train_lr_images_dir = f"./data/lr"
-    test_gt_images_dir = f"./data/Set5/GTmod12"
-    test_lr_images_dir = f"./data/Set5/LRbicx{upscale_factor}"
+    test_gt_images_dir = f"./data/hr"
+    test_lr_images_dir = f"./data/lr"
 
     gt_image_size = 128
-    batch_size = 16
+    batch_size = 1
     num_workers = 4
 
     # The address to load the pretrained model
-    pretrained_d_model_weights_path = "./results\pretrained_models\Dsicrminator_x4-DFO2K-e74d7ca1.pth.tar"
-    pretrained_g_model_weights_path = "./results\pretrained_models\RRDBNet_x4-DFO2K-2e2a91f4.pth.tar"
+    pretrained_d_model_weights_path = "results/pretrained_models/Dsicrminator_x4-DFO2K-e74d7ca1.pth.tar"
+    pretrained_g_model_weights_path = "results/pretrained_models/RRDBNet_x4-DFO2K-2e2a91f4.pth.tar"
 
     # Incremental training and migration training
     resume_d_model_weights_path = f""
@@ -91,10 +91,10 @@ if mode == "train":
     train_print_frequency = 100
     valid_print_frequency = 1
 
-if mode == "test":
-    # Test data address
-    lr_dir = f"./data/Set5/LRbicx{upscale_factor}"
-    sr_dir = f"./results/test/{exp_name}"
-    gt_dir = "./data/Set5/GTmod12"
+# if mode == "test":
+#     # Test data address
+#     lr_dir = f"./data/Set5/LRbicx{upscale_factor}"
+#     sr_dir = f"./results/test/{exp_name}"
+#     gt_dir = "./data/Set5/GTmod12"
 
-    g_model_weights_path = "./results/pretrained_models/ESRGAN_x4-DFO2K-25393df7.pth.tar"
+#     g_model_weights_path = "./results/pretrained_models/ESRGAN_x4-DFO2K-25393df7.pth.tar"

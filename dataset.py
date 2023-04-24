@@ -43,41 +43,25 @@ class TrainValidImageDataset(Dataset):
 
     def __init__(
             self,
-            image_dir: str,
-            gt_image_size: int,
-            upscale_factor: int,
-            mode: str,
+            lr_image_dir: str,
+            hr_image_dir:str,
     ) -> None:
         super(TrainValidImageDataset, self).__init__()
-        self.image_file_names = [os.path.join(image_dir, image_file_name) for image_file_name in os.listdir(image_dir)]
-        self.gt_image_size = gt_image_size
-        self.upscale_factor = upscale_factor
-        self.mode = mode
+        self.lr_img_names = [os.path.join(lr_image_dir, image_file_name) for image_file_name in os.listdir(lr_image_dir)]
+        self.hr_img_names = [os.path.join(hr_image_dir, image_file_name) for image_file_name in os.listdir(hr_image_dir)]
 
-    def __getitem__(self, batch_index: int) -> [dict[str, Tensor], dict[str, Tensor]]:
+
+    def __getitem__(self, batch_index: int):
         # Read a batch of image data
-        gt_image = cv2.imread(self.image_file_names[batch_index]).astype(np.float32) / 255.
+        lr_image = cv2.imread(self.lr_img_names_names[batch_index]).astype(np.float32) / 255.
+        hr_image = cv2.imread(self.hr_img_names_names[batch_index]).astype(np.float32) / 255.
 
-        # Image processing operations
-        if self.mode == "Train":
-            gt_image = imgproc.random_crop(gt_image, self.gt_image_size)
-            gt_image = imgproc.random_rotate(gt_image, [90, 180, 270])
-            gt_image = imgproc.random_horizontally_flip(gt_image, 0.5)
-            gt_image = imgproc.random_vertically_flip(gt_image, 0.5)
-        elif self.mode == "Valid":
-            gt_image = imgproc.center_crop(gt_image, self.gt_image_size)
-        else:
-            raise ValueError("Unsupported data processing model, please use `Train` or `Valid`.")
-
-        lr_image = imgproc.image_resize(gt_image, 1 / self.upscale_factor)
-
-        # BGR convert RGB
-        gt_image = cv2.cvtColor(gt_image, cv2.COLOR_BGR2RGB)
+        hr_image = cv2.cvtColor(hr_image, cv2.COLOR_BGR2RGB)
         lr_image = cv2.cvtColor(lr_image, cv2.COLOR_BGR2RGB)
 
         # Convert image data into Tensor stream format (PyTorch).
         # Note: The range of input and output is between [0, 1]
-        gt_tensor = imgproc.image_to_tensor(gt_image, False, False)
+        gt_tensor = imgproc.image_to_tensor(hr_image, False, False)
         lr_tensor = imgproc.image_to_tensor(lr_image, False, False)
 
         return {"gt": gt_tensor, "lr": lr_tensor}
@@ -100,7 +84,7 @@ class TestImageDataset(Dataset):
         self.gt_image_file_names = [os.path.join(test_gt_images_dir, x) for x in os.listdir(test_gt_images_dir)]
         self.lr_image_file_names = [os.path.join(test_lr_images_dir, x) for x in os.listdir(test_lr_images_dir)]
 
-    def __getitem__(self, batch_index: int) -> [torch.Tensor, torch.Tensor]:
+    def __getitem__(self, batch_index: int) :
         # Read a batch of image data
         gt_image = cv2.imread(self.gt_image_file_names[batch_index]).astype(np.float32) / 255.
         lr_image = cv2.imread(self.lr_image_file_names[batch_index]).astype(np.float32) / 255.

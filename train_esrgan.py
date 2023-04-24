@@ -176,12 +176,10 @@ def main():
                         is_last)
 
 
-def load_dataset() -> [CUDAPrefetcher, CUDAPrefetcher]:
+def load_dataset():
     # Load train, test and valid datasets
     train_datasets = TrainValidImageDataset(esrgan_config.train_gt_images_dir,
-                                            esrgan_config.gt_image_size,
-                                            esrgan_config.upscale_factor,
-                                            "Train")
+                                            esrgan_config.train_lr_images_dir)
     test_datasets = TestImageDataset(esrgan_config.test_gt_images_dir, esrgan_config.test_lr_images_dir)
 
     # Generator all dataloader
@@ -207,7 +205,7 @@ def load_dataset() -> [CUDAPrefetcher, CUDAPrefetcher]:
     return train_prefetcher, test_prefetcher
 
 
-def build_model() -> [nn.Module, nn.Module, nn.Module]:
+def build_model():
     d_model = model.__dict__[esrgan_config.d_arch_name]()
     g_model = model.__dict__[esrgan_config.g_arch_name](in_channels=esrgan_config.in_channels,
                                                         out_channels=esrgan_config.out_channels,
@@ -224,7 +222,7 @@ def build_model() -> [nn.Module, nn.Module, nn.Module]:
     return d_model, g_model, ema_g_model
 
 
-def define_loss() -> [nn.L1Loss, model.content_loss, nn.BCEWithLogitsLoss]:
+def define_loss():
     pixel_criterion = nn.L1Loss()
     content_criterion = model.content_loss(esrgan_config.feature_model_extractor_node,
                                            esrgan_config.feature_model_normalize_mean,
@@ -239,7 +237,7 @@ def define_loss() -> [nn.L1Loss, model.content_loss, nn.BCEWithLogitsLoss]:
     return pixel_criterion, content_criterion, adversarial_criterion
 
 
-def define_optimizer(d_model, g_model) -> [optim.Adam, optim.Adam]:
+def define_optimizer(d_model, g_model):
     d_optimizer = optim.Adam(d_model.parameters(),
                              esrgan_config.model_lr,
                              esrgan_config.model_betas,
@@ -257,7 +255,7 @@ def define_optimizer(d_model, g_model) -> [optim.Adam, optim.Adam]:
 def define_scheduler(
         d_optimizer: optim.Adam,
         g_optimizer: optim.Adam
-) -> [lr_scheduler.MultiStepLR, lr_scheduler.MultiStepLR]:
+):
     d_scheduler = lr_scheduler.MultiStepLR(d_optimizer,
                                            esrgan_config.lr_scheduler_milestones,
                                            esrgan_config.lr_scheduler_gamma)
@@ -435,7 +433,7 @@ def validate(
         psnr_model: nn.Module,
         ssim_model: nn.Module,
         mode: str
-) -> [float, float]:
+):
     # Calculate how many batches of data are in each Epoch
     batch_time = AverageMeter("Time", ":6.3f")
     psnres = AverageMeter("PSNR", ":4.2f")

@@ -44,8 +44,8 @@ exp_name = "test_ESRGAN_x4"
 
 if mode == "train":
     # Dataset address
-    train_gt_images_dir = f"./data/DIV2K/ESRGAN/train"
-
+    train_gt_images_dir = f"./data/hr"
+    train_lr_images_dir = f"./data/lr"
     test_gt_images_dir = f"./data/Set5/GTmod12"
     test_lr_images_dir = f"./data/Set5/LRbicx{upscale_factor}"
 
@@ -54,8 +54,8 @@ if mode == "train":
     num_workers = 4
 
     # The address to load the pretrained model
-    pretrained_d_model_weights_path = ""
-    pretrained_g_model_weights_path = "./results/RRDBNet_x4/g_best.pth.tar"
+    pretrained_d_model_weights_path = "./results\pretrained_models\Dsicrminator_x4-DFO2K-e74d7ca1.pth.tar"
+    pretrained_g_model_weights_path = "./results\pretrained_models\RRDBNet_x4-DFO2K-2e2a91f4.pth.tar"
 
     # Incremental training and migration training
     resume_d_model_weights_path = f""

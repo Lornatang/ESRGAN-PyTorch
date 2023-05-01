@@ -182,8 +182,8 @@ def load_dataset():
     train_datasets = TrainValidImageDataset(esrgan_config.train_gt_images_dir,
                                             esrgan_config.train_lr_images_dir)
     test_datasets = TestImageDataset(esrgan_config.test_gt_images_dir, esrgan_config.test_lr_images_dir)
-    for i in train_datasets[0]:
-        print(train_datasets[0][i].shape,i)
+    # for i in train_datasets[0]:
+    #     print(train_datasets[0][i].shape,i)
     # Generator all dataloader
     train_dataloader = DataLoader(train_datasets,
                                   batch_size=esrgan_config.batch_size,
@@ -314,7 +314,7 @@ def train(
     while batch_data is not None:
         # Calculate the time it takes to load a batch of data
         data_time.update(time.time() - end)
-        print(batch_data["lr"].shape, batch_data["gt"].shape)
+ #       print(batch_data["lr"].shape, batch_data["gt"].shape)
         # Transfer in-memory data to CUDA devices to speed up training
         gt = batch_data["gt"].to(device=esrgan_config.device, non_blocking=True)
         lr = batch_data["lr"].to(device=esrgan_config.device, non_blocking=True)
@@ -339,7 +339,7 @@ def train(
             sr = g_model(lr)
 #            print(sr.shape)
             # Output discriminator to discriminate object probability
-            print(gt.detach().clone().shape)
+ #           print(gt.detach().clone().shape)
             gt_output = d_model(gt.detach().clone())
  #           print(gt_output.shape)
             sr_output = d_model(sr)

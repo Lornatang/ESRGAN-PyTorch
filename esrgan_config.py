@@ -38,16 +38,16 @@ growth_channels = 32
 num_blocks = 23
 upscale_factor = 4
 # Current configuration parameter method
-mode = "test"
+mode = "train"
 # Experiment name, easy to save weights and log files
-exp_name = "test_ESRGAN_x4"
+exp_name = "train1_ESRGAN_x4"
 
 if mode == "train":
     # Dataset address
-    train_gt_images_dir = f"./data/hr"
-    train_lr_images_dir = f"./data/lr"
-    test_gt_images_dir = f"./data/hr"
-    test_lr_images_dir = f"./data/lr"
+    train_gt_images_dir = f"./data/train/hr"
+    train_lr_images_dir = f"./data/train/lr"
+    test_gt_images_dir = f"./data/test/hr"
+    test_lr_images_dir = f"./data/test/lr"
 
     gt_image_size = 128
     batch_size = 1
@@ -62,7 +62,7 @@ if mode == "train":
     resume_g_model_weights_path = f""
 
     # Total num epochs (400,000 iters)
-    epochs = 94
+    epochs = 50
 
     # Loss function weight
     pixel_weight = 0.01
@@ -93,8 +93,8 @@ if mode == "train":
 
 if mode == "test":
     # Test data address
-    lr_dir = f"./data/lr"
-    sr_dir = f"./results/test/{exp_name}"
-    gt_dir = "./data/hr"
+    lr_dir = f"./data/test/lr"
+    sr_dir = f"./data/results/test/{exp_name}"
+    gt_dir = "./data/test/hr"
 
-    g_model_weights_path = "./results/train_ESRGAN_x4/g_best.pth.tar"
+    g_model_weights_path = "./results/train1_ESRGAN_x4/g_best.pth.tar"

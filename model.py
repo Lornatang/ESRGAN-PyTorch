@@ -135,9 +135,9 @@ class Discriminator(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = self.features(x)
-        print(out.shape)
+  #      print(out.shape)
         out = torch.flatten(out, 1)
-        print(out.shape)
+  #      print(out.shape)
         for i in self.classifier:
             out = i(out)
  #           print(i)

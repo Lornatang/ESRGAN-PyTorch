@@ -38,9 +38,9 @@ growth_channels = 32
 num_blocks = 23
 upscale_factor = 4
 # Current configuration parameter method
-mode = "train"
+mode = "test"
 # Experiment name, easy to save weights and log files
-exp_name = "train_ESRGAN_x4"
+exp_name = "test_ESRGAN_x4"
 
 if mode == "train":
     # Dataset address
@@ -91,10 +91,10 @@ if mode == "train":
     train_print_frequency = 100
     valid_print_frequency = 1
 
-# if mode == "test":
-#     # Test data address
-#     lr_dir = f"./data/Set5/LRbicx{upscale_factor}"
-#     sr_dir = f"./results/test/{exp_name}"
-#     gt_dir = "./data/Set5/GTmod12"
+if mode == "test":
+    # Test data address
+    lr_dir = f"./data/lr"
+    sr_dir = f"./results/test/{exp_name}"
+    gt_dir = "./data/hr"
 
-#     g_model_weights_path = "./results/pretrained_models/ESRGAN_x4-DFO2K-25393df7.pth.tar"
+    g_model_weights_path = "./results/train_ESRGAN_x4/g_best.pth.tar"

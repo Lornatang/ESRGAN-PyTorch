@@ -43,8 +43,8 @@ class TrainValidImageDataset(Dataset):
 
     def __init__(
             self,
-            lr_image_dir: str,
-            hr_image_dir:str,
+            hr_image_dir: str,
+            lr_image_dir:str,
     ) -> None:
         super(TrainValidImageDataset, self).__init__()
         self.lr_img_names = [os.path.join(lr_image_dir, image_file_name) for image_file_name in os.listdir(lr_image_dir)]

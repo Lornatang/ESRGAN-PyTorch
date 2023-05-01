@@ -43,6 +43,7 @@ def main():
     best_ssim = 0.0
 
     train_prefetcher, test_prefetcher = load_dataset()
+#    print(train_prefetcher[0].shape)
     print("Load all datasets successfully.")
 
     d_model, g_model, ema_g_model = build_model()
@@ -181,7 +182,8 @@ def load_dataset():
     train_datasets = TrainValidImageDataset(esrgan_config.train_gt_images_dir,
                                             esrgan_config.train_lr_images_dir)
     test_datasets = TestImageDataset(esrgan_config.test_gt_images_dir, esrgan_config.test_lr_images_dir)
-
+    for i in train_datasets[0]:
+        print(train_datasets[0][i].shape,i)
     # Generator all dataloader
     train_dataloader = DataLoader(train_datasets,
                                   batch_size=esrgan_config.batch_size,
@@ -312,7 +314,7 @@ def train(
     while batch_data is not None:
         # Calculate the time it takes to load a batch of data
         data_time.update(time.time() - end)
-
+        print(batch_data["lr"].shape, batch_data["gt"].shape)
         # Transfer in-memory data to CUDA devices to speed up training
         gt = batch_data["gt"].to(device=esrgan_config.device, non_blocking=True)
         lr = batch_data["lr"].to(device=esrgan_config.device, non_blocking=True)
@@ -333,10 +335,15 @@ def train(
         # Calculate the perceptual loss of the generator, mainly including pixel loss, feature loss and adversarial loss
         with amp.autocast():
             # Use the generator model to generate fake samples
+#            print(lr.shape,)
             sr = g_model(lr)
+#            print(sr.shape)
             # Output discriminator to discriminate object probability
+            print(gt.detach().clone().shape)
             gt_output = d_model(gt.detach().clone())
+ #           print(gt_output.shape)
             sr_output = d_model(sr)
+ #           print(sr_output.shape)
             pixel_loss = esrgan_config.pixel_weight * pixel_criterion(sr, gt)
             content_loss = esrgan_config.content_weight * content_criterion(sr, gt)
             # Computational adversarial network loss

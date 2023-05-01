@@ -128,20 +128,21 @@ class Discriminator(nn.Module):
         )
 
         self.classifier = nn.Sequential(
-            nn.Linear(2048, 100),
+            nn.Linear(512*4*4, 100),
             nn.LeakyReLU(0.2, True),
             nn.Linear(100, 1)
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = self.features(x)
+        print(out.shape)
         out = torch.flatten(out, 1)
         print(out.shape)
         for i in self.classifier:
             out = i(out)
-            print(i)
-            print(out.shape)
-
+ #           print(i)
+ #           print(out.shape)
+ #       print(out.shape)
         return out
 
 
@@ -230,9 +231,7 @@ class RRDBNet(nn.Module):
 
         out = self.conv3(out)
         out = self.conv4(out)
-
         out = torch.clamp_(out, 0.0, 1.0)
-        print(out.shape)
         return out
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

@@ -121,7 +121,7 @@ class RRDBNet(nn.Module):
         for module in self.modules():
             if isinstance(module, nn.Conv2d):
                 nn.init.kaiming_normal_(module.weight)
-                module.weight.data *= 0.1
+                module.weight.data *= 0.2
                 if module.bias is not None:
                     nn.init.constant_(module.bias, 0)
 

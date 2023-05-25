@@ -12,11 +12,11 @@ This repository contains an op-for-op PyTorch reimplementation of [ESRGAN: Enhan
     - [Download weights](#download-weights)
     - [Download datasets](#download-datasets)
     - [How Test and Train](#how-test-and-train)
-        - [Test](#test)
-        - [Train RRDBNet model](#train-rrdbnet-model)
-        - [Resume train RRDBNet model](#resume-train-rrdbnet-model)
-        - [Train ESRGAN model](#train-esrgan-model)
-        - [Resume train ESRGAN model](#resume-train-esrgan-model)
+        - [Test ESRGAN_x4](#test-esrganx4)
+        - [Train RRDBNet_x4](#train-rrdbnetx4)
+        - [Resume train RRDBNet_x4](#resume-train-rrdbnetx4)
+        - [Train ESRGAN_x4](#train-esrganx4)
+        - [Resume train ESRGAN_x4](#resume-train-esrganx4)
     - [Result](#result)
     - [Contributing](#contributing)
     - [Credit](#credit)
@@ -38,76 +38,50 @@ Please refer to `README.md` in the `data` directory for the method of making a d
 
 ## How Test and Train
 
-Both training and testing only need to modify the `rrdbnet_config.py` or `esrgan_config.py` file.
+Both training and testing only need to modify yaml file. 
 
-### Test
-
-Modify the `esrgan_config.py` file.
-
-- line 32: `g_arch_name` change to `rrdbnet_x4`.
-- line 39: `upscale_factor` change to `4`.
-- line 41: `mode` change to `test`.
-- line 43: `exp_name` change to `test_ESRGAN_x4`.
-- line 100: `g_model_weights_path` change to `./results/pretrained_models/ESRGAN_x4-DFO2K-25393df7.pth.tar`.
+### Test ESRGAN_x4
 
 ```bash
-python3 test.py
+python3 test.py --config_path ./configs/test/ESRGAN_X4.yaml
 ```
 
-### Train RRDBNet model
-
-modify the `rrdbnet_config.py`
-
-- line 31: `g_arch_name` change to `rrdbnet_x4`.
-- line 38: `upscale_factor` change to `4`.
-- line 40: `mode` change to `train`.
-- line 43: `exp_name` change to `RRDBNet_x4`.
+### Train RRDBNet_x4
 
 ```bash
-python3 train_rrdbnet.py
+python3 train_net.py --config_path ./configs/train/RRDBNet_X4.yaml
 ```
 
-### Resume train RRDBNet model
+### Resume train RRDBNet_x4
 
-modify the `rrdbnet_config.py`
+Modify the `./configs/train/RRDBNet_X4.yaml` file.
 
-- line 31: `g_arch_name` change to `rrdbnet_x4`.
-- line 38: `upscale_factor` change to `4`.
-- line 40: `mode` change to `train`.
-- line 43: `exp_name` change to `RRDBNet_x4`.
-- line 59: `resume_g_model_weights_path` change to `./samples/RRDBNet_x4/g_epoch_xxx.pth.tar`.
+- line 34: `RESUMED_G_MODEL` change to `./samples/RRDBNet_X4-DIV2K/g_epoch_xxx.pth.tar`.
 
 ```bash
-python3 train_rrdbnet.py
+python3 train_net.py --config_path ./configs/train/RRDBNet_X4.yaml
 ```
 
-### Train ESRGAN model
+### Train ESRGAN_x4
 
-modify the `esrgan_config.py`
+Modify the `./configs/train/ESRGAN_X4.yaml` file.
 
-- line 32: `g_arch_name` change to `rrdbnet_x4`.
-- line 39: `upscale_factor` change to `4`.
-- line 41: `mode` change to `test`.
-- line 43: `exp_name` change to `ESRGAN_x4`.
-- line 58: `pretrained_g_model_path` change to `./results/RRDBNet_x4/g_best.pth.tar`.
+- line 39: `PRETRAINED_G_MODEL` change to `./results/EDSRGAN_x4-DIV2K/g_last.pth.tar`.
 
 ```bash
-python3 train_esrgan.py
+python3 train_gan.py --config_path ./configs/train/ESRGAN_X4.yaml
 ```
 
-### Resume train ESRGAN model
+### Resume train ESRGAN_x4
 
-modify the `esrgan_config.py`
+Modify the `./configs/train/ESRGAN_X4.yaml` file.
 
-- line 32: `g_arch_name` change to `rrdbnet_x4`.
-- line 39: `upscale_factor` change to `4`.
-- line 41: `mode` change to `test`.
-- line 43: `exp_name` change to `ESRGAN_x4`.
-- line 61: `resume_d` change to `./samples/ESRGAN_x4/g_epoch_xxx.pth.tar`.
-- line 62: `resume_g` change to `./samples/ESRGAN_x4/g_epoch_xxx.pth.tar`.
+- line 39: `PRETRAINED_G_MODEL` change to `./results/RRDBNet_x4-DIV2K/g_last.pth.tar`.
+- line 41: `RESUMED_G_MODEL` change to `./samples/EDSRGAN_x4-DIV2K/g_epoch_xxx.pth.tar`.
+- line 42: `RESUMED_D_MODEL` change to `./samples/EDSRGAN_x4-DIV2K/d_epoch_xxx.pth.tar`.
 
 ```bash
-python3 train_esrgan.py
+python3 train_gan.py --config_path ./configs/train/ESRGAN_X4.yaml
 ```
 
 ### Result
@@ -115,7 +89,6 @@ python3 train_esrgan.py
 Source of original paper results: [https://arxiv.org/pdf/1809.00219v2.pdf](https://arxiv.org/pdf/1809.00219v2.pdf)
 
 In the following table, the value in `()` indicates the result of the project, and `-` indicates no test.
-
 | Method | Scale |          Set5 (PSNR/SSIM)           |          Set14 (PSNR/SSIM)          |         BSD100 (PSNR/SSIM)          |        Urban100 (PSNR/SSIM)         |        Manga109 (PSNR/SSIM)         |
 |:------:|:-----:|:-----------------------------------:|:-----------------------------------:|:-----------------------------------:|:-----------------------------------:|:-----------------------------------:|
 |  RRDB  |   4   | 32.73(**32.71**)/0.9011(**0.9018**) | 28.99(**28.96**)/0.7917(**0.7917**) | 27.85(**27.85**)/0.7455(**0.7473**) | 27.03(**27.03**)/0.8153(**0.8156**) | 31.66(**31.60**)/0.9196(**0.9195**) |
@@ -137,8 +110,9 @@ Output:
 
 ```text
 Build `rrdbnet_x4` model successfully.
-Load `rrdbnet_x4` model weights `./results/pretrained_models/ESRGAN_x4-DFO2K-25393df7.pth.tar` successfully.
-SR image save to `./figure/baboon_sr.png`
+Load `rrdbnet_x4` model weights `/ESRGAN-PyTorch/results/pretrained_models/ESRGAN_x4-DFO2K.pth.tar` successfully.
+SR image save to `./figure/ESRGAN_x4_baboon.png`
+
 ```
 
 ### Contributing

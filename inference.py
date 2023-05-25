@@ -1,4 +1,4 @@
-# Copyright 2022 Dakewe Biotech Corporation. All Rights Reserved.
+# Copyright 2023 Dakewe Biotech Corporation. All Rights Reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
@@ -18,85 +18,87 @@ import cv2
 import torch
 from torch import nn
 
-import imgproc
 import model
-from utils import load_state_dict
-
-model_names = sorted(
-    name for name in model.__dict__ if
-    name.islower() and not name.startswith("__") and callable(model.__dict__[name]))
+from imgproc import preprocess_one_image, tensor_to_image
+from utils import load_pretrained_state_dict
 
 
-def choice_device(device_type: str) -> torch.device:
-    # Select model processing equipment type
-    if device_type == "cuda":
-        device = torch.device("cuda", 0)
-    else:
-        device = torch.device("cpu")
-    return device
+def main(args):
+    device = torch.device(args.device)
+
+    # Read original image
+    input_tensor = preprocess_one_image(args.inputs, False, args.half, device)
+
+    # Initialize the model
+    sr_model = build_model(args.model_arch_name, device)
+    print(f"Build `{args.model_arch_name}` model successfully.")
+
+    # Load model weights
+    sr_model = load_pretrained_state_dict(sr_model, args.compile_state, args.model_weights_path)
+    print(f"Load `{args.model_arch_name}` model weights `{os.path.abspath(args.model_weights_path)}` successfully.")
+
+    # Start the verification mode of the model.
+    sr_model.eval()
+
+    # Enable half-precision inference to reduce memory usage and inference time
+    if args.half:
+        sr_model.half()
+
+    # Use the model to generate super-resolved images
+    with torch.no_grad():
+        # Reasoning
+        sr_tensor = sr_model(input_tensor)
+
+    # Save image
+    cr_image = tensor_to_image(sr_tensor, False, args.half)
+    cr_image = cv2.cvtColor(cr_image, cv2.COLOR_RGB2BGR)
+    cv2.imwrite(args.output, cr_image)
+
+    print(f"SR image save to `{args.output}`")
 
 
 def build_model(model_arch_name: str, device: torch.device) -> nn.Module:
     # Initialize the super-resolution model
-    g_model = model.__dict__[model_arch_name](in_channels=3,
-                                              out_channels=3,
-                                              channels=64,
-                                              growth_channels=32,
-                                              num_blocks=23)
-    g_model = g_model.to(device=device)
+    sr_model = model.__dict__[model_arch_name](in_channels=3,
+                                               out_channels=3,
+                                               channels=64,
+                                               growth_channels=32,
+                                               num_rrdb=23)
 
-    return g_model
+    sr_model = sr_model.to(device)
 
-
-def main(args):
-    device = choice_device(args.device_type)
-
-    # Initialize the model
-    g_model = build_model(args.model_arch_name, device)
-    print(f"Build `{args.model_arch_name}` model successfully.")
-
-    # Load model weights
-    g_model = load_state_dict(g_model, args.model_weights_path)
-    print(f"Load `{args.model_arch_name}` model weights `{os.path.abspath(args.model_weights_path)}` successfully.")
-
-    # Start the verification mode of the model.
-    g_model.eval()
-
-    lr_tensor = imgproc.preprocess_one_image(args.inputs_path, device)
-
-    # Use the model to generate super-resolved images
-    with torch.no_grad():
-        sr_tensor = g_model(lr_tensor)
-
-    # Save image
-    sr_image = imgproc.tensor_to_image(sr_tensor, False, False)
-    sr_image = cv2.cvtColor(sr_image, cv2.COLOR_RGB2BGR)
-    cv2.imwrite(args.output_path, sr_image)
-
-    print(f"SR image save to `{args.output_path}`")
+    return sr_model
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Using the model generator super-resolution images.")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--inputs",
+                        type=str,
+                        default="./figure/baboon.png",
+                        help="Original image path.")
+    parser.add_argument("--output",
+                        type=str,
+                        default="./figure/ESRGAN_x4_baboon.png",
+                        help="Super-resolution image path.")
     parser.add_argument("--model_arch_name",
                         type=str,
-                        default="rrdbnet_x4")
-    parser.add_argument("--inputs_path",
-                        type=str,
-                        default="./figure/baboon_lr.png",
-                        help="Low-resolution image path.")
-    parser.add_argument("--output_path",
-                        type=str,
-                        default="./figure/baboon_sr.png",
-                        help="Super-resolution image path.")
+                        default="rrdbnet_x4",
+                        help="Model architecture name.")
+    parser.add_argument("--compile_state",
+                        type=bool,
+                        default=False,
+                        help="Whether to compile the model state.")
     parser.add_argument("--model_weights_path",
                         type=str,
-                        default="./results/pretrained_models/ESRGAN_x4-DFO2K-25393df7.pth.tar",
+                        default="./results/pretrained_models/ESRGAN_x4-DFO2K.pth.tar",
                         help="Model weights file path.")
-    parser.add_argument("--device_type",
+    parser.add_argument("--half",
+                        action="store_true",
+                        help="Use half precision.")
+    parser.add_argument("--device",
                         type=str,
-                        default="cpu",
-                        choices=["cpu", "cuda"])
+                        default="cuda:0",
+                        help="Device to run model.")
     args = parser.parse_args()
 
     main(args)

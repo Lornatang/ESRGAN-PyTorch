@@ -129,11 +129,11 @@ python3 ./inference.py
 
 Input: 
 
-<span align="center"><img width="492" height="480" src="figure/baboon_lr.png"/></span>
+<span align="center"><img width="492" height="480" src="figure/baboon.png"/></span>
 
 Output: 
 
-<span align="center"><img width="492" height="480" src="figure/baboon_sr.png"/></span>
+<span align="center"><img width="492" height="480" src="figure/ESRGAN_x4_baboon.png"/></span>
 
 ```text
 Build `rrdbnet_x4` model successfully.

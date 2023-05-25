@@ -1,0 +1,41 @@
+# experiment name
+EXP_NAME: RRDBNet_x4-DIV2K-Set5
+# random number seed
+SEED: 0
+# Super resolution magnification factor
+SCALE: 4
+# run device model
+DEVICE_ID: 0
+# Model weights path
+MODEL_WEIGHTS_PATH: "./results/pretrained_models/RRDBNet_x4-DIV2K.pth.tar"
+
+# Model define
+MODEL:
+  NAME: rrdbnet_x4
+  IN_CHANNELS: 3
+  OUT_CHANNELS: 3
+  CHANNELS: 64
+  GROWTH_CHANNELS: 32
+  NUM_RRDB: 23
+  COMPILED: False
+
+TEST:
+  DATASET:
+    PAIRED_TEST_GT_IMAGES_DIR: "./data/Set5/GTmod12"
+    PAIRED_TEST_LR_IMAGES_DIR: "./data/Set5/LRbicx4"
+
+  # Test hyperparameters
+  HYP:
+    IMGS_PER_BATCH: 1
+    SHUFFLE: False
+    NUM_WORKERS: 1
+    PIN_MEMORY: True
+    PERSISTENT_WORKERS: True
+
+  # Only test Y channel
+  ONLY_TEST_Y_CHANNEL: True
+
+  SAVE_IMAGE: False
+  SAVE_IMAGE_DIR: None
+
+  PRINT_FREQ: 1

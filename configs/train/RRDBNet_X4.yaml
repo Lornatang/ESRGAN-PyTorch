@@ -81,5 +81,3 @@ TEST:
 
   SAVE_IMAGE: False
   SAVE_IMAGE_DIR: None
-
-  PRINT_FREQ: 1

@@ -11,13 +11,14 @@ MODEL_WEIGHTS_PATH: "./results/pretrained_models/ESRGAN_x4-DIV2K.pth.tar"
 
 # Model define
 MODEL:
-  NAME: rrdbnet_x4
-  IN_CHANNELS: 3
-  OUT_CHANNELS: 3
-  CHANNELS: 64
-  GROWTH_CHANNELS: 32
-  NUM_RRDB: 23
-  COMPILED: False
+  G:
+    NAME: rrdbnet_x4
+    IN_CHANNELS: 3
+    OUT_CHANNELS: 3
+    CHANNELS: 64
+    GROWTH_CHANNELS: 32
+    NUM_RRDB: 23
+    COMPILED: False
 
 TEST:
   DATASET:
@@ -37,5 +38,3 @@ TEST:
 
   SAVE_IMAGE: False
   SAVE_IMAGE_DIR: None
-
-  PRINT_FREQ: 1

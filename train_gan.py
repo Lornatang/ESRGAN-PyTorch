@@ -145,7 +145,7 @@ def main():
               feature_criterion,
               adversarial_criterion,
               g_optimizer,
-              g_optimizer,
+              d_optimizer,
               epoch,
               scaler,
               writer,

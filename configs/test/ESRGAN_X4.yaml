@@ -1,5 +1,5 @@
 # experiment name
-EXP_NAME: ESRGAN_x4-DIV2K-Set5
+EXP_NAME: ESRGAN_x4-DFO2K-Set5
 # random number seed
 SEED: 0
 # Super resolution magnification factor
@@ -7,7 +7,7 @@ SCALE: 4
 # run device model
 DEVICE_ID: 0
 # Model weights path
-MODEL_WEIGHTS_PATH: "./results/pretrained_models/ESRGAN_x4-DIV2K.pth.tar"
+MODEL_WEIGHTS_PATH: "./results/pretrained_models/ESRGAN_x4-DFO2K.pth.tar"
 
 # Model define
 MODEL:
@@ -22,8 +22,8 @@ MODEL:
 
 TEST:
   DATASET:
-    PAIRED_TEST_GT_IMAGES_DIR: "./data/Set5/GTmod12"
-    PAIRED_TEST_LR_IMAGES_DIR: "./data/Set5/LRbicx4"
+    PAIRED_TEST_GT_IMAGES_DIR: "./data/Set5/X4/GT"
+    PAIRED_TEST_LR_IMAGES_DIR: "./data/Set5/X4/LR"
 
   # Test hyperparameters
   HYP:

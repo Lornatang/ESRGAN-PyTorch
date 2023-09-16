@@ -339,7 +339,7 @@ class ContentLoss(nn.Module):
             net_cfg_name: str = "vgg19",
             batch_norm: bool = False,
             num_classes: int = 1000,
-            model_weights_path: str = None,
+            model_weights_path: str = "",
             feature_nodes: list = None,
             feature_normalize_mean: list = None,
             feature_normalize_std: list = None,
@@ -348,7 +348,7 @@ class ContentLoss(nn.Module):
         # Define the feature extraction model
         model = _FeatureExtractor(net_cfg_name, batch_norm, num_classes)
         # Load the pre-trained model
-        if model_weights_path is None:
+        if model_weights_path == "":
             model = models.vgg19(weights=models.VGG19_Weights.IMAGENET1K_V1)
         elif model_weights_path is not None and os.path.exists(model_weights_path):
             checkpoint = torch.load(model_weights_path, map_location=lambda storage, loc: storage)

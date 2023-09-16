@@ -23,8 +23,8 @@ def main():
     args = {
         "inputs_dir": "./data/DIV2K_train_HR",  # Path to input image directory.
         "output_dir": "./data/DFO2K_train_GT",  # Path to generator image directory.
-        "crop_size": 544,  # Crop image size from raw image.
-        "step": 272,  # Step size of sliding window.
+        "crop_size": 400,  # Crop image size from raw image.
+        "step": 200,  # Step size of sliding window.
         "thresh_size": 0,  # Threshold size. If the remaining image is less than the threshold, it will not be cropped.
         "num_workers": 10  # How many threads to open at the same time.
     }
@@ -33,8 +33,8 @@ def main():
     args = {
         "inputs_dir": "./data/Flickr2K",  # Path to input image directory.
         "output_dir": "./data/DFO2K_train_GT",  # Path to generator image directory.
-        "crop_size": 544,  # Crop image size from raw image.
-        "step": 272,  # Step size of sliding window.
+        "crop_size": 400,  # Crop image size from raw image.
+        "step": 200,  # Step size of sliding window.
         "thresh_size": 0,  # Threshold size. If the remaining image is less than the threshold, it will not be cropped.
         "num_workers": 10  # How many threads to open at the same time.
     }
@@ -43,8 +43,8 @@ def main():
     args = {
         "inputs_dir": "./data/OST",  # Path to input image directory.
         "output_dir": "./data/DFO2K_train_GT",  # Path to generator image directory.
-        "crop_size": 192,  # Crop image size from raw image.
-        "step": 96,  # Step size of sliding window.
+        "crop_size": 400,  # Crop image size from raw image.
+        "step": 200,  # Step size of sliding window.
         "thresh_size": 0,  # Threshold size. If the remaining image is less than the threshold, it will not be cropped.
         "num_workers": 10  # How many threads to open at the same time.
     }

@@ -49,7 +49,7 @@ TRAIN:
     PIN_MEMORY: True
     PERSISTENT_WORKERS: True
 
-    EPOCHS: 94  # 400,000 iters
+    EPOCHS: 27  # 400,000 iters
 
   OPTIM:
     NAME: Adam

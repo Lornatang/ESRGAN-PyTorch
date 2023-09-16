@@ -41,7 +41,7 @@ TRAIN:
     PIN_MEMORY: True
     PERSISTENT_WORKERS: True
 
-    EPOCHS: 50  # 323856 images, 1000000 iters
+    EPOCHS: 67  # 238907 images, 1000000 iters
 
   OPTIM:
     NAME: Adam

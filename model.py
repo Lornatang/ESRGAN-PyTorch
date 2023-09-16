@@ -22,7 +22,7 @@ from torchvision.models.feature_extraction import create_feature_extractor
 
 __all__ = [
     "DiscriminatorForVGG", "RRDBNet", "ContentLoss",
-    "discriminator_for_vgg", "rrdbnet_x2", "rrdbnet_x3", "rrdbnet_x4", "rrdbnet_x8"
+    "discriminator_for_vgg", "rrdbnet_x2", "rrdbnet_x4", "rrdbnet_x8"
 ]
 
 feature_extractor_net_cfgs: Dict[str, List[Union[str, int]]] = {
@@ -105,12 +105,12 @@ class _FeatureExtractor(nn.Module):
 class RRDBNet(nn.Module):
     def __init__(
             self,
-            in_channels: int,
-            out_channels: int,
-            channels: int,
-            growth_channels: int,
-            num_rrdb: int,
-            upscale: int,
+            in_channels: int = 3,
+            out_channels: int = 3,
+            channels: int = 64,
+            growth_channels: int = 32,
+            num_rrdb: int = 23,
+            upscale: int = 4,
     ) -> None:
         super(RRDBNet, self).__init__()
         self.upscale = upscale
@@ -266,9 +266,9 @@ class _ResidualResidualDenseBlock(nn.Module):
 class DiscriminatorForVGG(nn.Module):
     def __init__(
             self,
-            in_channels: int,
-            out_channels: int,
-            channels: int,
+            in_channels: int = 3,
+            out_channels: int = 3,
+            channels: int = 64,
     ) -> None:
         super(DiscriminatorForVGG, self).__init__()
         self.features = nn.Sequential(
@@ -336,13 +336,13 @@ class ContentLoss(nn.Module):
 
     def __init__(
             self,
-            net_cfg_name: str,
-            batch_norm: bool,
-            num_classes: int,
-            model_weights_path: str,
-            feature_nodes: list,
-            feature_normalize_mean: list,
-            feature_normalize_std: list,
+            net_cfg_name: str = "vgg19",
+            batch_norm: bool = False,
+            num_classes: int = 1000,
+            model_weights_path: str = None,
+            feature_nodes: list = None,
+            feature_normalize_mean: list = None,
+            feature_normalize_std: list = None,
     ) -> None:
         super(ContentLoss, self).__init__()
         # Define the feature extraction model
@@ -394,12 +394,6 @@ class ContentLoss(nn.Module):
 
 def rrdbnet_x2(**kwargs: Any) -> RRDBNet:
     model = RRDBNet(upscale=2, **kwargs)
-
-    return model
-
-
-def rrdbnet_x3(**kwargs: Any) -> RRDBNet:
-    model = RRDBNet(upscale=3, **kwargs)
 
     return model
 

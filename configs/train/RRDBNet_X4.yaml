@@ -1,5 +1,5 @@
 # experiment name
-EXP_NAME: RRDBNet_x4-DIV2K
+EXP_NAME: RRDBNet_x4-DFO2K
 # random number seed
 SEED: 0
 # super resolution magnification factor
@@ -24,7 +24,7 @@ MODEL:
 
 TRAIN:
   DATASET:
-    TRAIN_GT_IMAGES_DIR: ./data/DIV2K/train/GT
+    TRAIN_GT_IMAGES_DIR: ./data/DFO2K_train_GT
 
     GT_IMAGE_SIZE: 192
 
@@ -41,7 +41,7 @@ TRAIN:
     PIN_MEMORY: True
     PERSISTENT_WORKERS: True
 
-    EPOCHS: 234  # 1,000,000 iters
+    EPOCHS: 50  # 323856 images, 1000000 iters
 
   OPTIM:
     NAME: Adam
@@ -65,8 +65,8 @@ TRAIN:
 
 TEST:
   DATASET:
-    PAIRED_TEST_GT_IMAGES_DIR: "./data/Set5/GTmod12"
-    PAIRED_TEST_LR_IMAGES_DIR: "./data/Set5/LRbicx4"
+    PAIRED_TEST_GT_IMAGES_DIR: "./data/Set5/X4/GT"
+    PAIRED_TEST_LR_IMAGES_DIR: "./data/Set5/X4/LR"
 
   # Test hyperparameters
   HYP:

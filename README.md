@@ -49,7 +49,7 @@ python3 test.py --config_path ./configs/test/ESRGAN_X4.yaml
 ### Train RRDBNet_x4
 
 ```bash
-python3 train_net.py --config_path ./configs/train/RRDBNet_X4.yaml
+python3 train_net.py --config_path ./configs/train/RRDBNet_x4-DFO2K.yaml
 ```
 
 ### Resume train RRDBNet_x4
@@ -59,7 +59,7 @@ Modify the `./configs/train/RRDBNet_X4.yaml` file.
 - line 34: `RESUMED_G_MODEL` change to `./samples/RRDBNet_X4-DIV2K/g_epoch_xxx.pth.tar`.
 
 ```bash
-python3 train_net.py --config_path ./configs/train/RRDBNet_X4.yaml
+python3 train_net.py --config_path ./configs/train/RRDBNet_x4-DFO2K.yaml
 ```
 
 ### Train ESRGAN_x4

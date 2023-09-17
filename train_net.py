@@ -41,7 +41,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_path",
                         type=str,
-                        default="./configs/train/RRDBNet_X4.yaml",
+                        default="./configs/train/RRDBNet_x4-DFO2K.yaml",
                         help="Path to train config file.")
     args = parser.parse_args()
 

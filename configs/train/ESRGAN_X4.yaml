@@ -60,7 +60,7 @@ TRAIN:
 
   LR_SCHEDULER:
     NAME: MultiStepLR
-    MILESTONES: [ 11, 23, 46, 70 ]
+    MILESTONES: [ 3, 6, 13, 20 ]
     GAMMA: 0.5
 
   # Loss function
@@ -100,5 +100,4 @@ TEST:
   # Only test Y channel
   ONLY_TEST_Y_CHANNEL: True
 
-  SAVE_IMAGE: False
-  SAVE_IMAGE_DIR: None
+  SAVE_IMAGE_DIR: ""

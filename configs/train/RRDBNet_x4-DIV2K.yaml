@@ -31,7 +31,7 @@ TRAIN:
   # Model file address, used for pre-training and recovery training
   CHECKPOINT:
     PRETRAINED_G_MODEL: ""
-    RESUMED_G_MODEL: "./samples/RRDBNet_x4-DIV2K/g_epoch_4.pth.tar"
+    RESUMED_G_MODEL: ""
 
   # training hyperparameters
   HYP:

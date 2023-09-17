@@ -43,7 +43,7 @@ Both training and testing only need to modify yaml file.
 ### Test ESRGAN_x4
 
 ```bash
-python3 test.py --config_path ./configs/test/ESRGAN_X4.yaml
+python3 test.py --config_path ./configs/test/ESRGAN_x4-DFO2K-Set5.yaml
 ```
 
 ### Train RRDBNet_x4
@@ -69,7 +69,7 @@ Modify the `./configs/train/ESRGAN_X4.yaml` file.
 - line 39: `PRETRAINED_G_MODEL` change to `./results/EDSRGAN_x4-DIV2K/g_last.pth.tar`.
 
 ```bash
-python3 train_gan.py --config_path ./configs/train/ESRGAN_X4.yaml
+python3 train_gan.py --config_path ./configs/train/ESRGAN_x4-DFO2K.yaml
 ```
 
 ### Resume train ESRGAN_x4
@@ -81,7 +81,7 @@ Modify the `./configs/train/ESRGAN_X4.yaml` file.
 - line 42: `RESUMED_D_MODEL` change to `./samples/EDSRGAN_x4-DIV2K/d_epoch_xxx.pth.tar`.
 
 ```bash
-python3 train_gan.py --config_path ./configs/train/ESRGAN_X4.yaml
+python3 train_gan.py --config_path ./configs/train/ESRGAN_x4-DFO2K.yaml
 ```
 
 ### Result

@@ -154,7 +154,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_path",
                         type=str,
-                        default="./configs/test/ESRGAN_X4.yaml",
+                        default="./configs/test/ESRGAN_x4-DFO2K.yaml",
                         required=True,
                         help="Path to test config file.")
     args = parser.parse_args()

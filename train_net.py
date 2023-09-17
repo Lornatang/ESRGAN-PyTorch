@@ -148,19 +148,22 @@ def main():
         is_last = (epoch + 1) == config["TRAIN"]["HYP"]["EPOCHS"]
         best_psnr = max(psnr, best_psnr)
         best_ssim = max(ssim, best_ssim)
-        save_checkpoint({"epoch": epoch + 1,
-                         "psnr": psnr,
-                         "ssim": ssim,
-                         "state_dict": g_model.state_dict(),
-                         "ema_state_dict": ema_g_model.state_dict() if ema_g_model is not None else None,
-                         "optimizer": optimizer.state_dict()},
-                        f"g_epoch_{epoch + 1}.pth.tar",
-                        samples_dir,
-                        results_dir,
-                        "g_best.pth.tar",
-                        "g_last.pth.tar",
-                        is_best,
-                        is_last)
+        save_checkpoint({
+            "epoch": epoch + 1,
+            "psnr": psnr,
+            "ssim": ssim,
+            "state_dict": g_model.state_dict(),
+            "ema_state_dict": ema_g_model.state_dict() if ema_g_model is not None else None,
+            "optimizer": optimizer.state_dict(),
+            "scheduler": scheduler.state_dict() if scheduler is not None else None,
+        },
+            f"g_epoch_{epoch + 1}.pth.tar",
+            samples_dir,
+            results_dir,
+            "g_best.pth.tar",
+            "g_last.pth.tar",
+            is_best,
+            is_last)
 
 
 def load_dataset(

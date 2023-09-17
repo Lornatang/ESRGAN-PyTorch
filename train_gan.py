@@ -41,7 +41,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_path",
                         type=str,
-                        default="./configs/train/ESRGAN_X4.yaml",
+                        default="./configs/train/ESRGAN_x4-DFO2K.yaml",
                         required=True,
                         help="Path to train config file.")
     args = parser.parse_args()
@@ -173,31 +173,38 @@ def main():
         is_last = (epoch + 1) == config["TRAIN"]["HYP"]["EPOCHS"]
         best_psnr = max(psnr, best_psnr)
         best_ssim = max(ssim, best_ssim)
-        save_checkpoint({"epoch": epoch + 1,
-                         "psnr": psnr,
-                         "ssim": ssim,
-                         "state_dict": g_model.state_dict(),
-                         "ema_state_dict": ema_g_model.state_dict() if ema_g_model is not None else None,
-                         "optimizer": g_optimizer.state_dict()},
-                        f"epoch_{epoch + 1}.pth.tar",
-                        samples_dir,
-                        results_dir,
-                        "g_best.pth.tar",
-                        "g_last.pth.tar",
-                        is_best,
-                        is_last)
-        save_checkpoint({"epoch": epoch + 1,
-                         "psnr": psnr,
-                         "ssim": ssim,
-                         "state_dict": d_model.state_dict(),
-                         "optimizer": d_optimizer.state_dict()},
-                        f"epoch_{epoch + 1}.pth.tar",
-                        samples_dir,
-                        results_dir,
-                        "d_best.pth.tar",
-                        "d_last.pth.tar",
-                        is_best,
-                        is_last)
+        save_checkpoint({
+            "epoch": epoch + 1,
+            "psnr": psnr,
+            "ssim": ssim,
+            "state_dict": g_model.state_dict(),
+            "ema_state_dict": ema_g_model.state_dict() if ema_g_model is not None else None,
+            "optimizer": g_optimizer.state_dict(),
+            "scheduler": g_scheduler.state_dict() if g_scheduler is not None else None
+        },
+            f"g_epoch_{epoch + 1}.pth.tar",
+            samples_dir,
+            results_dir,
+            "g_best.pth.tar",
+            "g_last.pth.tar",
+            is_best,
+            is_last)
+        save_checkpoint({
+            "epoch": epoch + 1,
+            "psnr": psnr,
+            "ssim": ssim,
+            "state_dict": d_model.state_dict(),
+            "ema_state_dict": None,
+            "optimizer": d_optimizer.state_dict(),
+            "scheduler": d_scheduler.state_dict() if d_scheduler is not None else None,
+        },
+            f"d_epoch_{epoch + 1}.pth.tar",
+            samples_dir,
+            results_dir,
+            "d_best.pth.tar",
+            "d_last.pth.tar",
+            is_best,
+            is_last)
 
 
 def load_dataset(

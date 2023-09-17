@@ -1,4 +1,4 @@
-# Copyright 2023 Dakewe Biotech Corporation. All Rights Reserved.
+# Copyright 2022 Dakewe Biotech Corporation. All Rights Reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
@@ -121,12 +121,12 @@ def load_pretrained_state_dict(
 
 def load_resume_state_dict(
         model: nn.Module,
-        ema_model: nn.Module | None,
+        ema_model: Any,
         optimizer: Optimizer,
         scheduler: Any,
         compile_state: bool,
         model_weights_path: str,
-) -> tuple[Any, Module | None | Any, Any, Any, Any, Optimizer, Any] | tuple[Any, Module | None | Any, Any, Any, Any, Optimizer]:
+):
     """Restore training model weights
 
     Args:
@@ -238,11 +238,11 @@ class AverageMeter(object):
         if self.summary_type is Summary.NONE:
             fmtstr = ""
         elif self.summary_type is Summary.AVERAGE:
-            fmtstr = "{name} {avg:.2f}"
+            fmtstr = "{name} {avg:.4f}"
         elif self.summary_type is Summary.SUM:
-            fmtstr = "{name} {sum:.2f}"
+            fmtstr = "{name} {sum:.4f}"
         elif self.summary_type is Summary.COUNT:
-            fmtstr = "{name} {count:.2f}"
+            fmtstr = "{name} {count:.4f}"
         else:
             raise ValueError(f"Invalid summary type {self.summary_type}")
 

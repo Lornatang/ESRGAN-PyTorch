@@ -154,7 +154,7 @@ def main():
                          "state_dict": g_model.state_dict(),
                          "ema_state_dict": ema_g_model.state_dict() if ema_g_model is not None else None,
                          "optimizer": optimizer.state_dict()},
-                        f"epoch_{epoch + 1}.pth.tar",
+                        f"g_epoch_{epoch + 1}.pth.tar",
                         samples_dir,
                         results_dir,
                         "g_best.pth.tar",

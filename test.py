@@ -14,6 +14,7 @@
 import argparse
 import os
 import time
+import warnings
 from typing import Any
 
 import cv2
@@ -43,11 +44,11 @@ def load_dataset(config: Any, device: torch.device) -> CUDAPrefetcher:
     return test_test_data_prefetcher
 
 
-def build_model(config: Any, device: torch.device) -> nn.Module | Any:
+def build_model(config: Any, device: torch.device):
     g_model = model.__dict__[config["MODEL"]["G"]["NAME"]](in_channels=config["MODEL"]["G"]["IN_CHANNELS"],
                                                            out_channels=config["MODEL"]["G"]["OUT_CHANNELS"],
                                                            channels=config["MODEL"]["G"]["CHANNELS"],
-                                                           growth_channels= config["MODEL"]["G"]["GROWTH_CHANNELS"],
+                                                           growth_channels=config["MODEL"]["G"]["GROWTH_CHANNELS"],
                                                            num_rrdb=config["MODEL"]["G"]["NUM_RRDB"])
     g_model = g_model.to(device)
 
@@ -66,14 +67,13 @@ def test(
         device: torch.device,
         config: Any,
 ) -> [float, float]:
-    if config["TEST"]["SAVE_IMAGE"] and config["TEST"]["SAVE_DIR_PATH"] is None:
-        raise ValueError("Image save location cannot be empty!")
+    save_image = False
+    save_image_dir = ""
 
-    if config["TEST"]["SAVE_IMAGE"]:
-        save_dir_path = os.path.join(config["SAVE_DIR_PATH"], config["EXP_NAME"])
-        make_directory(save_dir_path)
-    else:
-        save_dir_path = None
+    if config["TEST"]["SAVE_IMAGE_DIR"]:
+        save_image = True
+        save_image_dir = os.path.join(config["SAVE_IMAGE_DIR"], config["EXP_NAME"])
+        make_directory(save_image_dir)
 
     # Calculate the number of iterations per epoch
     batches = len(test_data_prefetcher)
@@ -129,13 +129,13 @@ def test(
                 progress.display(batch_index)
 
             # Save the processed image after super-resolution
-            if config["TEST"]["SAVE_IMAGE"] and batch_data["image_name"] is None:
+            if batch_data["image_name"] == "":
                 raise ValueError("The image_name is None, please check the dataset.")
-            if config["TEST"]["SAVE_IMAGE"]:
+            if save_image:
                 image_name = os.path.basename(batch_data["image_name"][0])
                 sr_image = tensor_to_image(sr, False, False)
                 sr_image = cv2.cvtColor(sr_image, cv2.COLOR_RGB2BGR)
-                cv2.imwrite(os.path.join(save_dir_path, image_name), sr_image)
+                cv2.imwrite(os.path.join(save_image_dir, image_name), sr_image)
 
             # Preload the next batch of data
             batch_data = test_data_prefetcher.next()
@@ -167,17 +167,12 @@ def main() -> None:
     g_model = build_model(config, device)
     psnr_model, ssim_model = build_iqa_model(
         config["SCALE"],
-        config["ONLY_TEST_Y_CHANNEL"],
+        config["TEST"]["ONLY_TEST_Y_CHANNEL"],
         device,
     )
 
     # Load model weights
     g_model = load_pretrained_state_dict(g_model, config["MODEL"]["G"]["COMPILED"], config["MODEL_WEIGHTS_PATH"])
-
-    # Create a directory for saving test results
-    save_dir_path = os.path.join(config["SAVE_DIR_PATH"], config["EXP_NAME"])
-    if config["SAVE_IMAGE"]:
-        make_directory(save_dir_path)
 
     test(g_model,
          test_data_prefetcher,

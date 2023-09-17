@@ -36,5 +36,4 @@ TEST:
   # Only test Y channel
   ONLY_TEST_Y_CHANNEL: True
 
-  SAVE_IMAGE: False
-  SAVE_IMAGE_DIR: None
+  SAVE_IMAGE_DIR: ""

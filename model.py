@@ -193,8 +193,6 @@ class RRDBNet(nn.Module):
         x = self.conv3(x)
         x = self.conv4(x)
 
-        x = torch.clamp_(x, 0.0, 1.0)
-
         return x
 
     def forward(self, x: Tensor) -> Tensor:

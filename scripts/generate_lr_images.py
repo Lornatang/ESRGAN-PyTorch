@@ -12,21 +12,14 @@
 # limitations under the License.
 # ==============================================================================
 import math
-import random
+import multiprocessing
+import os
 from typing import Any
 
 import cv2
 import numpy as np
 import torch
-from numpy import ndarray
-from torch import Tensor
-import multiprocessing
-import os
-
-import cv2
-import numpy as np
 from tqdm import tqdm
-from torchvision.transforms import functional as F_vision
 
 
 def _cubic(x: Any) -> Any:
